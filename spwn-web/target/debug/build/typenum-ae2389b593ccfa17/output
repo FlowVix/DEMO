@@ -1,2 +1,0 @@
-cargo:rustc-env=TYPENUM_BUILD_CONSTS=/home/flow/Documents/DEMO/spwn-web/target/debug/build/typenum-ae2389b593ccfa17/out/consts.rs
-cargo:rustc-env=TYPENUM_BUILD_OP=/home/flow/Documents/DEMO/spwn-web/target/debug/build/typenum-ae2389b593ccfa17/out/op.rs
