@@ -26,6 +26,8 @@ class World {
     colorIDs: Record<number, ColorIDData> = {};
     itemIDs: Record<number, ItemIDData> = {};
     blockIDs: Record<number, BlockIDData> = {};
+
+    scheduled_spawns: {time: number, group: number}[] = [];
     
     displays: Display[] = [];
 
@@ -108,13 +110,25 @@ class World {
     ) {
         if (!(groupID in this.groupIDs))
             return
-        
+        const d = new Date()
+        const time = d.getTime()
         for (let i = 0; i < this.groupIDs[groupID].objects.length; i++) {
             let obj = this.groupIDs[groupID].objects[i]
             if ((obj instanceof Trigger) && obj.disables == 0) {
+                obj.lastTrigger = time
                 obj.trigger(this)
             }
         }
+    }
+
+    scheduleSpawnGroupID(
+        groupID: number,
+        time: number,
+    ) {
+        if (!(groupID in this.groupIDs))
+            return
+        
+        this.scheduled_spawns.push({time: time, group: groupID})
     }
     
     changeItemID(

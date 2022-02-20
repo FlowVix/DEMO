@@ -136,6 +136,9 @@ const worldSketch = (
         p5.text(world.objects.length + " objects", 20, 50)
 
         world.objects.forEach(obj => obj.drawFull(p5))
+
+        const date = new Date()
+        let time = date.getTime()
         
         world.objects.forEach(obj => {
             // draw connections for spawn triggers etc
@@ -151,8 +154,6 @@ const worldSketch = (
             }
 
             if (obj instanceof SpawnTrigger) {
-                const d = new Date()
-                let time = d.getTime()
                 if (time - obj.last_trigger < obj.delay * 1000) {
                     const progress = (time - obj.last_trigger) / (obj.delay * 1000)
                     let target = obj.target
@@ -161,7 +162,13 @@ const worldSketch = (
                         p5.stroke(0, 255, 255, 200)
                         p5.strokeWeight(3)
                         p5.noFill()
-                        arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
+                        arrow(
+                            p5, 
+                            obj.pos.x, 
+                            -obj.pos.y, 
+                            obj.pos.x + (targetObj.pos.x - obj.pos.x) * progress, 
+                            -obj.pos.y + (-targetObj.pos.y - -obj.pos.y) * progress,
+                        )
                     })
                 }
             }
@@ -175,6 +182,16 @@ const worldSketch = (
         p5.rect(-6, -6, p5.width+12, p5.height+12, 18)
         p5.stroke(17, 17, 22)
         p5.rect(-38, -38, p5.width+44, p5.height+44, 18)
+
+        let to_remove = []
+        world.scheduled_spawns.forEach((spawn, i) => {
+            if (spawn.time <= time) {
+                world.spawnGroupID(spawn.group)
+                to_remove.push(i)
+            }
+        })
+        to_remove.forEach(i => world.scheduled_spawns.splice(i, 1))
+
 
     };
 

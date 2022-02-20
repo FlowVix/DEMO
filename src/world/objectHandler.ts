@@ -65,7 +65,7 @@ const parseProps = (
                         value = value as number
                         break;
                     case Constants.PropTypes.Bool:
-                        value = value == 1
+                        value = value == "1"
                         break;
                     case Constants.PropTypes.String:
                         value = value as string
@@ -121,10 +121,10 @@ const createObject = (
     for (const i in props) {
         switch (parseInt(i)) {
             case Constants.OBJ_PROPS.X:
-                obj.pos.x = props[i]
+                obj.pos.x = parseFloat(props[i])
                 break;
             case Constants.OBJ_PROPS.Y:
-                obj.pos.y = props[i]
+                obj.pos.y = parseFloat(props[i])
                 break;
             case Constants.OBJ_PROPS.HORIZONTAL_FLIP:
                 obj.scale.x = props[i] ? (-1) : 1
@@ -133,7 +133,7 @@ const createObject = (
                 obj.scale.y = props[i] ? (-1) : 1
                 break;
             case Constants.OBJ_PROPS.ROTATION:
-                obj.rotation = props[i]
+                obj.rotation = parseFloat(props[i])
                 break;
             case Constants.OBJ_PROPS.GROUPS:
                 props[i].forEach(g => {
@@ -161,49 +161,49 @@ const createObject = (
                             if (obj instanceof ToggleTrigger) {
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET:
-										obj.target = props[i]
+										obj.target = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.ACTIVATE_GROUP:
-										obj.activate = props[i]
+										obj.activate = props[i] === "1"
                                         break;
                                 }
                             } else if (obj instanceof MoveTrigger) {
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET:
-										obj.target = props[i]
+										obj.target = parseInt(props[i])
                                         break;
                                 }
                             } else if (obj instanceof SpawnTrigger) {
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET:
-										obj.target = props[i]
+										obj.target = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.SPAWN_DURATION:
-										obj.delay = props[i]
+										obj.delay = parseFloat(props[i])
                                         break;
                                 }
                             } else if (obj instanceof PickupTrigger) {
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.ITEM:
-										obj.itemID = props[i]
+										obj.itemID = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.COUNT:
-										obj.amount = props[i]
+										obj.amount = parseInt(props[i])
                                         break;
                                 }
                             } else if (obj instanceof InstantCountTrigger) {
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.ITEM:
-										obj.itemID = props[i]
+										obj.itemID = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.COUNT:
-										obj.amount = props[i]
+										obj.amount = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.ACTIVATE_GROUP:
-										obj.activate = props[i]
+										obj.activate = props[i] === "1"
                                         break;
 									case Constants.OBJ_PROPS.TARGET:
-										obj.target = props[i]
+										obj.target = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.COMPARISON:
 										switch (parseInt(i)) {
