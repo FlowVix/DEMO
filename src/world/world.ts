@@ -30,7 +30,14 @@ class World {
     displays: Display[] = [];
 
     constructor() {
+        this.reset()
+    }
+    reset() {
         this.objects = []
+        this.groupIDs = {}
+        this.colorIDs = {}
+        this.itemIDs = {}
+        this.blockIDs = {}
     }
 
     addGroupID(

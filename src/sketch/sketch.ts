@@ -2,6 +2,7 @@
 import P5 from 'p5-svelte';
 import type World from '../world/world';
 import type GDObject from '../objects/object'
+import { InstantCountTrigger, SpawnTrigger } from '../objects/triggers';
 
 
 interface Vector {
@@ -117,26 +118,54 @@ const worldSketch = (
 
         
         p5.push()
+        p5.background(50, 60, 70)
 
-        p5.background(94, 129, 235)
         p5.translate(p5.width/2, p5.height/2)
         
         p5.translate(cameraPos.x, -cameraPos.y)
         p5.scale(2)
+
+        p5.stroke(0)
+        p5.strokeWeight(1)
+        p5.line(0,0,100*30,0)
+        p5.line(0,0,0,-100*30)
 
         p5.textSize(15)
         p5.noStroke()
         p5.fill(0)
         p5.text(world.objects.length + " objects", 20, 50)
 
-        for (let i = 0; i < world.objects.length; i++) {
-            world.objects[i].drawFull(p5)
-        }
+        world.objects.forEach(obj => obj.drawFull(p5))
+        
+        world.objects.forEach(obj => {
+            // draw connections for spawn triggers etc
+            if (obj instanceof SpawnTrigger || obj instanceof InstantCountTrigger) {
+                let target = obj.target
+                let group = world.groupIDs[target]
+                group.objects.forEach(targetObj => {
+                    p5.stroke(255, 0, 0, group.on ? 100 : 50)
+                    p5.noFill()
+                    p5.strokeWeight(3)
+                    arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
+                })
+            }
 
-        p5.stroke(0)
-        p5.strokeWeight(1)
-        p5.line(0,0,100*30,0)
-        p5.line(0,0,0,-100*30)
+            if (obj instanceof SpawnTrigger) {
+                const d = new Date()
+                let time = d.getTime()
+                if (time - obj.last_trigger < obj.delay * 1000) {
+                    const progress = (time - obj.last_trigger) / (obj.delay * 1000)
+                    let target = obj.target
+                    let group = world.groupIDs[target]
+                    group.objects.forEach(targetObj => {
+                        p5.stroke(0, 255, 255, 200)
+                        p5.strokeWeight(3)
+                        p5.noFill()
+                        arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
+                    })
+                }
+            }
+        })
 
         p5.pop()
 
@@ -152,6 +181,19 @@ const worldSketch = (
 
 
 };
+
+function arrow(p5, x1, y1, x2, y2) {
+    const offset = 5;
+    p5.line(x1, y1, x2, y2); //draw a line beetween the vertices
+
+    // this code is to make the arrow point
+    p5.push() //start new drawing state
+    var angle = p5.atan2(y1 - y2, x1 - x2) - Math.PI / 2; //gets the angle of the line
+    p5.translate(x2, y2); //translates to the destination vertex
+    p5.rotate(angle); //rotates the arrow point
+    p5.triangle(-offset*0.5, offset, offset*0.5, offset, 0, -offset/2); //draws the arrow point as a triangle
+    p5.pop();
+}
 
 export default worldSketch
 

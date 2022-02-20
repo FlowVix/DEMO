@@ -24,7 +24,8 @@
     "svelte-code-editor": "^1.0.1",
     "svelte-preprocess": "^4.0.0",
     "tslib": "^2.0.0",
-    "typescript": "^4.0.0"
+    "typescript": "^4.0.0",
+    "wasm-pack": "^0.10.2"
   },
   "dependencies": {
     "@novacbn/svelte-codejar": "^0.1.1",

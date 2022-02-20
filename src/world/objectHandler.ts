@@ -12,6 +12,7 @@ import {
     SpawnTrigger,
     PickupTrigger,
     InstantCountTrigger,
+    MoveTrigger,
     Cmp
 } from "../objects/triggers"
 import {
@@ -104,6 +105,9 @@ const createObject = (
 		case Constants.OBJ_IDS.Triggers.INSTANT_COUNT:
 			obj = new InstantCountTrigger(0, 0)
             break;
+        case Constants.OBJ_IDS.Triggers.MOVE:
+            obj = new MoveTrigger(0, 0)
+            break;
 		case Constants.OBJ_IDS.Special.ITEM_DISPLAY:
 			obj = new Display(0, 0)
             break;
@@ -161,6 +165,12 @@ const createObject = (
                                         break;
 									case Constants.OBJ_PROPS.ACTIVATE_GROUP:
 										obj.activate = props[i]
+                                        break;
+                                }
+                            } else if (obj instanceof MoveTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.target = props[i]
                                         break;
                                 }
                             } else if (obj instanceof SpawnTrigger) {
