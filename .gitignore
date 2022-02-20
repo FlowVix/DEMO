@@ -1,4 +1,5 @@
 /node_modules/
 /public/build/
+/spwn-web/target/
 
 .DS_Store
