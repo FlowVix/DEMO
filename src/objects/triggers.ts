@@ -2,7 +2,6 @@ import GDObject from "./object";
 import type World from "../world/world";
 import {draw_trigger} from "./util";
 
-
 class Trigger extends GDObject {
     touchTriggered: boolean = false;
     spawnTriggered: boolean = false;
@@ -10,9 +9,16 @@ class Trigger extends GDObject {
     lastTrigger: number = 0;
     trigger(world: World) {}
 }
+// activates other triggers (spawn, ic, collision, ...)
+export class FunctionTrigger extends Trigger {
+    target: number;
+    last_spawn: number = 0;
+}
+
+export class OutputTrigger extends Trigger {}
 
 // oops didnt mean to call
-class ToggleTrigger extends Trigger {
+class ToggleTrigger extends OutputTrigger {
     target: number = 0;
     activate: boolean = false;
     draw(p5: any, world: World) {
@@ -23,17 +29,15 @@ class ToggleTrigger extends Trigger {
     }
 }
 
-class MoveTrigger extends Trigger {
+class MoveTrigger extends OutputTrigger {
     target: number = 0;
     draw(p5: any, world: World) {
         draw_trigger(p5, [91, 38, 175], "Move", `${this.target}`, this.lastTrigger)
     }
 }
 
-class SpawnTrigger extends Trigger {
-    target: number = 0;                 // nope
+class SpawnTrigger extends FunctionTrigger {
     delay: number = 0;
-    last_trigger: number = 0;
     draw(p5: any, world: World) {
         draw_trigger(p5, [62, 173, 119], "Spawn", `${this.delay}`.replace(/\.?0*$/,''), this.lastTrigger)
     }
@@ -48,9 +52,8 @@ class SpawnTrigger extends Trigger {
 
     trigger(world: World) {
         const d = new Date();
-        this.last_trigger = d.getTime();
+        this.last_spawn = d.getTime();
         if (this.delay > 0) {
-            const d = new Date();
             let time = d.getTime();
             this.schedule_spawn(world, time + this.delay * 1000)
         } else {
@@ -59,9 +62,10 @@ class SpawnTrigger extends Trigger {
     }
 }
 
-class PickupTrigger extends Trigger {
+class PickupTrigger extends OutputTrigger {
     itemID: number = 0;
     amount: number = 0;
+    
     draw(p5: any, world: World) {
         draw_trigger(p5, [247, 151, 25], "Pickup", `${this.itemID}i${this.amount >= 0 ? "+" : ""}${this.amount}`, this.lastTrigger)
     }
@@ -71,12 +75,11 @@ class PickupTrigger extends Trigger {
 }
 
 enum Cmp { EQUAL, GREATER, LESSER }
-class InstantCountTrigger extends Trigger {
+class InstantCountTrigger extends FunctionTrigger {
     itemID: number = 0;
     amount: number = 0;
     cmpType: Cmp = Cmp.LESSER;
 
-    target: number = 0;
     activate: boolean = false;
 
     draw(p5: any, world: World) {
@@ -85,6 +88,8 @@ class InstantCountTrigger extends Trigger {
     }
 
     trigger(world: World) {
+        const d = new Date();
+        this.last_spawn = d.getTime();
         switch (this.cmpType) {
             case Cmp.EQUAL:
                 if (world.getItemID(this.itemID) == this.amount) {

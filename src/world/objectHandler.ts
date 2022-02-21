@@ -136,7 +136,8 @@ const createObject = (
                 break;
             case Constants.OBJ_PROPS.GROUPS:
                 props[i].forEach(g => {
-                    world.addGroupID(idx, g)
+                    world.addGroupID(idx, g, false)
+                    obj.groups.push(g)
                 });
                 break;
             default:

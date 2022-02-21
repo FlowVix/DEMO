@@ -44,7 +44,9 @@ class World {
     addGroupID(
         obj: ObjIndex,
         groupID: number,
+        add_to_obj: boolean = true, //brb
     ) {
+        if (add_to_obj) this.objects[obj].groups.push(groupID)
         if (!(groupID in this.groupIDs)) {
             this.groupIDs[groupID] = {on: true, objects: []};
         }

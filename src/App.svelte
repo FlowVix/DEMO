@@ -23,6 +23,12 @@
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
     import worldSketch from "./sketch/sketch"
     import { parseProps, createObject } from "./world/objectHandler"
+
+    import { AceEditor } from "svelte-ace"
+    import "brace/mode/json"
+    import "brace/theme/chrome"
+    let fartCode = ""
+
     export let run_spwn
     export let init_panics
     init_panics()
@@ -94,8 +100,6 @@ while_loop(() => true, () {
             }
         })
     }
-
-    let showGraph = true
 </script>
 
 <!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
@@ -103,17 +107,13 @@ while_loop(() => true, () {
 <!-- updates in the same way as the world sketch -->
 <!-- yeah but the world sketch has an always running draw call accessing the world -->
 <!-- unless im not understanding, the triggerSketch code just runs once on creation -->
-{#if showGraph}
-    <P5 parentDivStyle="border-radius: 20px;" sketch={triggerSketch} />
-{/if}
-<P5 parentDivStyle="border-radius: 20px;" sketch={worldSketch(world)} />
+
 <div class="everything">
     <div class="header">
         <a href="https://spu7nix.net/spwn"
             ><img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a
         >
         <span class="logo-text">SPWN Playground</span>
-        <button on:click={() => (showGraph = !showGraph)}>poopfart</button>
     </div>
 
     <div class="playground">
@@ -121,18 +121,18 @@ while_loop(() => true, () {
             <CodeJar
                 style="
                     font-family:'Source Code Pro', monospace;
-                    background-color:#0005;
+                    font-size: 16px;
                     border-radius:6px;
                     margin:0;
                     border: 2px solid #3b3b3b;
                     box-shadow: 3px 3px 10px 0px #0005;
+                    background-color: #0002;
                 "
                 syntax="spwn"
                 {highlight}
                 bind:value
                 tab={"\t"}
             />
-
             <div id="console">
                 {@html ansiUp.ansi_to_html(editor_console)}
             </div>
@@ -152,14 +152,20 @@ while_loop(() => true, () {
     </div>
 </div>
 
+<P5 sketch={triggerSketch} />
+
+<P5 sketch={worldSketch(world)} />
+
 <style>
     .everything {
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        flex: 2;
     }
 
     .simulation {
@@ -168,7 +174,6 @@ while_loop(() => true, () {
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        flex: 2;
         gap: 1rem;
     }
 
@@ -206,7 +211,14 @@ while_loop(() => true, () {
 
     .playground {
         width: 100%;
-        height: 100%;
+        /** can you put the height of the header maybe here */
+        /* just did that, it is fixed */
+        /* i dont like how hacky it is tho but oh well */
+        /** maybe style the scrollbar to not look shit */
+        /* yeah i did wanna do that, time to learn how owowowo */
+        /** copy from w3schools*/
+        /* epic pogger */
+        height: calc(100% - 53px);
         background-color: rgb(20, 20, 26);
         display: flex;
         flex-direction: row;
@@ -214,11 +226,11 @@ while_loop(() => true, () {
         padding: 1rem;
         gap: 1rem;
     }
-
+    /* this is so hacky wait */
+    /** still expands a tiny bit */
     .editor {
-        width: 50%;
+        width: 100%;
         height: 100%;
-
         box-sizing: border-box;
         padding: 1rem;
 
@@ -236,6 +248,29 @@ while_loop(() => true, () {
         box-shadow: 3px 3px 10px 0px #0005;
     }
 
+    * ::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    /* Track */
+    * ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.15);
+        margin: 4px;
+        border-radius: 10px;
+    }
+
+    /* Handle */
+    * ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.486);
+        border-radius: 10px;
+        transition: 0.2s all;
+    }
+
+    /* Handle on hover */
+    * ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.886);
+    }
+    /* idk lol */
     #console {
         line-height: 20px;
         color: white;
@@ -244,10 +279,10 @@ while_loop(() => true, () {
         overflow: auto;
         overflow-wrap: break-word;
         border-radius: 6px;
-        font-weight: 400;
+        font-weight: 600;
 
         padding: 10px;
-        font-size: 20px;
+        font-size: 16px;
         min-height: 100px;
         max-height: 500px;
         overflow-x: auto;

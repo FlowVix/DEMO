@@ -14,6 +14,7 @@ class GDObject {
     rotation: number = 0;
 
     disables: number = 0;
+    groups: number[] = [];
 
     constructor(x: number, y: number) {
         this.pos = {x, y}

@@ -173,8 +173,8 @@ const worldSketch = (
                 }
 
                 if (obj instanceof SpawnTrigger) {
-                    if (time - obj.last_trigger < obj.delay * 1000) {
-                        const progress = (time - obj.last_trigger) / (obj.delay * 1000)
+                    if (time - obj.last_spawn < obj.delay * 1000) {
+                        const progress = (time - obj.last_spawn) / (obj.delay * 1000)
                         let target = obj.target
                         let group = world.groupIDs[target]
                         group.objects.forEach(targetObjIdx => {

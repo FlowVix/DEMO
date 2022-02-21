@@ -1,9 +1,15 @@
 
 import P5 from 'p5-svelte';
-import { SpawnTrigger, Trigger } from '../objects/triggers';
+import { FunctionTrigger, SpawnTrigger, Trigger } from '../objects/triggers';
 import type World from '../world/world';
+import {QuadTree, Box, Point, Circle} from 'js-quadtree';
+import Body, { GROUP_OBJ_SPACING } from './graph';
 
-import Body from './graph';
+export type BodyIdx = number;
+export type BodyChildIdx = number;
+
+export type Graph = Record<BodyIdx, Record<BodyChildIdx, Set<BodyIdx>>>;
+export type ReverseGraph = Record<BodyIdx, Set<[BodyIdx, BodyChildIdx]>>;
 
 interface Vector {
     x: number,
@@ -15,62 +21,127 @@ const CAMERA_SPEED = 10;
 const triggerGraphSketch = (
     world: World
 ) => {
-    let bodies = [];
-    let connections = []
-    let graph = []
+    let bodies: Body[] = [];
+    let graph: Graph = {}
+    let reverse_graph: ReverseGraph = {}
+
+    function add_to_graph(a, a_child, b) {
+        if (!graph[a]) {
+            graph[a] = []
+        }
+        if (!graph[a][a_child]) {
+            graph[a][a_child] = new Set()
+        }
+        graph[a][a_child].add(b)
+        
+        if (!reverse_graph[b]) {
+            reverse_graph[b] = new Set()
+        }
+        reverse_graph[b].add([a, a_child])
+    }
     
     const updateBodies = (new_world: World) => {
         world = new_world
         bodies = []
-        connections = []
-        graph = []
+        graph = {}
+        reverse_graph = {}
         const l = world.objects.length
         console.log(l)
-        for (let i = 0; i < l; i++) {
-            graph.push(Array(l).fill(false))
-        }
     
-        let obj_to_body_idx: Record<number, number> = {}
+        let obj_to_body_idx: Record<number, BodyIdx> = {}
 
         let start_obj_y = 0
-    
-        // build graph from triggers
+
+        let group_bodies: Record<number, number[]> = {}
+        let spawn_groups = new Set<number>()
+
+        // get spawn groups
         world.objects.forEach((obj, idx) => {
             if (obj instanceof Trigger) {
-                const body_idx = bodies.length
-                obj_to_body_idx[idx] = body_idx
-                if (obj.spawnTriggered) {
-                    bodies.push(new Body({x: Math.random() * 100 - 50, y: Math.random() * 100 - 50}, idx))
-                } else {
-                    bodies.push(new Body({x: -100, y: start_obj_y}, idx, true))
-                    start_obj_y += 50
-                }
-                if (obj.hasOwnProperty("target")) {
-                    const targets = world.groupIDs[obj["target"]];
-                    if (targets)
-                        targets.objects.forEach(target => {
-                            if (world.objects[target] instanceof Trigger) {
-                                graph[idx][target] = true;
-                                graph[target][idx] = true;
-                                connections.push({
-                                    source: body_idx,
-                                    target: target, // change to body index below
-                                })
-                            }
-                        });
+                if (obj instanceof FunctionTrigger) {
+                    const targets = world.groupIDs[obj.target];
+                    if (targets) {
+                        spawn_groups.add(obj.target)
+                    }
                 }
             }
         })
-    
-        for (let i = 0; i < connections.length; i++) {
-            connections[i].target = obj_to_body_idx[connections[i].target]
-        }
-        if (bodies.length < 100) {
-            for (let i = 0; i < 1000; i++) {
-                for (let i = 0; i < bodies.length; i++) {
-                    bodies[i].affect(bodies, graph)
+        // get pinned triggers + spawn groups
+        world.objects.forEach((obj, idx) => {
+            if (obj instanceof Trigger) {
+                if (!obj.spawnTriggered) {
+                    const body_idx = bodies.length
+                    obj_to_body_idx[idx] = body_idx
+                    bodies.push(new Body({x: -100, y: start_obj_y}, [idx], body_idx, true))
+                    start_obj_y += 50
+                } else {
+
+                    const groups = obj.groups.filter(group => spawn_groups.has(group))
+                    if (groups.length != 1) {
+                        const body_idx = bodies.length
+                        obj_to_body_idx[idx] = body_idx
+                        bodies.push(new Body({x: Math.random() * 100 - 50, y: Math.random() * 100 - 50}, [idx], body_idx))
+                    } else {
+                        const g = groups[0]
+                        // obj_to_group_body[idx] = g
+                        if (!group_bodies[g]) {
+                            group_bodies[g] = [idx]
+                        } else {
+                            group_bodies[g].push(idx)
+                        }
+                    }
                 }
             }
+        })
+
+        // add group bodies
+        Object.entries(group_bodies).forEach(([g, idxs]) => {
+            const body_idx = bodies.length
+            idxs.forEach(idx => {
+                obj_to_body_idx[idx] = body_idx
+            })
+            bodies.push(new Body({x: Math.random() * 100 - 50, y: Math.random() * 100 - 50}, idxs, body_idx))
+        })
+
+        // build graph
+        bodies.forEach((body, idx) => {
+            body.objs.forEach((obj, child_idx) => {
+                const object = world.objects[obj]
+                if (object instanceof FunctionTrigger) {
+                    const targets = world.groupIDs[object.target];
+                    if (targets) {
+                        targets.objects.forEach(target => {
+                            const target_body_idx = obj_to_body_idx[target]
+                            add_to_graph(idx, child_idx, target_body_idx)
+
+                        });
+                    }
+                }
+            })
+        })
+
+        console.log(graph, reverse_graph)
+        
+        for (let i = 0; i < 1000; i++) {
+            affectBodies(bodies, graph, reverse_graph)
+        }
+    }
+
+    const qtree_config = {
+        capacity: 4,            // Specify the maximum amount of point per node (default: 4)
+        //removeEmptyNodes: true,  // Specify if the quadtree has to remove subnodes if they are empty (default: false).
+        maximumDepth: 12,         // Specify the maximum depth of the quadtree. -1 for no limit (default: -1).
+        // Specify a custom method to compare point for removal (default: (point1, point2) => point1.x === point2.x && point1.y === point2.y).
+        //arePointsEqual: (point1, point2) => point1.data.foo === point2.data.foo      
+    };
+
+    const affectBodies = (bodies: Body[], graph: Graph, reverse_graph: ReverseGraph) => {
+        let qtree = new QuadTree(new Box(-500, -5000, 10000, 10000), qtree_config);
+        bodies.forEach((body, i) => {
+            qtree.insert(new Point(body.pos.x, body.pos.y, i));
+        })
+        for (let i = 0; i < bodies.length; i++) {
+            bodies[i].affect(bodies, qtree, graph, reverse_graph)
         }
     }
 
@@ -87,19 +158,11 @@ const triggerGraphSketch = (
         }
     
         
-        //
-        // but it clearly does update, just not after we have added the objects
-        // i mean isnt the world empty to begin with
-        // yea but try to build
-        // i think we just need to call this again when it builds, cause nothing updates it
-        // these should be the triggers from the world but it console logs an empty array
-    
         p5.setup = () => {
             cnv = p5.createCanvas(400, 400);
             p5.frameRate(240)
             p5div = document.getElementById("trigger-graph-sketch")
             console.log(p5div)
-    
         };
     
         p5.keyPressed = () => {
@@ -198,49 +261,93 @@ const triggerGraphSketch = (
 
             const d = new Date()
             const time = d.getTime()
-    
-            connections.forEach(({source, target}) => {
-                p5.stroke(255, 255, 255, 100)
-                const body = bodies[source]
-                const body2 = bodies[target]
 
-                p5.stroke(255, 255, 255, 255)
-                p5.strokeWeight(1)
-                p5.fill(255)
+            for (let body_idx = 0; body_idx < bodies.length; body_idx++) {
+                for (let child_idx = 0; child_idx < bodies[body_idx].objs.length; child_idx++) {
+                    if (graph[body_idx] && graph[body_idx][child_idx]) {
+                        graph[body_idx][child_idx].forEach(other_body => {
+                            const body = bodies[body_idx]
+                            const body2 = bodies[other_body]
+                            
+                            p5.strokeWeight(1)
+                            
+                            const obj = world.objects[body.objs[child_idx]]
+                            const flashlen = 700;
+                            let time_since_last_spawn = obj instanceof FunctionTrigger ? 
+                                (obj instanceof SpawnTrigger ? 
+                                    time - (obj.last_spawn + obj.delay * 1000)
+                                    : (time - obj.last_spawn))
+                                : Infinity;
+                            if (time_since_last_spawn < 0) time_since_last_spawn = Infinity;
 
-                arrow(p5, body.pos.x, body.pos.y, body2.pos.x, body2.pos.y)
-
-                const obj = world.objects[body.obj]
-                if (obj instanceof SpawnTrigger) {
-                    if (time - obj.last_trigger < obj.delay * 1000) {
-                        const progress = (time - obj.last_trigger) / (obj.delay * 1000)
-                        
-                        p5.stroke(0, 255, 255, 200)
-                        p5.strokeWeight(3)
-                        p5.fill(0, 255, 255, 200)
-                        arrow(
-                            p5, 
-                            body.pos.x, 
-                            body.pos.y, 
-                            body2.pos.x, 
-                            body2.pos.y,
-                            progress,
-                        )       
+                            if (time_since_last_spawn < flashlen) {
+                                const progress = time_since_last_spawn / flashlen;
+                                p5.fill(255 * progress, 255, 255 * progress)
+                                p5.stroke(255 * progress, 255, 255 * progress)
+                            } else {
+                                p5.fill(255)
+                                p5.stroke(255)
+                            }
+                            arrow(p5, body.pos.x, body.pos.y + GROUP_OBJ_SPACING * child_idx, body2.connection_point().x, body2.connection_point().y)
+            
+                            if (obj instanceof SpawnTrigger) {
+                                if (time - obj.last_spawn < obj.delay * 1000) {
+                                    const progress = (time - obj.last_spawn) / (obj.delay * 1000)
+                                    
+                                    p5.stroke(0, 255, 255, 200)
+                                    p5.strokeWeight(3)
+                                    p5.fill(0, 255, 255, 200)
+                                    arrow(
+                                        p5, 
+                                        body.pos.x, 
+                                        body.pos.y + GROUP_OBJ_SPACING * child_idx, 
+                                        body2.connection_point().x, 
+                                        body2.connection_point().y,
+                                        progress,
+                                    )       
+                                }
+                            }
+                        })
                     }
                 }
-            })
-            
-            if (bodies.length < 100) {
-                for (let i = 0; i < bodies.length; i++) {
-                    bodies[i].affect(bodies, graph)
-                }
             }
-
+            
+            affectBodies(bodies, graph, reverse_graph)
+            
             bodies.forEach(body => {
+                // if spawn triggered
+                if (!body.pinned) {
+                    p5.push()
+                    p5.translate(body.connection_point().x, body.connection_point().y)
+                    p5.fill(255)
+                    p5.noStroke()
+                    p5.rect(-3, -3, 6, 6)
+                    p5.pop()
+                }
+
                 p5.push()
                 p5.translate(body.pos.x, body.pos.y)
-                p5.scale(0.7)
-                world.objects[body.obj].draw(p5, world)
+                p5.push()
+                
+                p5.strokeWeight(2)
+                p5.stroke(50, 50, 50)
+                p5.fill(30, 30, 30)
+                p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
+                body.objs.forEach(obj => {
+                    p5.push()
+                    p5.scale(0.7)
+                    world.objects[obj].draw(p5, world)
+                    p5.pop()
+                    p5.translate(0, GROUP_OBJ_SPACING)
+                })
+                
+                p5.pop()
+                if (body.pinned) {
+                    p5.strokeWeight(1)
+                    p5.stroke(255, 0, 0, 150)
+                    p5.noFill()
+                    p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
+                }
                 p5.pop()
             })
     
