@@ -38,6 +38,8 @@
 
     let world = new World()
 
+    let optimize = true
+
     import { CodeJar } from "@novacbn/svelte-codejar"
     import { Trigger } from "./objects/triggers"
     // shouldnt updateBodies take world, not triggerGraphSketch
@@ -75,8 +77,8 @@ while_loop(() => true, () {
     let editor_console = ""
     const run_code = () => {
         let code = value
-
-        let [txt, lvlStr] = run_spwn(code)
+        console.log(optimize)
+        let [txt, lvlStr] = run_spwn(code, optimize)
         console.log(lvlStr)
 
         world.reset()
@@ -90,7 +92,6 @@ while_loop(() => true, () {
         updateBodies(world)
 
         editor_console = txt
-        console.log("a")
     }
 
     const simulate_triggers = () => {
@@ -142,6 +143,10 @@ while_loop(() => true, () {
                 <button id="sim_button" class="big-button" style="background:#09493a" on:click={simulate_triggers}>
                     simulate
                 </button>
+                <label>
+                    <input type="checkbox" bind:checked={optimize} />
+                    Optimize Triggers
+                </label>
             </div>
         </div>
 

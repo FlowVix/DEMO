@@ -21,6 +21,11 @@ const CAMERA_SPEED = 10;
 const triggerGraphSketch = (
     world: World
 ) => {
+
+    let zoom = 1;
+    let cameraPos = {x: 0, y: 0};
+    let cameraMove = {x: 0, y: 0};
+    let cameraZoom = 1;
     let bodies: Body[] = [];
     let graph: Graph = {}
     let reverse_graph: ReverseGraph = {}
@@ -41,6 +46,9 @@ const triggerGraphSketch = (
     }
     
     const updateBodies = (new_world: World) => {
+        cameraPos = {x: 0, y: 0};
+        cameraMove = {x: 0, y: 0};
+
         world = new_world
         bodies = []
         graph = {}
@@ -51,6 +59,7 @@ const triggerGraphSketch = (
         let obj_to_body_idx: Record<number, BodyIdx> = {}
 
         let start_obj_y = 0
+        let obj_x = 30
 
         let group_bodies: Record<number, number[]> = {}
         let spawn_groups = new Set<number>()
@@ -80,7 +89,8 @@ const triggerGraphSketch = (
                     if (groups.length != 1) {
                         const body_idx = bodies.length
                         obj_to_body_idx[idx] = body_idx
-                        bodies.push(new Body({x: Math.random() * 100 - 50, y: Math.random() * 100 - 50}, [idx], body_idx))
+                        bodies.push(new Body({x: obj_x, y: Math.random() * 100 - 50}, [idx], body_idx))
+                        obj_x += 50
                     } else {
                         const g = groups[0]
                         // obj_to_group_body[idx] = g
@@ -100,7 +110,8 @@ const triggerGraphSketch = (
             idxs.forEach(idx => {
                 obj_to_body_idx[idx] = body_idx
             })
-            bodies.push(new Body({x: Math.random() * 100 - 50, y: Math.random() * 100 - 50}, idxs, body_idx))
+            bodies.push(new Body({x: obj_x, y: Math.random() * 100 - 50}, idxs, body_idx))
+            obj_x += 50
         })
 
         // build graph
@@ -122,7 +133,7 @@ const triggerGraphSketch = (
 
         console.log(graph, reverse_graph)
         
-        for (let i = 0; i < 1000; i++) {
+        for (let i = 0; i < 3000; i++) {
             affectBodies(bodies, graph, reverse_graph)
         }
     }
@@ -136,7 +147,7 @@ const triggerGraphSketch = (
     };
 
     const affectBodies = (bodies: Body[], graph: Graph, reverse_graph: ReverseGraph) => {
-        let qtree = new QuadTree(new Box(-500, -5000, 10000, 10000), qtree_config);
+        let qtree = new QuadTree(new Box(-5000, -5000, 10000, 10000), qtree_config);
         bodies.forEach((body, i) => {
             qtree.insert(new Point(body.pos.x, body.pos.y, i));
         })
@@ -147,9 +158,10 @@ const triggerGraphSketch = (
 
     const sketch = (p5: any) => {
 
-        let zoom = 1;
-        let cameraPos = {x: 0, y: 0};
-        let cameraMove = {x: 0, y: 0};
+        zoom = 1;
+        cameraPos = {x: 0, y: 0};
+        cameraMove = {x: 0, y: 0};
+        cameraZoom = 1;
     
         let p5div, cnv;
     
@@ -218,6 +230,11 @@ const triggerGraphSketch = (
         p5.mouseReleased = () => {
             dragging = false;
         }
+        p5.mouseWheel = (event) => {
+            if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height))
+                cameraZoom -= event.delta * 0.001;
+            cameraZoom = Math.max(Math.min(cameraZoom, 10), 0.1);
+        }
     
         p5.draw = () => {
     
@@ -255,12 +272,68 @@ const triggerGraphSketch = (
             p5.background(10, 10, 15)
     
             p5.translate(p5.width/2, p5.height/2)
-            
+            p5.scale(cameraZoom)
             p5.translate(cameraPos.x, -cameraPos.y)
             p5.scale(2)
 
+            for (let i = 0; i < bodies.length; i++) {
+                bodies[i].calc_input_side(bodies, reverse_graph)
+                bodies[i].calc_output_side(bodies, graph)
+            }
+            
+            affectBodies(bodies, graph, reverse_graph)
+
             const d = new Date()
             const time = d.getTime()
+
+            bodies.forEach(body => {
+                // if spawn triggered
+                if (!body.pinned) {
+                    p5.push()
+                    p5.translate(body.connection_point().x, body.connection_point().y)
+                    p5.fill(255)
+                    p5.noStroke()
+                    p5.rect(-3, -3, 6, 6)
+                    p5.pop()
+                }
+
+                body.objs.forEach((obj, idx) => {
+                    if (world.objects[obj] instanceof FunctionTrigger) {
+                        p5.push()
+                        const output_point = body.output_point(idx)
+                        p5.translate(output_point.x, output_point.y)
+                        p5.fill(255)
+                        p5.noStroke()
+                        p5.ellipse(-0, -0, 6, 6)
+                        p5.pop()
+                    }
+                })
+
+                p5.push()
+                p5.translate(body.pos.x, body.pos.y)
+                p5.push()
+                
+                p5.strokeWeight(2)
+                p5.stroke(50, 50, 50)
+                p5.fill(30, 30, 30)
+                p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
+                body.objs.forEach(obj => {
+                    p5.push()
+                    p5.scale(0.7)
+                    world.objects[obj].draw(p5, world)
+                    p5.pop()
+                    p5.translate(0, GROUP_OBJ_SPACING)
+                })
+                
+                p5.pop()
+                if (body.pinned) {
+                    p5.strokeWeight(1)
+                    p5.stroke(255, 0, 0, 150)
+                    p5.noFill()
+                    p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
+                }
+                p5.pop()
+            })
 
             for (let body_idx = 0; body_idx < bodies.length; body_idx++) {
                 for (let child_idx = 0; child_idx < bodies[body_idx].objs.length; child_idx++) {
@@ -288,7 +361,9 @@ const triggerGraphSketch = (
                                 p5.fill(255)
                                 p5.stroke(255)
                             }
-                            arrow(p5, body.pos.x, body.pos.y + GROUP_OBJ_SPACING * child_idx, body2.connection_point().x, body2.connection_point().y)
+                            const output_point = body.output_point(child_idx)
+                            const input_point = body2.connection_point()
+                            arrow(p5, output_point.x, output_point.y, input_point.x, input_point.y)
             
                             if (obj instanceof SpawnTrigger) {
                                 if (time - obj.last_spawn < obj.delay * 1000) {
@@ -299,10 +374,10 @@ const triggerGraphSketch = (
                                     p5.fill(0, 255, 255, 200)
                                     arrow(
                                         p5, 
-                                        body.pos.x, 
-                                        body.pos.y + GROUP_OBJ_SPACING * child_idx, 
-                                        body2.connection_point().x, 
-                                        body2.connection_point().y,
+                                        output_point.x, 
+                                        output_point.y, 
+                                        input_point.x, 
+                                        input_point.y,
                                         progress,
                                     )       
                                 }
@@ -311,51 +386,9 @@ const triggerGraphSketch = (
                     }
                 }
             }
-            
-            affectBodies(bodies, graph, reverse_graph)
-            
-            bodies.forEach(body => {
-                // if spawn triggered
-                if (!body.pinned) {
-                    p5.push()
-                    p5.translate(body.connection_point().x, body.connection_point().y)
-                    p5.fill(255)
-                    p5.noStroke()
-                    p5.rect(-3, -3, 6, 6)
-                    p5.pop()
-                }
-
-                p5.push()
-                p5.translate(body.pos.x, body.pos.y)
-                p5.push()
-                
-                p5.strokeWeight(2)
-                p5.stroke(50, 50, 50)
-                p5.fill(30, 30, 30)
-                p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
-                body.objs.forEach(obj => {
-                    p5.push()
-                    p5.scale(0.7)
-                    world.objects[obj].draw(p5, world)
-                    p5.pop()
-                    p5.translate(0, GROUP_OBJ_SPACING)
-                })
-                
-                p5.pop()
-                if (body.pinned) {
-                    p5.strokeWeight(1)
-                    p5.stroke(255, 0, 0, 150)
-                    p5.noFill()
-                    p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
-                }
-                p5.pop()
-            })
     
             p5.pop()
         };
-        
-    
-    
     }
 
     return [sketch, updateBodies]
@@ -370,8 +403,8 @@ const triggerGraphSketch = (
 function arrow(p5, x1, y1, x2, y2, progress = 1) {
     const offset = 5;
     let angle = p5.atan2(y1 - y2, x1 - x2); //gets the angle of the line
-    x1 -= Math.cos(angle) * offset * 2.5; 
-    y1 -= Math.sin(angle) * offset * 2.5;
+    x1 -= Math.cos(angle) * offset * 1.5; 
+    y1 -= Math.sin(angle) * offset * 1.5;
     x2 += Math.cos(angle) * offset * 2.5;
     y2 += Math.sin(angle) * offset * 2.5;
     angle -= Math.PI / 2

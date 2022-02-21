@@ -163,13 +163,14 @@ const worldSketch = (
                 if (obj instanceof SpawnTrigger || obj instanceof InstantCountTrigger) {
                     let target = obj.target
                     let group = world.groupIDs[target]
-                    group.objects.forEach(targetObjIdx => {
-                        const targetObj = world.objects[targetObjIdx]
-                        p5.stroke(255, 0, 0, group.on ? 100 : 50)
-                        p5.noFill()
-                        p5.strokeWeight(3)
-                        arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
-                    })
+                    if (group)
+                        group.objects.forEach(targetObjIdx => {
+                            const targetObj = world.objects[targetObjIdx]
+                            p5.stroke(255, 0, 0, group.on ? 100 : 50)
+                            p5.noFill()
+                            p5.strokeWeight(3)
+                            arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
+                        })
                 }
 
                 if (obj instanceof SpawnTrigger) {

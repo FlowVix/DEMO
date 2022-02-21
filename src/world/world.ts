@@ -39,6 +39,7 @@ class World {
         this.colorIDs = {}
         this.itemIDs = {}
         this.blockIDs = {}
+        this.scheduled_spawns = []
     }
 
     addGroupID(

@@ -1,9 +1,10 @@
 import {QuadTree, Circle, Box} from 'js-quadtree';
 import type { BodyIdx, Graph, ReverseGraph } from './sketch';
 
-const IDEAL_DIST = 70;
-const RELATION_POWER = 1000;
+const IDEAL_DIST = 100;
+const RELATION_POWER = 3000;
 const SPRING_COEF = 0.05;
+const MAX_VEL = 300;
 
 export const GROUP_OBJ_SPACING = 25
 
@@ -13,12 +14,16 @@ class Body {
     pinned: boolean = false;
     objs: number[];
     index: BodyIdx;
+
+    input_side: number;
+    output_side: number;
+
     connection_point() {
-        return { x: this.pos.x - 13, y: this.pos.y - 13 +  (GROUP_OBJ_SPACING * this.objs.length) * 0.5 }
+        return { x: this.pos.x + 13 * this.input_side, y: this.pos.y - 13 +  (GROUP_OBJ_SPACING * this.objs.length) * 0.5 }
     }
 
     output_point(child_idx: number) {
-        return { x: this.pos.x + 13, y: this.pos.y + (GROUP_OBJ_SPACING * child_idx) }
+        return { x: this.pos.x + 13 * this.output_side, y: this.pos.y + (GROUP_OBJ_SPACING * child_idx) + 5 }
     }
 
     constructor(pos: { x: number, y: number }, objs: number[], index: BodyIdx, pinned: boolean = false) {
@@ -27,7 +32,39 @@ class Body {
         this.pinned = pinned;
         this.objs = objs;
         this.index = index;
-        
+        this.input_side = -1;
+        this.output_side = 1;
+    }
+
+    calc_input_side(bodies: Body[], reverse_graph: ReverseGraph) {
+        let sum = 0
+        if (reverse_graph[this.index])
+            reverse_graph[this.index].forEach(([body_idx, _]) => {
+                const child_pos = bodies[body_idx].pos.x
+                sum += child_pos - this.pos.x
+            })
+
+        if (sum > 0)
+            this.input_side = 1
+        else
+            this.input_side = -1
+    }
+
+    calc_output_side(bodies: Body[], graph: Graph) {
+        let sum = 0
+
+        if (graph[this.index]) {
+            Object.values(graph[this.index]).forEach((set) => {
+                set.forEach(body_idx => {
+                    const body_pos = bodies[body_idx].pos.x
+                    sum += body_pos - this.pos.x
+                })
+            })
+        }
+        if (sum > 0)
+            this.output_side = 1
+        else
+            this.output_side = -1
     }
 
 //     type Graph =        Record<BodyIdx, Record<BodyChildIdx, Set<BodyIdx>>>;
@@ -36,7 +73,7 @@ class Body {
     affect(bodies: Body[], qtree: QuadTree, graph: Graph, reverse_graph: ReverseGraph) {
         if (this.pinned) return
 
-        let force = { x: 1, y: 0 };
+        let force = { x: 0.5, y: 0 };
         const end_y = (this.pos.y + GROUP_OBJ_SPACING * this.objs.length)
 
         const connected_to = (other: BodyIdx) => {
@@ -54,17 +91,20 @@ class Body {
             if (bodies_done[point.data]) return
             bodies_done[point.data] = true
 
+            const body2 = bodies[point.data]
+            const body2_end_y = (body2.pos.y + GROUP_OBJ_SPACING * body2.objs.length)
+
             let dist;
             let to;
-            if (point.y < this.pos.y) {
-                dist = Math.hypot(this.pos.x - point.x, this.pos.y - point.y);
-                to = { x: this.pos.x - point.x, y: this.pos.y - point.y }
-            } else if (point.y > end_y) {
-                dist = Math.hypot(this.pos.x - point.x, end_y - point.y);
-                to = { x: this.pos.x - point.x, y: end_y - point.y }
+            if (body2_end_y < this.pos.y) {
+                dist = Math.hypot(this.pos.x - body2.pos.x, this.pos.y - body2_end_y);
+                to = { x: this.pos.x - body2.pos.x, y: this.pos.y - body2_end_y }
+            } else if (body2.pos.y > end_y) {
+                dist = Math.hypot(this.pos.x - body2.pos.x, end_y - body2.pos.y);
+                to = { x: this.pos.x - body2.pos.x, y: end_y - body2.pos.y }
             } else {
-                dist = Math.abs(this.pos.x - point.x)
-                to = { x: this.pos.x - point.x, y: 0}
+                dist = Math.abs(this.pos.x - body2.pos.x)
+                to = { x: this.pos.x - body2.pos.x, y: 0}
             }
 
 
@@ -98,8 +138,8 @@ class Body {
             reverse_graph[this.index].forEach(([body_idx, child_idx]) => {
                 const child_pos = bodies[body_idx].output_point(child_idx)
                 const to = {
-                    x: this.pos.x - child_pos.x,
-                    y: this.pos.y - child_pos.y
+                    x: this.connection_point().x - child_pos.x,
+                    y: this.connection_point().y - child_pos.y
                 }
                 connected_bodies.push(to)
             })
@@ -117,14 +157,17 @@ class Body {
         })
         
 
-        force.x /= this.objs.length ** 2;
-        force.y /= this.objs.length ** 2;
+        // force.x /= this.objs.length ** 2;
+        // force.y /= this.objs.length ** 2;
 
         this.vel.x += force.x;
         this.vel.y += force.y;
 
-        this.vel.x *= 0.8;
-        this.vel.y *= 0.8;
+        this.vel.x *= 0.7;
+        this.vel.y *= 0.7;
+
+        this.vel.x = Math.min(Math.max(this.vel.x, -MAX_VEL), MAX_VEL);
+        this.vel.y = Math.min(Math.max(this.vel.y, -MAX_VEL), MAX_VEL);
 
         this.pos.x += this.vel.x;
         this.pos.y += this.vel.y;
