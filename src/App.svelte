@@ -64,16 +64,18 @@
     // world sketch does act like it is
     // xddd
 
-    let value = `
-$.print("Hello SPWN!")
+    let value = `$.print("Hello SPWN!")
 
-while_loop(() => true, () {
+c = counter()
+c.display(45, 45)
+
+while_loop(() => c < 10, () {
     10g.move(0, 20, 0.5)
     10g.move(20, 0, 0.5)
     10g.move(0, -20, 0.5)
     10g.move(-20, 0, 0.5)
-})
-        `
+    c += 1
+})`
     let editor_console = ""
     const run_code = () => {
         let code = value
