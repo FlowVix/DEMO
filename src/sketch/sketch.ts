@@ -23,7 +23,7 @@ const worldSketch = (
 
 
 
-    let zoom = 1;
+    let zoom = 2;
     let cameraPos = {x: 0, y: 0};
     let cameraMove = {x: 0, y: 0};
 
@@ -44,19 +44,19 @@ const worldSketch = (
         if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height))
             switch (p5.keyCode) {
                 case 37:
-                    cameraMove.x += CAMERA_SPEED;
-                    break;
-                
-                case 38:
-                    cameraMove.y -= CAMERA_SPEED;
-                    break;
-                    
-                case 39:
                     cameraMove.x -= CAMERA_SPEED;
                     break;
                 
-                case 40:
+                case 38:
                     cameraMove.y += CAMERA_SPEED;
+                    break;
+                    
+                case 39:
+                    cameraMove.x += CAMERA_SPEED;
+                    break;
+                
+                case 40:
+                    cameraMove.y -= CAMERA_SPEED;
                     break;
             }
     }
@@ -103,7 +103,7 @@ const worldSketch = (
             p5div.offsetWidth,
             p5div.offsetHeight,
         )
-
+        
 
         // stop dragging when mouse leaves the canvas
         if (p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height) dragging = false;
@@ -112,8 +112,8 @@ const worldSketch = (
         cameraPos.x += cameraMove.x
         cameraPos.y += cameraMove.y
         if (dragging) {
-            cameraPos.x = prevCameraPos.x + (p5.mouseX - prevMousePos.x);
-            cameraPos.y = prevCameraPos.y - (p5.mouseY - prevMousePos.y);
+            cameraPos.x = prevCameraPos.x - (p5.mouseX - prevMousePos.x)/zoom;
+            cameraPos.y = prevCameraPos.y + (p5.mouseY - prevMousePos.y)/zoom;
         }
 
         
@@ -122,8 +122,8 @@ const worldSketch = (
 
         p5.translate(p5.width/2, p5.height/2)
         
-        p5.translate(cameraPos.x, -cameraPos.y)
-        p5.scale(2)
+        p5.translate(-cameraPos.x*zoom, cameraPos.y*zoom)
+        p5.scale(zoom)
 
         p5.stroke(0)
         p5.strokeWeight(1)
@@ -135,44 +135,65 @@ const worldSketch = (
         p5.fill(0)
         p5.text(world.objects.length + " objects", 20, 50)
 
-        world.objects.forEach(obj => obj.drawFull(p5))
+        let screenWorldBounds = {
+            left: cameraPos.x - p5.width/2/zoom,
+            right: cameraPos.x + p5.width/2/zoom,
+            up: cameraPos.y + p5.height/2/zoom,
+            down: cameraPos.y - p5.height/2/zoom,
+        }
+
+        world.objects.forEach(obj => {
+
+            if (
+                obj.pos.x > screenWorldBounds.left - 30 &&
+                obj.pos.x < screenWorldBounds.right + 30 &&
+                obj.pos.y < screenWorldBounds.up + 30 &&
+                obj.pos.y > screenWorldBounds.down - 30
+            ) {
+                obj.drawFull(p5, world)
+            }
+        })
 
         const date = new Date()
         let time = date.getTime()
         
-        world.objects.forEach(obj => {
-            // draw connections for spawn triggers etc
-            if (obj instanceof SpawnTrigger || obj instanceof InstantCountTrigger) {
-                let target = obj.target
-                let group = world.groupIDs[target]
-                group.objects.forEach(targetObj => {
-                    p5.stroke(255, 0, 0, group.on ? 100 : 50)
-                    p5.noFill()
-                    p5.strokeWeight(3)
-                    arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
-                })
-            }
-
-            if (obj instanceof SpawnTrigger) {
-                if (time - obj.last_trigger < obj.delay * 1000) {
-                    const progress = (time - obj.last_trigger) / (obj.delay * 1000)
+        if (true) {
+            world.objects.forEach(obj => {
+                // draw connections for spawn triggers etc
+                if (obj instanceof SpawnTrigger || obj instanceof InstantCountTrigger) {
                     let target = obj.target
                     let group = world.groupIDs[target]
-                    group.objects.forEach(targetObj => {
-                        p5.stroke(0, 255, 255, 200)
-                        p5.strokeWeight(3)
+                    group.objects.forEach(targetObjIdx => {
+                        const targetObj = world.objects[targetObjIdx]
+                        p5.stroke(255, 0, 0, group.on ? 100 : 50)
                         p5.noFill()
-                        arrow(
-                            p5, 
-                            obj.pos.x, 
-                            -obj.pos.y, 
-                            obj.pos.x + (targetObj.pos.x - obj.pos.x) * progress, 
-                            -obj.pos.y + (-targetObj.pos.y - -obj.pos.y) * progress,
-                        )
+                        p5.strokeWeight(3)
+                        arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
                     })
                 }
-            }
-        })
+
+                if (obj instanceof SpawnTrigger) {
+                    if (time - obj.last_trigger < obj.delay * 1000) {
+                        const progress = (time - obj.last_trigger) / (obj.delay * 1000)
+                        let target = obj.target
+                        let group = world.groupIDs[target]
+                        group.objects.forEach(targetObjIdx => {
+                            const targetObj = world.objects[targetObjIdx]
+                            p5.stroke(0, 255, 255, 200)
+                            p5.strokeWeight(3)
+                            p5.noFill()
+                            arrow(
+                                p5, 
+                                obj.pos.x, 
+                                -obj.pos.y, 
+                                obj.pos.x + (targetObj.pos.x - obj.pos.x) * progress, 
+                                -obj.pos.y + (-targetObj.pos.y - -obj.pos.y) * progress,
+                            )
+                        })
+                    }
+                }
+            })
+        }
 
         p5.pop()
 
@@ -182,6 +203,13 @@ const worldSketch = (
         p5.rect(-6, -6, p5.width+12, p5.height+12, 18)
         p5.stroke(17, 17, 22)
         p5.rect(-38, -38, p5.width+44, p5.height+44, 18)
+
+        
+        p5.fill(255)
+        p5.textSize(20)
+        p5.text(cameraPos.x + " " + cameraPos.y, 30, 30)
+        p5.text(screenWorldBounds.left + " " + screenWorldBounds.up + " " + screenWorldBounds.right + " " + screenWorldBounds.down, 30, 60)
+
 
         let to_remove = []
         world.scheduled_spawns.forEach((spawn, i) => {

@@ -86,11 +86,10 @@ const parseProps = (
 const createObject = (
     objStr: string,
     world: World,
+    idx: number,
 ): GDObject => {
     const props = parseProps(objStr);
     let obj: GDObject;
-
-    console.log("a", parseInt(props[Constants.OBJ_PROPS.OBJ_ID]))
 
     switch (parseInt(props[Constants.OBJ_PROPS.OBJ_ID])) {
         case Constants.OBJ_IDS.Triggers.TOGGLE:
@@ -137,14 +136,14 @@ const createObject = (
                 break;
             case Constants.OBJ_PROPS.GROUPS:
                 props[i].forEach(g => {
-                    world.addGroupID(obj, g)
+                    world.addGroupID(idx, g)
                 });
                 break;
             default:
                 if (obj instanceof Display) {
                     if (parseInt(i) == Constants.OBJ_PROPS.ITEM) {
                         obj.itemID = parseInt(props[i])
-                        world.addItemID(obj, parseInt(props[i]))
+                        world.addItemID(idx, parseInt(props[i]))
                     }
                 } else if (obj instanceof Trigger) {
                     switch (parseInt(i)) {
@@ -164,7 +163,7 @@ const createObject = (
 										obj.target = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.ACTIVATE_GROUP:
-										obj.activate = props[i] === "1"
+										obj.activate = props[i]
                                         break;
                                 }
                             } else if (obj instanceof MoveTrigger) {
@@ -200,13 +199,13 @@ const createObject = (
 										obj.amount = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.ACTIVATE_GROUP:
-										obj.activate = props[i] === "1"
+										obj.activate = props[i]
                                         break;
 									case Constants.OBJ_PROPS.TARGET:
 										obj.target = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.COMPARISON:
-										switch (parseInt(i)) {
+										switch (parseInt(props[i])) {
                                             case 0:
                                                 obj.cmpType = Cmp.EQUAL
                                                 break;

@@ -1,21 +1,22 @@
 import type Object from "../objects/object"
 import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger} from "../objects/triggers"
 import {Display} from "../objects/special"
-
+ 
+type ObjIndex = number;
 
 interface GroupIDData {
-    objects: Object[];
+    objects: ObjIndex[];
     on: boolean;
 }
 interface ColorIDData {
-    objects: Object[];
+    objects: ObjIndex[];
 }
 interface ItemIDData {
-    objects: Object[];
+    objects: ObjIndex[];
     value: number;
 }
 interface BlockIDData {
-    objects: Object[];
+    objects: ObjIndex[];
 }
 
 class World {
@@ -28,8 +29,6 @@ class World {
     blockIDs: Record<number, BlockIDData> = {};
 
     scheduled_spawns: {time: number, group: number}[] = [];
-    
-    displays: Display[] = [];
 
     constructor() {
         this.reset()
@@ -43,7 +42,7 @@ class World {
     }
 
     addGroupID(
-        obj: Object,
+        obj: ObjIndex,
         groupID: number,
     ) {
         if (!(groupID in this.groupIDs)) {
@@ -54,7 +53,7 @@ class World {
         }
     }
     addColorID(
-        obj: Object,
+        obj: ObjIndex,
         colorID: number,
     ) {
         if (!(colorID in this.colorIDs)) {
@@ -65,7 +64,7 @@ class World {
         }
     }
     addItemID(
-        obj: Object,
+        obj: ObjIndex,
         itemID: number,
     ) {
         if (!(itemID in this.itemIDs)) {
@@ -76,7 +75,7 @@ class World {
         }
     }
     addBlockID(
-        obj: Object,
+        obj: ObjIndex,
         blockID: number,
     ) {
         if (!(blockID in this.blockIDs)) {
@@ -95,11 +94,11 @@ class World {
             this.groupIDs[groupID].on = on
             if (on) {
                 for (let i = 0; i < this.groupIDs[groupID].objects.length; i++) {
-                    this.groupIDs[groupID].objects[i].toggleOn();
+                    this.objects[this.groupIDs[groupID].objects[i]].toggleOn();
                 }
             } else {
                 for (let i = 0; i < this.groupIDs[groupID].objects.length; i++) {
-                    this.groupIDs[groupID].objects[i].toggleOff();
+                    this.objects[this.groupIDs[groupID].objects[i]].toggleOff();
                 }
             }
         }
@@ -113,7 +112,7 @@ class World {
         const d = new Date()
         const time = d.getTime()
         for (let i = 0; i < this.groupIDs[groupID].objects.length; i++) {
-            let obj = this.groupIDs[groupID].objects[i]
+            let obj = this.objects[this.groupIDs[groupID].objects[i]]
             if ((obj instanceof Trigger) && obj.disables == 0) {
                 obj.lastTrigger = time
                 obj.trigger(this)
@@ -141,7 +140,7 @@ class World {
         this.itemIDs[itemID].value += amount;
     
         for (let i = 0; i < this.itemIDs[itemID].objects.length; i++) {
-            let obj = this.itemIDs[itemID].objects[i]
+            let obj = this.objects[this.itemIDs[itemID].objects[i]]
             if (obj instanceof Display) {
                 obj.set_value(/*...*/)
             }

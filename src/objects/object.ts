@@ -1,4 +1,5 @@
 
+import type World from "../world/world";
 
 class GDObject {
 
@@ -25,18 +26,20 @@ class GDObject {
         this.disables -= 1
     }
 
-    drawFull(p5: any) {
-        p5.push()
-        p5.translate(this.pos.x, -this.pos.y)
-        p5.rotate(- this.rotation * Math.PI / 180)
-        p5.scale(this.scale.x, this.scale.y)
-
-        this.draw(p5)
-
-        p5.pop()
+    drawFull(p5: any, world: World) {
+        if (this.disables == 0) {
+            p5.push()
+            p5.translate(this.pos.x, -this.pos.y)
+            p5.rotate(- this.rotation * Math.PI / 180)
+            p5.scale(this.scale.x, this.scale.y)
+    
+            this.draw(p5, world)
+    
+            p5.pop()
+        }
     }
 
-    draw(p5: any) {}
+    draw(p5: any, world: World) {}
 
 }
 

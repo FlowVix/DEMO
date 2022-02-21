@@ -1,255 +1,304 @@
 <script context="module">
-  import Prism from "prismjs"
+    import Prism from "prismjs"
 
-  Prism.languages.spwn = Prism.languages.extend("clike", {
-    keyword:
-      /\b(?:else|for|if|return|error|extract|let|type|import|impl|break|\=>|\->|continue|match|null|sync|throw|while|as|in|is)\b/,
-    builtin: /\b(?:null|trigger|obj|\$|self)\b/,
-    boolean: /\b(?:true|false)\b/,
-    operator:
-      /(==|!=|<=|>=|<|>|&&|\|\||!|=|\+\=|\-\=|\*\=|\/\=|\+|\-|\*|\/|%|\^|\.\.|\-\-|\+\+|\/\%|\/\%=|\^=|<=>|\||\&)/,
-    number: /(?:\b\d+(\.\d+)?\b)|(\b([0-9]+|\?)[gbci]\b)/,
-    string: /[a-z]?"(?:\\.|[^\\"])*"|'(?:\\.|[^\\'])*'/,
-    tag: /@([a-zA-Z_][a-zA-Z0-9_]*)/,
-  })
-  delete Prism.languages.spwn["class-name"]
+    Prism.languages.spwn = Prism.languages.extend("clike", {
+        keyword:
+            /\b(?:else|for|if|return|error|extract|let|type|import|impl|break|\=>|\->|continue|match|null|sync|throw|while|as|in|is)\b/,
+        builtin: /\b(?:null|trigger|obj|\$|self)\b/,
+        boolean: /\b(?:true|false)\b/,
+        operator:
+            /(==|!=|<=|>=|<|>|&&|\|\||!|=|\+\=|\-\=|\*\=|\/\=|\+|\-|\*|\/|%|\^|\.\.|\-\-|\+\+|\/\%|\/\%=|\^=|<=>|\||\&)/,
+        number: /(?:\b\d+(\.\d+)?\b)|(\b([0-9]+|\?)[gbci]\b)/,
+        string: /[a-z]?"(?:\\.|[^\\"])*"|'(?:\\.|[^\\'])*'/,
+        tag: /@([a-zA-Z_][a-zA-Z0-9_]*)/,
+    })
+    delete Prism.languages.spwn["class-name"]
 
-  const highlight = (code, syntax) => Prism.highlight(code, Prism.languages[syntax], syntax)
+    const highlight = (code, syntax) => Prism.highlight(code, Prism.languages[syntax], syntax)
 </script>
 
 <script lang="ts">
-  import P5 from "p5-svelte"
-  import World from "./world/world"
-  import worldSketch from "./sketch/sketch"
-  import { parseProps, createObject } from "./world/objectHandler"
-  export let run_spwn
-  export let init_panics
-  init_panics()
+    import P5 from "p5-svelte"
+    import World from "./world/world"
+    import triggerGraphSketch from "./trigger_graph_sketch/sketch"
+    import worldSketch from "./sketch/sketch"
+    import { parseProps, createObject } from "./world/objectHandler"
+    export let run_spwn
+    export let init_panics
+    init_panics()
 
-  import AnsiUp from "ansi_up"
-  let ansiUp = new AnsiUp()
+    import AnsiUp from "ansi_up"
+    let ansiUp = new AnsiUp()
 
-  let world = new World()
+    let world = new World()
 
-  import { CodeJar } from "@novacbn/svelte-codejar"
-  import { Trigger } from "./objects/triggers"
+    import { CodeJar } from "@novacbn/svelte-codejar"
+    import { Trigger } from "./objects/triggers"
+    // shouldnt updateBodies take world, not triggerGraphSketch
+    // yea but again since its not by reference it will only have the first version
+    // so when it updates it will use the same version
+    // because js
 
-  // console.log(parseProps("1,5,2,15,3,30"))
-  // console.log(parseProps("1,5,,,,2,15,,57,6.4.9"))
-  // console.log(parseProps("1,5,43,1a0.5a0.2a1a0"))
+    // easy fix though
+    // i mean maybe the sketch itself also uses world
+    // might be easier if its already in scope
 
-  let value = `
+    // oh god why isnt this by reference
+    // i hate js
+    const [triggerSketch, updateBodies] = triggerGraphSketch(world)
+
+    // console.log(parseProps("1,5,2,15,3,30"))
+    // console.log(parseProps("1,5,,,,2,15,,57,6.4.9"))
+    // console.log(parseProps("1,5,43,1a0.5a0.2a1a0"))
+    // i have no idea but i dont trust js to be consistent on anything
+
+    // are you sure it isnt by reference tho? cuz the
+    // world sketch does act like it is
+    // xddd
+
+    let value = `
 $.print("Hello SPWN!")
 
 while_loop(() => true, () {
-  10g.move(0, 20, 0.5)
-  10g.move(20, 0, 0.5)
-  10g.move(0, -20, 0.5)
-  10g.move(-20, 0, 0.5)
+    10g.move(0, 20, 0.5)
+    10g.move(20, 0, 0.5)
+    10g.move(0, -20, 0.5)
+    10g.move(-20, 0, 0.5)
 })
-    `
-  let editor_console = ""
-  const run_code = () => {
-    let code = value
+        `
+    let editor_console = ""
+    const run_code = () => {
+        let code = value
 
-    let [txt, lvlStr] = run_spwn(code)
+        let [txt, lvlStr] = run_spwn(code)
+        console.log(lvlStr)
 
-    world.reset()
-    lvlStr
-      .split(";")
-      .filter((e) => e.length > 0)
-      .forEach((objStr) => {
-        world.objects.push(createObject(objStr, world))
-      })
+        world.reset()
+        lvlStr
+            .split(";")
+            .filter((e) => e.length > 0)
+            .forEach((objStr) => {
+                world.objects.push(createObject(objStr, world, world.objects.length))
+            })
 
-    console.log(world.objects)
+        updateBodies(world)
 
-    editor_console = txt
-    console.log("a")
-  }
+        editor_console = txt
+        console.log("a")
+    }
 
-  const simulate_triggers = () => {
-    world.objects.forEach((obj) => {
-      if (obj instanceof Trigger && !obj.spawnTriggered) {
-        obj.trigger(world)
-      }
-    })
-  }
+    const simulate_triggers = () => {
+        world.objects.forEach((obj) => {
+            if (obj instanceof Trigger && !obj.spawnTriggered) {
+                obj.trigger(world)
+            }
+        })
+    }
+
+    let showGraph = true
 </script>
 
 <!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
 <link href="prism-atom-dark.css" rel="stylesheet" />
-
+<!-- updates in the same way as the world sketch -->
+<!-- yeah but the world sketch has an always running draw call accessing the world -->
+<!-- unless im not understanding, the triggerSketch code just runs once on creation -->
+{#if showGraph}
+    <P5 parentDivStyle="border-radius: 20px;" sketch={triggerSketch} />
+{/if}
 <P5 parentDivStyle="border-radius: 20px;" sketch={worldSketch(world)} />
-
 <div class="everything">
-  <div class="header">
-    <a href="https://spu7nix.net/spwn"><img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a>
-    <span class="logo-text">SPWN Playground</span>
-  </div>
-
-  <div class="playground">
-    <div class="editor">
-      <CodeJar
-        style="
-                font-family:'Source Code Pro', monospace;
-                background-color:#0005;
-                border-radius:6px;
-                margin:0;
-                border: 2px solid #3b3b3b;
-                box-shadow: 3px 3px 10px 0px #0005;
-            "
-        syntax="spwn"
-        {highlight}
-        bind:value
-        tab={"\t"}
-      />
-
-      <div id="console">
-        {@html ansiUp.ansi_to_html(editor_console)}
-      </div>
-
-      <div class="buttons">
-        <button id="run_button" class="big-button" on:click={run_code}> >> build >> </button>
-        <button id="sim_button" class="big-button" style="background:#09493a" on:click={simulate_triggers}>
-          >> simulate >>
-        </button>
-      </div>
+    <div class="header">
+        <a href="https://spu7nix.net/spwn"
+            ><img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a
+        >
+        <span class="logo-text">SPWN Playground</span>
+        <button on:click={() => (showGraph = !showGraph)}>poopfart</button>
     </div>
 
-    <div id="sketch" />
-  </div>
+    <div class="playground">
+        <div class="editor">
+            <CodeJar
+                style="
+                    font-family:'Source Code Pro', monospace;
+                    background-color:#0005;
+                    border-radius:6px;
+                    margin:0;
+                    border: 2px solid #3b3b3b;
+                    box-shadow: 3px 3px 10px 0px #0005;
+                "
+                syntax="spwn"
+                {highlight}
+                bind:value
+                tab={"\t"}
+            />
+
+            <div id="console">
+                {@html ansiUp.ansi_to_html(editor_console)}
+            </div>
+
+            <div class="buttons">
+                <button id="run_button" class="big-button" on:click={run_code}> build </button>
+                <button id="sim_button" class="big-button" style="background:#09493a" on:click={simulate_triggers}>
+                    simulate
+                </button>
+            </div>
+        </div>
+
+        <div class="simulation">
+            <div id="trigger-graph-sketch" />
+            <div id="sketch" />
+        </div>
+    </div>
 </div>
 
 <style>
-  .everything {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-  }
+    .everything {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        flex: 2;
+    }
 
-  .logo {
-    display: block;
-    transition: 0.5s all;
-  }
-  .logo:hover {
-    display: auto;
-    transform: rotate(360deg);
-  }
+    .simulation {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        flex: 2;
+        gap: 1rem;
+    }
 
-  .logo-text {
-    font-size: 25px;
-    font-weight: 600;
-    text-shadow: 2px 2px 5px #0005;
-    margin: 0 0;
-    padding: 0 0 2px 0;
-  }
+    .logo {
+        display: block;
+        transition: 0.5s all;
+    }
+    .logo:hover {
+        display: auto;
+        transform: rotate(360deg);
+    }
 
-  .header {
-    border-bottom: 1px solid rgb(58, 58, 58);
-    padding: 8px;
-    background: linear-gradient(180deg, rgba(40, 40, 40, 1) 0%, rgba(20, 20, 20, 1) 100%);
+    .logo-text {
+        font-size: 25px;
+        font-weight: 600;
+        text-shadow: 2px 2px 5px #0005;
+        margin: 0 0;
+        padding: 0 0 2px 0;
+    }
 
-    display: flex;
-    flex-direction: row;
-    justify-content: left;
-    align-items: center;
-    gap: 12px;
+    .header {
+        border-bottom: 1px solid rgb(58, 58, 58);
+        padding: 8px;
+        background: linear-gradient(180deg, rgba(40, 40, 40, 1) 0%, rgba(20, 20, 20, 1) 100%);
 
-    font-family: "Source Code Pro", monospace;
-    color: #efefef;
-  }
+        display: flex;
+        flex-direction: row;
+        justify-content: left;
+        align-items: center;
+        gap: 12px;
 
-  .playground {
-    width: 100%;
-    height: 100%;
-    background-color: rgb(20, 20, 26);
-    display: flex;
-    flex-direction: row;
-    box-sizing: border-box;
+        font-family: "Source Code Pro", monospace;
+        color: #efefef;
+    }
 
-    padding: 1rem;
-    gap: 1rem;
-  }
+    .playground {
+        width: 100%;
+        height: 100%;
+        background-color: rgb(20, 20, 26);
+        display: flex;
+        flex-direction: row;
+        box-sizing: border-box;
+        padding: 1rem;
+        gap: 1rem;
+    }
 
-  .editor {
-    width: 50%;
-    height: 100%;
+    .editor {
+        width: 50%;
+        height: 100%;
 
-    box-sizing: border-box;
-    padding: 1rem;
+        box-sizing: border-box;
+        padding: 1rem;
 
-    display: grid;
-    grid-template-rows: 3fr 2fr auto;
-    gap: 1rem;
+        display: grid;
+        grid-template-rows: 3fr 2fr auto;
+        gap: 1rem;
 
-    background-color: #ffffff09;
-    border-radius: 12px;
+        background-color: #ffffff09;
+        border-radius: 12px;
 
-    font-family: "Source Code Pro", monospace;
-    font-size: 16px;
-    font-weight: 600;
+        font-family: "Source Code Pro", monospace;
+        font-size: 16px;
+        font-weight: 600;
 
-    box-shadow: 3px 3px 10px 0px #0005;
-  }
+        box-shadow: 3px 3px 10px 0px #0005;
+    }
 
-  #console {
-    line-height: 20px;
-    color: white;
-    background: black;
-    border: 2px solid #3b3b3b;
-    overflow: auto;
-    overflow-wrap: break-word;
-    border-radius: 6px;
-    font-weight: 400;
+    #console {
+        line-height: 20px;
+        color: white;
+        background: black;
+        border: 2px solid #3b3b3b;
+        overflow: auto;
+        overflow-wrap: break-word;
+        border-radius: 6px;
+        font-weight: 400;
 
-    padding: 10px;
-    font-size: 20px;
-    min-height: 100px;
-    max-height: 500px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    white-space: -moz-pre-wrap;
-    white-space: -pre-wrap;
-    white-space: -o-pre-wrap;
-    word-wrap: break-word;
+        padding: 10px;
+        font-size: 20px;
+        min-height: 100px;
+        max-height: 500px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        white-space: -moz-pre-wrap;
+        white-space: -pre-wrap;
+        white-space: -o-pre-wrap;
+        word-wrap: break-word;
 
-    box-shadow: 3px 3px 10px 0px #0005;
-  }
-  .big-button {
-    width: 40%;
-    height: 60px;
-    background: #551c1c;
-    font-family: "Source Code Pro", monospace;
-    color: #ffffff;
-    font-size: 30px;
-    white-space: nowrap;
-    overflow: clip;
-    letter-spacing: 0em;
-    font-weight: 400;
-    padding: 3px 20px;
-    margin: 0 0 2px 0;
-    border: solid rgba(255, 255, 255, 0.4) 2px;
-    border-radius: 0px 14px 0px 14px;
-    transition: all 0.1s ease-in-out 0s;
-    box-shadow: 3px 3px 10px 0px #0005;
-  }
+        box-shadow: 3px 3px 10px 0px #0005;
+    }
+    .big-button {
+        width: 40%;
+        height: 60px;
+        background: #551c1c;
+        font-family: "Source Code Pro", monospace;
+        color: #ffffff;
+        font-size: 30px;
+        white-space: nowrap;
+        overflow: clip;
+        letter-spacing: 0em;
+        font-weight: 400;
+        padding: 3px 20px;
+        margin: 0 0 2px 0;
+        border: solid rgba(255, 255, 255, 0.4) 2px;
+        border-radius: 0px 14px 0px 14px;
+        transition: all 0.1s ease-in-out 0s;
+        box-shadow: 3px 3px 10px 0px #0005;
+    }
 
-  .big-button:hover {
-    border-radius: 14px 0px 14px 0px;
-  }
+    .big-button:hover {
+        border-radius: 14px 0px 14px 0px;
+    }
 
-  .buttons {
-    width: 100%;
-    box-sizing: border-box;
-    float: left;
-  }
+    .buttons {
+        width: 100%;
+        box-sizing: border-box;
+        float: left;
+    }
 
-  #sketch {
-    width: 50%;
-    border-radius: 12px;
-    box-shadow: 3px 3px 10px 0px #0005;
-  }
+    #sketch {
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        box-shadow: 3px 3px 10px 0px #0005;
+    }
+
+    #trigger-graph-sketch {
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        box-shadow: 3px 3px 10px 0px #0005;
+    }
 </style>
