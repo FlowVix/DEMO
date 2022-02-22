@@ -17,13 +17,17 @@
     const highlight = (code, syntax) => Prism.highlight(code, Prism.languages[syntax], syntax)
 </script>
 
+<svelte:head>
+    <script src="/ace-build/src-noconflict/ace.js" type="text/javascript" charset="utf-8" on:load={initializeEditor}></script>
+</svelte:head>
+
 <script lang="ts">
     import P5 from "p5-svelte"
+    import { onMount } from 'svelte';
     import World from "./world/world"
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
     import worldSketch from "./sketch/sketch"
     import { createObject } from "./world/objectHandler"
-
 
     export let run_spwn
     export let init_panics
@@ -85,6 +89,8 @@ while_loop(() => c < 10, () {
     10g.move(-20, 0, 0.5)
     c += 1
 })`
+
+
     let editor_console = ""
     let is_showing_error = false
     const run_code = async () => {
@@ -137,11 +143,21 @@ while_loop(() => c < 10, () {
         })
     }
 
+    const initializeEditor = () => {
+        let codeEditor = window.ace.edit("code-editor");
+        codeEditor.setTheme("ace/theme/dracula");
+        codeEditor.setValue(value);
+        codeEditor.session.setMode("ace/mode/spwn");
+        codeEditor.on("change", () => value = codeEditor.getValue())
+    }
+    
+
     run_code()
 </script>
 
 <!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
 <link href="prism-atom-dark.css" rel="stylesheet" />
+<link href="atom-one-dark.css" rel="stylesheet" />
 <!-- updates in the same way as the world sketch -->
 <!-- yeah but the world sketch has an always running draw call accessing the world -->
 <!-- unless im not understanding, the triggerSketch code just runs once on creation -->
@@ -156,15 +172,10 @@ while_loop(() => c < 10, () {
 
     <div class="playground">
         <div class="editor">
-            <CodeJar
-                on:change={check_syntax_code}
-                class="code"
-                syntax="spwn"
-                {highlight}
-                bind:value
-                tab={"\t"}
-                style="height: 75%; font-family: 'Source Code Pro', monospace;font-size: 16px;border-radius: 6px;margin: 0;border: 2px solid #3b3b3b;box-shadow: 3px 3px 10px 0px #0005;background-color: #0002;"
-            />
+            <div class="editor-container">
+                <div id="code-editor" contenteditable="true"></div>
+            </div>
+
             <div id="console">
                 {@html ansiUp.ansi_to_html(editor_console)}
             </div>
@@ -212,6 +223,42 @@ while_loop(() => c < 10, () {
         box-sizing: border-box;
         gap: 1rem;
     }
+
+
+    .editor-container {
+        position: relative;
+        width: 100%;
+        height: 75%;
+        font-family: 'Source Code Pro', monospace;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    * {
+        -moz-tab-size : 4;
+        -o-tab-size : 4;
+        tab-size : 4;
+    }
+
+    #code-editor {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        border-radius: 6px;
+        margin: 0;
+        padding: 8px;
+        border: 2px solid #3b3b3b;
+        box-shadow: 3px 3px 10px 0px #0005;
+        /* background-color: #0002; */
+        resize: none;
+        color:rgba(255, 255, 255, 0.886);
+        font-family: 'Source Code Pro', monospace;
+        font-size: 16px;
+        font-weight: 0;
+    }
+
+
 
     .logo {
         display: block;
