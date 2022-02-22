@@ -81,33 +81,61 @@ class InstantCountTrigger extends FunctionTrigger {
     cmpType: Cmp = Cmp.LESSER;
 
     activate: boolean = false;
+    last_fail: number = 0;
 
     draw(p5: any, world: World) {
         let cmp: string = this.cmpType == Cmp.EQUAL ? "=" : this.cmpType == Cmp.LESSER ? "<" : ">";
         draw_trigger(p5, [245, 137, 137], "IC", `${this.itemID}i${cmp}${this.amount}`, this.lastTrigger)
+        const d = new Date();
+        const time = d.getTime();
+        const flashlen = 300
+        if (time - this.last_fail < flashlen) {
+            const alpha = 1 - (time - this.last_fail) / flashlen;
+            p5.stroke(255, 0, 0, alpha * 200);
+            p5.strokeWeight(4);
+            const l = alpha * 8 + 5
+            p5.line(-l, -l, l, l);
+            p5.line(-l, l, l, -l);
+        }
+
+        if (time - this.last_spawn < flashlen) {
+            const alpha = 1 - (time - this.last_spawn) / flashlen;
+            p5.stroke(0, 255, 0, alpha * 200);
+            p5.strokeWeight(4);
+            p5.noFill();
+            const r = 13 - alpha * 8
+            p5.ellipse(0, 0, r * 2, r * 2);
+        }
     }
 
     trigger(world: World) {
         const d = new Date();
-        this.last_spawn = d.getTime();
         switch (this.cmpType) {
             case Cmp.EQUAL:
                 if (world.getItemID(this.itemID) == this.amount) {
+                    this.last_spawn = d.getTime();
                     world.toggleGroupID(this.target, this.activate)
                     if (this.activate) {world.spawnGroupID(this.target)}
+                } else {
+                    this.last_fail = d.getTime();
                 }
                 break;
             case Cmp.GREATER:
                 if (world.getItemID(this.itemID) > this.amount) {
+                    this.last_spawn = d.getTime();
                     world.toggleGroupID(this.target, this.activate)
                     if (this.activate) {world.spawnGroupID(this.target)}
+                } else {
+                    this.last_fail = d.getTime();
                 }
                 break;
             case Cmp.LESSER:
-                console.log("lesser")
                 if (world.getItemID(this.itemID) < this.amount) {
+                    this.last_spawn = d.getTime();
                     world.toggleGroupID(this.target, this.activate)
                     if (this.activate) {world.spawnGroupID(this.target)}
+                } else {
+                    this.last_fail = d.getTime();
                 }
                 break;
         }

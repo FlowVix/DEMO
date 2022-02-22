@@ -55,14 +55,20 @@
     // i hate js
     const [triggerSketch, updateBodies] = triggerGraphSketch(world)
 
-    // console.log(parseProps("1,5,2,15,3,30"))
-    // console.log(parseProps("1,5,,,,2,15,,57,6.4.9"))
-    // console.log(parseProps("1,5,43,1a0.5a0.2a1a0"))
-    // i have no idea but i dont trust js to be consistent on anything
+    /*
+c = counter()
+c.display(45, 45)
 
-    // are you sure it isnt by reference tho? cuz the
-    // world sketch does act like it is
-    // xddd
+for_loop(0..10, reset = false, (_) {
+    i = counter(reset = false)
+    while_loop(() => i < 10, () {
+        i += 1
+        c += 1	
+    })
+    while_loop(() => i > 0, () => i--)
+    wait(1)
+})
+    */
 
     let value = `$.print("Hello SPWN!")
 
@@ -97,6 +103,10 @@ while_loop(() => c < 10, () {
     }
 
     const simulate_triggers = () => {
+        // reset items
+        Object.keys(world.itemIDs).forEach((id) => {
+            world.itemIDs[id].value = 0
+        })
         world.objects.forEach((obj) => {
             if (obj instanceof Trigger && !obj.spawnTriggered) {
                 obj.trigger(world)

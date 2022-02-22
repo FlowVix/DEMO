@@ -134,7 +134,7 @@ const triggerGraphSketch = (
         console.log(graph, reverse_graph)
         
         for (let i = 0; i < 3000; i++) {
-            affectBodies(bodies, graph, reverse_graph)
+            affectBodies(bodies, graph, reverse_graph, {x: 0, y: 0})
         }
     }
 
@@ -146,13 +146,13 @@ const triggerGraphSketch = (
         //arePointsEqual: (point1, point2) => point1.data.foo === point2.data.foo      
     };
 
-    const affectBodies = (bodies: Body[], graph: Graph, reverse_graph: ReverseGraph) => {
+    const affectBodies = (bodies: Body[], graph: Graph, reverse_graph: ReverseGraph, tmouse) => {
         let qtree = new QuadTree(new Box(-5000, -5000, 10000, 10000), qtree_config);
         bodies.forEach((body, i) => {
             qtree.insert(new Point(body.pos.x, body.pos.y, i));
         })
         for (let i = 0; i < bodies.length; i++) {
-            bodies[i].affect(bodies, qtree, graph, reverse_graph)
+            bodies[i].affect(bodies, qtree, graph, reverse_graph, tmouse)
         }
     }
 
@@ -164,10 +164,21 @@ const triggerGraphSketch = (
         cameraZoom = 1;
     
         let p5div, cnv;
+
+        let is_selecting = false;
     
         p5.preload = () => {
             const PUSAB_FONT = p5.loadFont('assets/fonts/pusab.otf');
         }
+
+        const get_translated_mouse = () => {
+            return {
+                x: ((p5.mouseX - p5.width/2) / cameraZoom - cameraPos.x) / 2, 
+                y: ((p5.mouseY - p5.height/2) / cameraZoom + cameraPos.y) / 2
+            }
+        }
+
+        let tmouse;
     
         
         p5.setup = () => {
@@ -222,13 +233,27 @@ const triggerGraphSketch = (
         let prevMousePos = {x: 0, y: 0};
     
         p5.mousePressed = () => {
-            dragging = true;
-            [prevCameraPos.x, prevCameraPos.y] = [cameraPos.x, cameraPos.y];
-            prevMousePos.x = p5.mouseX;
-            prevMousePos.y = p5.mouseY;
+
+            for (let i = 0; i < bodies.length; i++) {
+                if (bodies[i].contains(tmouse)) {
+                    bodies[i].selected = true;
+                    is_selecting = true;
+                }
+            }
+
+            if (!is_selecting) {
+                dragging = true;
+                [prevCameraPos.x, prevCameraPos.y] = [cameraPos.x, cameraPos.y];
+                prevMousePos.x = p5.mouseX / cameraZoom;
+                prevMousePos.y = p5.mouseY / cameraZoom;
+            }
         }
         p5.mouseReleased = () => {
             dragging = false;
+            for (let i = 0; i < bodies.length; i++) {
+                bodies[i].selected = false
+            }
+            is_selecting = false
         }
         p5.mouseWheel = (event) => {
             if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height))
@@ -263,10 +288,10 @@ const triggerGraphSketch = (
             cameraPos.x += cameraMove.x
             cameraPos.y += cameraMove.y
             if (dragging) {
-                cameraPos.x = prevCameraPos.x + (p5.mouseX - prevMousePos.x);
-                cameraPos.y = prevCameraPos.y - (p5.mouseY - prevMousePos.y);
+                cameraPos.x = prevCameraPos.x + (p5.mouseX / cameraZoom - prevMousePos.x);
+                cameraPos.y = prevCameraPos.y - (p5.mouseY / cameraZoom - prevMousePos.y);
             }
-    
+            tmouse = get_translated_mouse()
             
             p5.push()
             p5.background(10, 10, 15)
@@ -281,7 +306,7 @@ const triggerGraphSketch = (
                 bodies[i].calc_output_side(bodies, graph)
             }
             
-            affectBodies(bodies, graph, reverse_graph)
+            affectBodies(bodies, graph, reverse_graph, tmouse)
 
             const d = new Date()
             const time = d.getTime()
@@ -331,6 +356,12 @@ const triggerGraphSketch = (
                     p5.stroke(255, 0, 0, 150)
                     p5.noFill()
                     p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
+                }
+                if (body.selected) {
+                    p5.strokeWeight(1)
+                    p5.stroke(0, 100, 255, 200)
+                    p5.noFill()
+                    p5.rect(-15, -15, 30, 30 + GROUP_OBJ_SPACING * (body.objs.length - 1), 5, 5, 5, 5)
                 }
                 p5.pop()
             })

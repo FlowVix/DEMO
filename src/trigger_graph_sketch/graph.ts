@@ -12,6 +12,7 @@ class Body {
     pos: { x: number, y: number };
     vel: { x: number, y: number };
     pinned: boolean = false;
+    selected: boolean = false;
     objs: number[];
     index: BodyIdx;
 
@@ -24,6 +25,15 @@ class Body {
 
     output_point(child_idx: number) {
         return { x: this.pos.x + 13 * this.output_side, y: this.pos.y + (GROUP_OBJ_SPACING * child_idx) + 5 }
+    }
+
+    contains(pos) {
+        return (
+            pos.x > this.pos.x - 13 &&
+            pos.x < this.pos.x + 13 &&
+            pos.y > this.pos.y - 13 &&
+            pos.y < this.pos.y + GROUP_OBJ_SPACING * this.objs.length + 13
+        )
     }
 
     constructor(pos: { x: number, y: number }, objs: number[], index: BodyIdx, pinned: boolean = false) {
@@ -70,10 +80,17 @@ class Body {
 //     type Graph =        Record<BodyIdx, Record<BodyChildIdx, Set<BodyIdx>>>;
 //     type ReverseGraph = Record<BodyIdx, Set<[BodyIdx, BodyChildIdx]>>;
 
-    affect(bodies: Body[], qtree: QuadTree, graph: Graph, reverse_graph: ReverseGraph) {
+    affect(bodies: Body[], qtree: QuadTree, graph: Graph, reverse_graph: ReverseGraph, mousepos) {
         if (this.pinned) return
 
         let force = { x: 0.5, y: 0 };
+
+        if (this.selected) {
+            force.x += (mousepos.x - this.pos.x) * 0.2;
+            force.y += (mousepos.y - this.pos.y) * 0.2;
+        }
+
+
         const end_y = (this.pos.y + GROUP_OBJ_SPACING * this.objs.length)
 
         const connected_to = (other: BodyIdx) => {

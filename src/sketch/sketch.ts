@@ -206,10 +206,10 @@ const worldSketch = (
         p5.rect(-38, -38, p5.width+44, p5.height+44, 18)
 
         
-        p5.fill(255)
-        p5.textSize(20)
-        p5.text(cameraPos.x + " " + cameraPos.y, 30, 30)
-        p5.text(screenWorldBounds.left + " " + screenWorldBounds.up + " " + screenWorldBounds.right + " " + screenWorldBounds.down, 30, 60)
+        // p5.fill(255)
+        // p5.textSize(20)
+        // p5.text(cameraPos.x + " " + cameraPos.y, 30, 30)
+        // p5.text(screenWorldBounds.left + " " + screenWorldBounds.up + " " + screenWorldBounds.right + " " + screenWorldBounds.down, 30, 60)
 
 
         let to_remove = []
