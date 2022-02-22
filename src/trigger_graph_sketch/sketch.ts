@@ -54,7 +54,6 @@ const triggerGraphSketch = (
         graph = {}
         reverse_graph = {}
         const l = world.objects.length
-        console.log(l)
     
         let obj_to_body_idx: Record<number, BodyIdx> = {}
 
@@ -130,10 +129,8 @@ const triggerGraphSketch = (
                 }
             })
         })
-
-        console.log(graph, reverse_graph)
         
-        for (let i = 0; i < 3000; i++) {
+        for (let i = 0; i < 600; i++) {
             affectBodies(bodies, graph, reverse_graph, {x: 0, y: 0})
         }
     }
@@ -185,7 +182,6 @@ const triggerGraphSketch = (
             cnv = p5.createCanvas(400, 400);
             p5.frameRate(240)
             p5div = document.getElementById("trigger-graph-sketch")
-            console.log(p5div)
         };
     
         p5.keyPressed = () => {

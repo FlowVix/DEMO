@@ -37,7 +37,6 @@ const worldSketch = (
         cnv = p5.createCanvas(400, 400);
         p5.frameRate(240)
         p5div = document.getElementById("sketch")
-        console.log(p5div)
     };
 
     p5.keyPressed = () => {

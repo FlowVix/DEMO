@@ -22,7 +22,8 @@ const init = async () => {
         props: {
           // https://svelte.dev/docs#Creating_a_component
           run_spwn: spwn_api.run_spwn,
-		  init_panics: spwn_api.init_panics
+		  init_panics: spwn_api.init_panics,
+          check_syntax: spwn_api.check_syntax,
         }
     });
 };

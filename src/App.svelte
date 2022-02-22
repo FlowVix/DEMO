@@ -31,6 +31,7 @@
 
     export let run_spwn
     export let init_panics
+    export let check_syntax
     init_panics()
 
     import AnsiUp from "ansi_up"
@@ -83,11 +84,15 @@ while_loop(() => c < 10, () {
     c += 1
 })`
     let editor_console = ""
-    const run_code = () => {
+    let is_showing_error = false
+    const run_code = async () => {
         let code = value
-        console.log(optimize)
-        let [txt, lvlStr] = run_spwn(code, optimize)
-        console.log(lvlStr)
+        let [txt, lvlStr, status] = run_spwn(code, optimize)
+        if (status == "error") {
+            editor_console = txt
+            is_showing_error = true
+            return
+        }
 
         world.reset()
         lvlStr
@@ -100,6 +105,19 @@ while_loop(() => c < 10, () {
         updateBodies(world)
 
         editor_console = txt
+        is_showing_error = false
+    }
+
+    const check_syntax_code = async () => {
+        let code = value
+        let err = check_syntax(code)
+        if (err.length > 0) {
+            editor_console = err
+            is_showing_error = true
+        } else if (is_showing_error) {
+            editor_console = ""
+            is_showing_error = false
+        }
     }
 
     const simulate_triggers = () => {
@@ -113,6 +131,8 @@ while_loop(() => c < 10, () {
             }
         })
     }
+
+    run_code()
 </script>
 
 <!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
@@ -132,19 +152,13 @@ while_loop(() => c < 10, () {
     <div class="playground">
         <div class="editor">
             <CodeJar
-                style="
-                    font-family:'Source Code Pro', monospace;
-                    font-size: 16px;
-                    border-radius:6px;
-                    margin:0;
-                    border: 2px solid #3b3b3b;
-                    box-shadow: 3px 3px 10px 0px #0005;
-                    background-color: #0002;
-                "
+                on:change={check_syntax_code}
+                class="code"
                 syntax="spwn"
                 {highlight}
                 bind:value
                 tab={"\t"}
+                style="font-family: 'Source Code Pro', monospace;font-size: 16px;border-radius: 6px;margin: 0;border: 2px solid #3b3b3b;box-shadow: 3px 3px 10px 0px #0005;background-color: #0002;"
             />
             <div id="console">
                 {@html ansiUp.ansi_to_html(editor_console)}
