@@ -9,6 +9,7 @@ class Trigger extends GDObject {
     lastTrigger: number = 0;
     trigger(world: World) {}
 }
+
 // activates other triggers (spawn, ic, collision, ...)
 export class FunctionTrigger extends Trigger {
     target: number;
@@ -17,7 +18,7 @@ export class FunctionTrigger extends Trigger {
 
 export class OutputTrigger extends Trigger {}
 
-// oops didnt mean to call
+
 class ToggleTrigger extends OutputTrigger {
     target: number = 0;
     activate: boolean = false;
@@ -31,8 +32,22 @@ class ToggleTrigger extends OutputTrigger {
 
 class MoveTrigger extends OutputTrigger {
     target: number = 0;
+
+    moveX: number = 0;
+    moveY: number = 0;
+    moveTime: number = 0;
+
     draw(p5: any, world: World) {
         draw_trigger(p5, [91, 38, 175], "Move", `${this.target}`, this.lastTrigger)
+    }
+
+    trigger(world: World) {
+        world.addMoveCommand(
+            this.target, 
+            this.moveX, 
+            this.moveY, 
+            this.moveTime,
+        )
     }
 }
 

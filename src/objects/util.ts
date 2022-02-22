@@ -1,7 +1,5 @@
 
-// what be happening
-// trying to draw the graph nodes as triggers
-// o e
+
 export function draw_trigger(p5, color, name, text, last_trigger = 0) {
     const d = new Date();
     const time = d.getTime();

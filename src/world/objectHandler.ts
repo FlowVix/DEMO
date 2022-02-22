@@ -134,6 +134,10 @@ const createObject = (
             case Constants.OBJ_PROPS.ROTATION:
                 obj.rotation = parseFloat(props[i])
                 break;
+            case Constants.OBJ_PROPS.SCALING:
+                obj.scale.x *= parseFloat(props[i])
+                obj.scale.y *= parseFloat(props[i])
+                break;
             case Constants.OBJ_PROPS.GROUPS:
                 props[i].forEach(g => {
                     world.addGroupID(idx, g, false)
@@ -171,6 +175,15 @@ const createObject = (
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET:
 										obj.target = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.MOVE_X:
+                                        obj.moveX = parseFloat(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.MOVE_Y:
+                                        obj.moveY = parseFloat(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.DURATION:
+                                        obj.moveTime = parseFloat(props[i])
                                         break;
                                 }
                             } else if (obj instanceof SpawnTrigger) {

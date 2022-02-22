@@ -57,6 +57,14 @@ const worldSketch = (
                 case 40:
                     cameraMove.y -= CAMERA_SPEED;
                     break;
+
+                case 69:
+                    console.log(JSON.stringify(world.moveCommands))
+                    break;
+
+                case 83:
+                    console.log(JSON.stringify(world.scheduled_spawns))
+                    break;
             }
     }
     p5.keyReleased = () => {
@@ -155,6 +163,7 @@ const worldSketch = (
 
         const date = new Date()
         let time = date.getTime()
+        world.time = time;
         
         if (true) {
             world.objects.forEach(obj => {
@@ -213,12 +222,40 @@ const worldSketch = (
 
         let to_remove = []
         world.scheduled_spawns.forEach((spawn, i) => {
+            // console.log("c:", time)
             if (spawn.time <= time) {
+                // console.log("a:", spawn.group)
                 world.spawnGroupID(spawn.group)
                 to_remove.push(i)
             }
         })
-        to_remove.forEach(i => world.scheduled_spawns.splice(i, 1))
+        world.scheduled_spawns = world.scheduled_spawns.filter((_, i) => !to_remove.includes(i))
+        
+        // silly spunix the ids will change!!! !
+        // to_remove.forEach(i => world.scheduled_spawns.splice(i, 1))
+        
+        let displacements = {}
+        to_remove = []
+        world.moveCommands.forEach((cmd, i) => {
+            if (!(cmd.groupID in displacements)) {
+                displacements[cmd.groupID] = {x: 0, y: 0}
+            }
+            let displacement = cmd.getDisplacement(time)
+            displacements[cmd.groupID].x += displacement.x;
+            displacements[cmd.groupID].y += displacement.y;
+            if (time >= cmd.startTime + cmd.duration * 1000) {
+                to_remove.push(i)
+            }
+        })
+        world.moveCommands = world.moveCommands.filter((_, i) => !to_remove.includes(i))
+        
+        for (const i in displacements) {
+            for (const objIdx of world.groupIDs[i].objects) {
+                world.objects[objIdx].pos.x += displacements[i].x
+                world.objects[objIdx].pos.y += displacements[i].y
+            }
+        }
+
 
 
     };

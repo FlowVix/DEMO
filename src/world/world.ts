@@ -19,6 +19,42 @@ interface BlockIDData {
     objects: ObjIndex[];
 }
 
+
+class MoveCommand {
+
+    lastVec: {x: number, y: number} = {x: 0, y: 0};
+
+    constructor(
+        public groupID: number,
+        public moveX: number,
+        public moveY: number,
+        public duration: number,
+        public startTime: number
+    ) {}
+
+    getDisplacement(
+        time: number
+    ): {x: number, y: number} {
+        let lerp = Math.min(1, (time - this.startTime) / (this.duration * 1000));
+        if (this.duration === 0) {
+            lerp = 1;
+        }
+        let newVec = {
+            x: this.moveX * lerp,
+            y: this.moveY * lerp,
+        }
+        let displacement = {
+            x: newVec.x - this.lastVec.x,
+            y: newVec.y - this.lastVec.y,
+        }
+        this.lastVec = newVec
+        return displacement
+    }
+
+}
+
+
+
 class World {
 
     objects: Object[] = [];
@@ -29,6 +65,9 @@ class World {
     blockIDs: Record<number, BlockIDData> = {};
 
     scheduled_spawns: {time: number, group: number}[] = [];
+    moveCommands: MoveCommand[] = [];
+
+    time: number = 0;
 
     constructor() {
         this.reset()
@@ -40,6 +79,8 @@ class World {
         this.itemIDs = {}
         this.blockIDs = {}
         this.scheduled_spawns = []
+        this.moveCommands = []
+        this.time = 0;
     }
 
     addGroupID(
@@ -158,6 +199,27 @@ class World {
     
         return this.itemIDs[itemID].value
     }
+
+    addMoveCommand(
+        groupID: number,
+        moveX: number,
+        moveY: number,
+        duration: number,
+    ) {
+        if (!(groupID in this.groupIDs))
+            return
+        
+        this.moveCommands.push(
+            new MoveCommand(
+                groupID,
+                moveX,
+                moveY,
+                duration,
+                this.time
+            )
+        )
+    }
+
 
 }
 

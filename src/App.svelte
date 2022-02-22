@@ -22,12 +22,8 @@
     import World from "./world/world"
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
     import worldSketch from "./sketch/sketch"
-    import { parseProps, createObject } from "./world/objectHandler"
+    import { createObject } from "./world/objectHandler"
 
-    import { AceEditor } from "svelte-ace"
-    import "brace/mode/json"
-    import "brace/theme/chrome"
-    let fartCode = ""
 
     export let run_spwn
     export let init_panics
@@ -43,17 +39,7 @@
 
     import { CodeJar } from "@novacbn/svelte-codejar"
     import { Trigger } from "./objects/triggers"
-    // shouldnt updateBodies take world, not triggerGraphSketch
-    // yea but again since its not by reference it will only have the first version
-    // so when it updates it will use the same version
-    // because js
-
-    // easy fix though
-    // i mean maybe the sketch itself also uses world
-    // might be easier if its already in scope
-
-    // oh god why isnt this by reference
-    // i hate js
+    
     const [triggerSketch, updateBodies] = triggerGraphSketch(world)
 
     /*
@@ -71,10 +57,26 @@ for_loop(0..10, reset = false, (_) {
 })
     */
 
-    let value = `$.print("Hello SPWN!")
+    let value = `extract obj_props
+
+$.print("Hello SPWN!")
 
 c = counter()
 c.display(45, 45)
+
+$.add(obj{
+	OBJ_ID: 1,
+	X: 15,
+	Y: 15,
+	GROUPS: 10g,
+})
+$.add(obj{
+	OBJ_ID: 1,
+	X: 15,
+	Y: 15,
+	GROUPS: 10g,
+    SCALING: 0.5,
+})
 
 while_loop(() => c < 10, () {
     10g.move(0, 20, 0.5)
@@ -106,6 +108,9 @@ while_loop(() => c < 10, () {
 
         editor_console = txt
         is_showing_error = false
+
+        console.log(world.objects)
+
     }
 
     const check_syntax_code = async () => {
@@ -158,7 +163,7 @@ while_loop(() => c < 10, () {
                 {highlight}
                 bind:value
                 tab={"\t"}
-                style="font-family: 'Source Code Pro', monospace;font-size: 16px;border-radius: 6px;margin: 0;border: 2px solid #3b3b3b;box-shadow: 3px 3px 10px 0px #0005;background-color: #0002;"
+                style="height: 75%; font-family: 'Source Code Pro', monospace;font-size: 16px;border-radius: 6px;margin: 0;border: 2px solid #3b3b3b;box-shadow: 3px 3px 10px 0px #0005;background-color: #0002;"
             />
             <div id="console">
                 {@html ansiUp.ansi_to_html(editor_console)}
@@ -169,10 +174,10 @@ while_loop(() => c < 10, () {
                 <button id="sim_button" class="big-button" style="background:#09493a" on:click={simulate_triggers}>
                     simulate
                 </button>
-                <label>
-                    <input type="checkbox" bind:checked={optimize} />
-                    Optimize Triggers
-                </label>
+            </div>
+            <div class="optimize">
+                <input type="checkbox" bind:checked={optimize} />
+                Optimize Triggers
             </div>
         </div>
 
@@ -242,13 +247,6 @@ while_loop(() => c < 10, () {
 
     .playground {
         width: 100%;
-        /** can you put the height of the header maybe here */
-        /* just did that, it is fixed */
-        /* i dont like how hacky it is tho but oh well */
-        /** maybe style the scrollbar to not look shit */
-        /* yeah i did wanna do that, time to learn how owowowo */
-        /** copy from w3schools*/
-        /* epic pogger */
         height: calc(100% - 53px);
         background-color: rgb(20, 20, 26);
         display: flex;
@@ -257,16 +255,16 @@ while_loop(() => c < 10, () {
         padding: 1rem;
         gap: 1rem;
     }
-    /* this is so hacky wait */
-    /** still expands a tiny bit */
+    
     .editor {
         width: 100%;
         height: 100%;
         box-sizing: border-box;
         padding: 1rem;
 
-        display: grid;
-        grid-template-rows: 3fr 2fr auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         gap: 1rem;
 
         background-color: #ffffff09;
@@ -279,11 +277,24 @@ while_loop(() => c < 10, () {
         box-shadow: 3px 3px 10px 0px #0005;
     }
 
+    .editor > .optimize {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: .5rem;
+        color: rgba(255, 255, 255, 0.886);
+    }
+
+    input[type="checkbox"] {
+        margin: 0;
+        padding: 0;
+    }
+
     * ::-webkit-scrollbar {
         width: 10px;
     }
 
-    /* Track */
     * ::-webkit-scrollbar-track {
         background: rgba(255, 255, 255, 0.15);
         margin: 4px;
@@ -301,8 +312,9 @@ while_loop(() => c < 10, () {
     * ::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.886);
     }
-    /* idk lol */
+    
     #console {
+        height: 40%;
         line-height: 20px;
         color: white;
         background: black;
@@ -326,7 +338,7 @@ while_loop(() => c < 10, () {
         box-shadow: 3px 3px 10px 0px #0005;
     }
     .big-button {
-        width: 40%;
+        width: 100%;
         height: 60px;
         background: #551c1c;
         font-family: "Source Code Pro", monospace;
@@ -351,6 +363,9 @@ while_loop(() => c < 10, () {
     .buttons {
         width: 100%;
         box-sizing: border-box;
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
         float: left;
     }
 

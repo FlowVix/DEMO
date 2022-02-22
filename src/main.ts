@@ -11,7 +11,7 @@ import App from './App.svelte';
 // The wasm-plugin runs `wasm-pack build` and cpoies the output into
 // `svelte-app/target` directory.
 // The `.wasm` file is located in the `svelte-app/public/build` dir.
-import wasm from './test';
+import wasm from './wasm-import';
 
 // we can do that if you want to
 const init = async () => {
