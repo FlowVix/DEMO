@@ -1,6 +1,6 @@
 
 import P5 from 'p5-svelte';
-import { FunctionTrigger, SpawnTrigger, Trigger } from '../objects/triggers';
+import { FunctionTrigger, SpawnTrigger, ToggleTrigger, Trigger } from '../objects/triggers';
 import type World from '../world/world';
 import {QuadTree, Box, Point, Circle} from 'js-quadtree';
 import Body, { GROUP_OBJ_SPACING } from './graph';
@@ -30,7 +30,7 @@ const triggerGraphSketch = (
     let graph: Graph = {}
     let reverse_graph: ReverseGraph = {}
 
-    function add_to_graph(a, a_child, b) {
+    function add_to_graph(a: BodyIdx, a_child: BodyChildIdx, b: BodyIdx) {
         if (!graph[a]) {
             graph[a] = []
         }
@@ -44,6 +44,10 @@ const triggerGraphSketch = (
         }
         reverse_graph[b].add([a, a_child])
     }
+
+    let obj_to_body_idx: Record<number, [BodyIdx, BodyChildIdx]> = {}
+
+    let bodies_per_group: Record<number, number[]> = {}
     
     const updateBodies = (new_world: World) => {
         cameraPos = {x: 0, y: 0};
@@ -55,12 +59,13 @@ const triggerGraphSketch = (
         reverse_graph = {}
         const l = world.objects.length
     
-        let obj_to_body_idx: Record<number, BodyIdx> = {}
+        obj_to_body_idx = {}
 
         let start_obj_y = 0
         let obj_x = 30
 
-        let group_bodies: Record<number, number[]> = {}
+        let group_bodies: Record<string, number[]> = {}
+        bodies_per_group = {}
         let spawn_groups = new Set<number>()
 
         // get spawn groups
@@ -79,26 +84,28 @@ const triggerGraphSketch = (
             if (obj instanceof Trigger) {
                 if (!obj.spawnTriggered) {
                     const body_idx = bodies.length
-                    obj_to_body_idx[idx] = body_idx
+                    obj_to_body_idx[idx] = [body_idx, 0]
                     bodies.push(new Body({x: -100, y: start_obj_y}, [idx], body_idx, true))
                     start_obj_y += 50
                 } else {
 
                     const groups = obj.groups.filter(group => spawn_groups.has(group))
-                    if (groups.length != 1) {
-                        const body_idx = bodies.length
-                        obj_to_body_idx[idx] = body_idx
-                        bodies.push(new Body({x: obj_x, y: Math.random() * 100 - 50}, [idx], body_idx))
-                        obj_x += 50
+                    // if (groups.length != 1) {
+                    //     const body_idx = bodies.length
+                    //     obj_to_body_idx[idx] = [body_idx, 0]
+                    //     bodies.push(new Body({x: obj_x, y: Math.random() * 100 - 50}, [idx], body_idx))
+                    //     obj_x += 50
+                    // } else {
+                    groups.sort()
+                    const g = groups.map(g => g.toString()).join(".")
+                    // obj_to_group_body[idx] = g
+                    if (!group_bodies[g]) {
+                        group_bodies[g] = [idx]
                     } else {
-                        const g = groups[0]
-                        // obj_to_group_body[idx] = g
-                        if (!group_bodies[g]) {
-                            group_bodies[g] = [idx]
-                        } else {
-                            group_bodies[g].push(idx)
-                        }
+                        group_bodies[g].push(idx)
                     }
+                    
+                    // }
                 }
             }
         })
@@ -106,12 +113,22 @@ const triggerGraphSketch = (
         // add group bodies
         Object.entries(group_bodies).forEach(([g, idxs]) => {
             const body_idx = bodies.length
-            idxs.forEach(idx => {
-                obj_to_body_idx[idx] = body_idx
+
+            const groups = g.split(".").map(parseInt)
+            groups.forEach(g => {
+                if (!bodies_per_group[g]) {
+                    bodies_per_group[g] = [body_idx]
+                } else {
+                    bodies_per_group[g].push(body_idx)
+                }
+            })
+
+            idxs.forEach((idx, i) => {
+                obj_to_body_idx[idx] = [body_idx, i]
             })
             bodies.push(new Body({x: obj_x, y: Math.random() * 100 - 50}, idxs, body_idx))
             obj_x += 50
-        })
+        }) // this file is acting weird for me
 
         // build graph
         bodies.forEach((body, idx) => {
@@ -121,7 +138,7 @@ const triggerGraphSketch = (
                     const targets = world.groupIDs[object.target];
                     if (targets) {
                         targets.objects.forEach(target => {
-                            const target_body_idx = obj_to_body_idx[target]
+                            const target_body_idx = obj_to_body_idx[target][0]
                             add_to_graph(idx, child_idx, target_body_idx)
 
                         });
@@ -364,14 +381,17 @@ const triggerGraphSketch = (
 
             for (let body_idx = 0; body_idx < bodies.length; body_idx++) {
                 for (let child_idx = 0; child_idx < bodies[body_idx].objs.length; child_idx++) {
+
+                    const body = bodies[body_idx]
+                    const obj = world.objects[body.objs[child_idx]]
+
                     if (graph[body_idx] && graph[body_idx][child_idx]) {
                         graph[body_idx][child_idx].forEach(other_body => {
-                            const body = bodies[body_idx]
                             const body2 = bodies[other_body]
+                            
                             
                             p5.strokeWeight(1)
                             
-                            const obj = world.objects[body.objs[child_idx]]
                             const flashlen = 700;
                             let time_since_last_spawn = obj instanceof FunctionTrigger ? 
                                 (obj instanceof SpawnTrigger ? 
@@ -411,10 +431,46 @@ const triggerGraphSketch = (
                             }
                         })
                     }
+
+                    // toggle trigger arrows
+                    if (obj instanceof ToggleTrigger) {
+                        p5.strokeWeight(1)
+                        p5.noFill()
+                        const p1 = {
+                            x: body.pos.x,
+                            y: body.pos.y + GROUP_OBJ_SPACING * child_idx
+                        }
+                        let prog = 1 - Math.max(0.5 - (time - obj.lastTrigger) / 1000, 0);;
+                        if (obj.activate) {
+                            p5.stroke(255 * prog, 255, 255 * prog, 20)
+                        } else {
+                            p5.stroke(255, 255 * prog, 255 * prog, 20)
+                        }
+
+                        // epic 
+                        
+                        if (bodies_per_group[obj.target]) {
+                            bodies_per_group[obj.target].forEach(body2idx => {
+                                const body2 = bodies[body2idx]
+                                const p2 = bodies[body2idx].connection_point()
+
+                                arrow(p5, p1.x, p1.y, p2.x, p2.y)
+                            })
+                        }
+                    }
+
                 }
             }
     
             p5.pop()
+
+            // dropped in to give your sketch rounded corners
+            p5.noFill()
+            p5.stroke(20, 20, 26)
+            p5.strokeWeight(12)
+            p5.rect(-6, -6, p5.width+12, p5.height+12, 18)
+            p5.stroke(17, 17, 22)
+            p5.rect(-38, -38, p5.width+44, p5.height+44, 18)
         };
     }
 

@@ -205,6 +205,7 @@ declare module 'ace-builds/src-noconflict/mode-xml';
 declare module 'ace-builds/src-noconflict/mode-xquery';
 declare module 'ace-builds/src-noconflict/mode-yaml';
 declare module 'ace-builds/src-noconflict/mode-zeek';
+declare module 'ace-builds/src-noconflict/theme-MaterialOceanHighContrast';
 declare module 'ace-builds/src-noconflict/theme-ambiance';
 declare module 'ace-builds/src-noconflict/theme-chaos';
 declare module 'ace-builds/src-noconflict/theme-chrome';

@@ -3,7 +3,7 @@ import type { BodyIdx, Graph, ReverseGraph } from './sketch';
 
 const IDEAL_DIST = 100;
 const RELATION_POWER = 3000;
-const SPRING_COEF = 0.05;
+const SPRING_COEF = 0.01;
 const MAX_VEL = 300;
 
 export const GROUP_OBJ_SPACING = 25
@@ -83,7 +83,7 @@ class Body {
     affect(bodies: Body[], qtree: QuadTree, graph: Graph, reverse_graph: ReverseGraph, mousepos) {
         if (this.pinned) return
 
-        let force = { x: 0.5, y: 0 };
+        let force = { x: 0.2, y: -this.pos.y * 0.002 };
 
         if (this.selected) {
             force.x += (mousepos.x - this.pos.x) * 0.2;
@@ -93,12 +93,12 @@ class Body {
 
         const end_y = (this.pos.y + GROUP_OBJ_SPACING * this.objs.length)
 
-        const connected_to = (other: BodyIdx) => {
-            if (graph[this.index])
-                return Object.values(graph[this.index]).some(set => set.has(other))
-                || (!!reverse_graph[other] && [...reverse_graph[other]].some(([i, _]) => i === this.index))
-            else return false
-        }
+        // const connected_to = (other: BodyIdx) => {
+        //     if (graph[this.index])
+        //         return Object.values(graph[this.index]).some(set => set.has(other))
+        //         || (!!reverse_graph[other] && [...reverse_graph[other]].some(([i, _]) => i === this.index))
+        //     else return false
+        // }
         // repel close objects
         const close_points = qtree.query(new Box(this.pos.x - 300, this.pos.y - 300, 600, this.objs.length * GROUP_OBJ_SPACING + 600))
         let bodies_done = Array(bodies.length).fill(false)
@@ -136,29 +136,37 @@ class Body {
             }
         })
 
-        // attract connected bodies            
+        // attract connected bodies
+        bodies_done = Array(bodies.length).fill(false)         
         let connected_bodies = []
-
+        
         for (let child_idx = 0; child_idx < this.objs.length; child_idx++) {
             if (!graph[this.index] || !graph[this.index][child_idx]) continue
             const child_pos = this.output_point(child_idx)
             graph[this.index][child_idx].forEach(body_idx => {
-                const body_pos = bodies[body_idx].connection_point()
-                const to = {
-                    x: child_pos.x - body_pos.x,
-                    y: child_pos.y - body_pos.y
+                if (!bodies_done[body_idx]) {
+                    bodies_done[body_idx] = true
+                    const body_pos = bodies[body_idx].connection_point()
+                    
+                    const to = {
+                        x: child_pos.x - body_pos.x,
+                        y: child_pos.y - body_pos.y
+                    }
+                    connected_bodies.push(to)
                 }
-                connected_bodies.push(to)
             })
         }
         if (reverse_graph[this.index])
             reverse_graph[this.index].forEach(([body_idx, child_idx]) => {
-                const child_pos = bodies[body_idx].output_point(child_idx)
-                const to = {
-                    x: this.connection_point().x - child_pos.x,
-                    y: this.connection_point().y - child_pos.y
+                if (!bodies_done[body_idx]) {
+                    bodies_done[body_idx] = true
+                    const child_pos = bodies[body_idx].output_point(child_idx)
+                    const to = {
+                        x: this.connection_point().x - child_pos.x,
+                        y: this.connection_point().y - child_pos.y
+                    }
+                    connected_bodies.push(to)
                 }
-                connected_bodies.push(to)
             })
 
         

@@ -64,9 +64,9 @@ var SPWNHighlightRules = function() {
         }],
         "#impl": [{
             token: [
-                "keyword.other.astral",
+                "keyword.other.spwn",
                 "text",
-                "entity.name.type.astral",
+                "entity.name.type.spwn",
                 "text",
                 "punctuation.other.bracket.curly.begin.spwn"
             ],
@@ -84,7 +84,7 @@ var SPWNHighlightRules = function() {
         }],
         "#obj_or_trigger": [{
             token: [
-                "keyword.other.astral",
+                "keyword.other.spwn",
                 "text",
                 "punctuation.other.bracket.curly.begin.spwn"
             ],
@@ -117,7 +117,7 @@ var SPWNHighlightRules = function() {
             regex: /\b[0-9][0-9_]*(?:\.[0-9_]+)?/
         }],
         "#constants": [{
-            token: "constant.language.astral",
+            token: "constant.language.spwn",
             regex: /\b(?:true|false|null)\b|\$/
         }],
         "#ids": [{
@@ -125,11 +125,11 @@ var SPWNHighlightRules = function() {
             regex: /(?:[0-9]+|\?)[gbci]/
         }],
         "#operators": [{
-            token: "keyword.operator.astral",
+            token: "keyword.operator.spwn",
             regex: /[+\-*\/=^<>|&%!]+|\bas\b|\.\.|\bin\b/
         }],
         "#constants_2": [{
-            token: "variable.language.astral",
+            token: "variable.language.spwn",
             regex: /\bself\b/
         }],
         "#comments": [{
@@ -147,18 +147,18 @@ var SPWNHighlightRules = function() {
             regex: /\/\/.*/
         }],
         "#types": [{
-            token: "entity.name.type.astral",
+            token: "entity.name.type.spwn",
             regex: /\b_\b/
         }, {
-            token: "entity.name.type.astral",
+            token: "entity.name.type.spwn",
             regex: /@[a-zA-Z_]\w*/
         }],
         "#func_calls": [{
-            token: "entity.name.function.astral",
+            token: "entity.name.function.spwn",
             regex: /\b[a-zA-Z_]\w*\b\s*(?=\(|![^{=])/
         }],
         "#punctuation": [{
-            token: "punctuation.other.astral",
+            token: "punctuation.other.spwn",
             regex: /[;,:]|->|=>|(?<!\.)\.(?!\.)/
         }],
         "#brackets": [{
@@ -259,7 +259,7 @@ var SPWNHighlightRules = function() {
             comment: "Some sort of function call"
         }],
         "#func_args": [{
-            token: "variable.language.astral",
+            token: "variable.language.spwn",
             regex: /\bself\b/
         }, {
             token: [
@@ -478,6 +478,9 @@ var Mode = function() {
 oop.inherits(Mode, TextMode);
 
 (function() {
+    this.lineCommentStart = "//";
+    this.blockComment = {start: "/*", end: "*/"};
+    this.$quotes = { '"': '"', "'": "'" };
     this.$id = "ace/mode/spwn"
 }).call(Mode.prototype);
 

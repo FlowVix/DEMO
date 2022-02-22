@@ -1,21 +1,4 @@
-<script context="module">
-    import Prism from "prismjs"
 
-    Prism.languages.spwn = Prism.languages.extend("clike", {
-        keyword:
-            /\b(?:else|for|if|return|error|extract|let|type|import|impl|break|\=>|\->|continue|match|null|sync|throw|while|as|in|is)\b/,
-        builtin: /\b(?:null|trigger|obj|\$|self)\b/,
-        boolean: /\b(?:true|false)\b/,
-        operator:
-            /(==|!=|<=|>=|<|>|&&|\|\||!|=|\+\=|\-\=|\*\=|\/\=|\+|\-|\*|\/|%|\^|\.\.|\-\-|\+\+|\/\%|\/\%=|\^=|<=>|\||\&)/,
-        number: /(?:\b\d+(\.\d+)?\b)|(\b([0-9]+|\?)[gbci]\b)/,
-        string: /[a-z]?"(?:\\.|[^\\"])*"|'(?:\\.|[^\\'])*'/,
-        tag: /@([a-zA-Z_][a-zA-Z0-9_]*)/,
-    })
-    delete Prism.languages.spwn["class-name"]
-
-    const highlight = (code, syntax) => Prism.highlight(code, Prism.languages[syntax], syntax)
-</script>
 
 <svelte:head>
     <script src="/ace-build/src-noconflict/ace.js" type="text/javascript" charset="utf-8" on:load={initializeEditor}></script>
@@ -23,7 +6,6 @@
 
 <script lang="ts">
     import P5 from "p5-svelte"
-    import { onMount } from 'svelte';
     import World from "./world/world"
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
     import worldSketch from "./sketch/sketch"
@@ -36,65 +18,69 @@
 
     import AnsiUp from "ansi_up"
     let ansiUp = new AnsiUp()
+    
+    const themes = [
+        ["Ambiance", "ambiance"],
+        ["Chaos", "chaos"],
+        ["Chrome", "chrome"],
+        ["Clouds Midnight", "clouds_midnight"],
+        ["Clouds", "clouds"],
+        ["Cobalt", "cobalt"],
+        ["Crimson Editor", "crimson_editor"],
+        ["Dawn", "dawn"],
+        ["Dracula", "dracula"],
+        ["Dreamweaver", "dreamweaver"],
+        ["Eclipse", "eclipse"],
+        ["Github", "github"],
+        ["Gob", "gob"],
+        ["Gruvbox", "gruvbox"],
+        ["Idle Fingers", "idle_fingers"],
+        ["iPlastic", "iplastic"],
+        ["Katzenmilch", "katzenmilch"],
+        ["Kr Theme", "kr_theme"],
+        ["Kuroir", "kuroir"],
+        ["Material Ocean", "MaterialOceanHighContrast"],
+        ["Merbivore Soft", "merbivore_soft"],
+        ["Merbivore", "merbivore"],
+        ["Mono Industrial", "mono_industrial"],
+        ["Monokai", "monokai"],
+        ["Nord Dark", "nord_dark"],
+        ["One Dark", "one_dark"],
+        ["Pastel On Dark", "pastel_on_dark"],
+        ["Solarized Dark", "solarized_dark"],
+        ["Solarized Light", "solarized_light"],
+        ["Sql Server", "sqlserver"],
+        ["Terminal", "terminal"],
+        ["Textmate", "textmate"],
+        ["Tomorrow Night Blue", "tomorrow_night_blue"],
+        ["Tomorrow Night Bright", "tomorrow_night_bright"],
+        ["Tomorrow Night Eighties", "tomorrow_night_eighties"],
+        ["Tomorrow Night", "tomorrow_night"],
+        ["Tomorrow", "tomorrow"],
+        ["Twilight", "twilight"],
+        ["Vibrant Ink", "vibrant_ink"],
+        ["XCode", "xcode"],
+    ]
+
+    let selectedTheme = "MaterialOceanHighContrast";
 
     let world = new World()
-
     let optimize = true
 
-    import { CodeJar } from "@novacbn/svelte-codejar"
     import { Trigger } from "./objects/triggers"
     
     const [triggerSketch, updateBodies] = triggerGraphSketch(world)
 
-    /*
-c = counter()
-c.display(45, 45)
-
-for_loop(0..10, reset = false, (_) {
-    i = counter(reset = false)
-    while_loop(() => i < 10, () {
-        i += 1
-        c += 1	
-    })
-    while_loop(() => i > 0, () => i--)
-    wait(1)
-})
-    */
-
-    let value = `extract obj_props
-
-$.print("Hello SPWN!")
-
-c = counter()
-c.display(45, 45)
-
-$.add(obj{
-	OBJ_ID: 1,
-	X: 15,
-	Y: 15,
-	GROUPS: 10g,
-})
-$.add(obj{
-	OBJ_ID: 1,
-	X: 15,
-	Y: 15,
-	GROUPS: 10g,
-    SCALING: 0.5,
-})
-
-while_loop(() => c < 10, () {
-    10g.move(0, 20, 0.5)
-    10g.move(20, 0, 0.5)
-    10g.move(0, -20, 0.5)
-    10g.move(-20, 0, 0.5)
-    c += 1
-})`
+    import def_examples from "./examples"
+    let examples = def_examples
+    
+    let current_example = Object.keys(def_examples)[0]
 
 
     let editor_console = ""
     let is_showing_error = false
-    const run_code = async () => {
-        let code = value
+    const run_code = async () => { 
+        let code = examples[current_example]
         let [txt, lvlStr, status] = run_spwn(code, optimize)
         if (status == "error") {
             editor_console = txt
@@ -120,7 +106,7 @@ while_loop(() => c < 10, () {
     }
 
     const check_syntax_code = async () => {
-        let code = value
+        let code = examples[current_example]
         let err = check_syntax(code)
         if (err.length > 0) {
             editor_console = err
@@ -132,9 +118,16 @@ while_loop(() => c < 10, () {
     }
 
     const simulate_triggers = () => {
+        
         // reset items
         Object.keys(world.itemIDs).forEach((id) => {
             world.itemIDs[id].value = 0
+        })
+        Object.keys(world.groupIDs).forEach((id) => {
+            world.groupIDs[id].on = true
+        })
+        world.objects.forEach((_, i) => {
+            world.objects[i].disables = 0
         })
         world.objects.forEach((obj) => {
             if (obj instanceof Trigger && !obj.spawnTriggered) {
@@ -143,14 +136,56 @@ while_loop(() => c < 10, () {
         })
     }
 
-    const initializeEditor = () => {
-        let codeEditor = window.ace.edit("code-editor");
-        codeEditor.setTheme("ace/theme/dracula");
-        codeEditor.setValue(value);
+    let codeEditor;
+    
+    const initializeEditor = () => { 
+        codeEditor = window.ace.edit("code-editor");
+        codeEditor.setTheme("ace/theme/ambiance");
+        codeEditor.setValue(examples[current_example]);
+        codeEditor.setBehavioursEnabled(true);
+        codeEditor.setOption("scrollPastEnd", true)
+        //codeEditor.setOption("showGutter", false)
         codeEditor.session.setMode("ace/mode/spwn");
-        codeEditor.on("change", () => value = codeEditor.getValue())
+        codeEditor.on("change", () => {
+            examples[current_example] = codeEditor.getValue()
+            check_syntax_code()
+        })
+        codeEditor.moveCursorTo(0, 0)
+        codeEditor.setShowPrintMargin(false)
+        codeEditor.setKeyboardHandler('ace/keyboard/vscode');
+        console.log(codeEditor.renderer)
     }
     
+
+    $: codeEditor ? codeEditor.setTheme(`ace/theme/${selectedTheme}`) : "";
+
+    let viewingDocs = false;
+    let dragging = false;
+
+    let docsPos = {x: 40, y: 40}
+
+    let prevDocsPos = {x: 0, y: 0}
+    prevDocsPos.x = docsPos.x
+    prevDocsPos.y = docsPos.y
+    let prevMousePos = {x: 0, y: 0}
+    const startDrag = (e) => {
+        prevMousePos.x = e.screenX
+        prevMousePos.y = e.screenY
+        prevDocsPos.x = docsPos.x
+        prevDocsPos.y = docsPos.y
+        dragging = true
+    }
+    // eyo im going for a walk
+    // if you need something to do check out the "test" example
+    // o oke hav fun
+    const drag = (e) => {
+        if (dragging) {
+            docsPos.x = prevDocsPos.x + (e.screenX - prevMousePos.x)
+            docsPos.y = prevDocsPos.y + (e.screenY - prevMousePos.y)
+            console.log(docsPos.x, docsPos.y)
+        }
+    }
+
 
     run_code()
 </script>
@@ -162,18 +197,35 @@ while_loop(() => c < 10, () {
 <!-- yeah but the world sketch has an always running draw call accessing the world -->
 <!-- unless im not understanding, the triggerSketch code just runs once on creation -->
 
+
+
 <div class="everything">
     <div class="header">
         <a href="https://spu7nix.net/spwn"
             ><img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a
         >
         <span class="logo-text">SPWN Playground</span>
+        <button class="docs-button" on:click={()=>viewingDocs=!viewingDocs}>{viewingDocs ? "Close Docs" : "Open Docs"}</button>
+        <div class="header-right">
+            Example:
+            <select bind:value={current_example} on:change={() => {codeEditor.setValue(examples[current_example])}}>
+                {#each Object.keys(examples) as name}
+                    <option value={name}>{name}</option>
+                {/each}
+            </select>
+            Theme:
+            <select bind:value={selectedTheme}>
+                {#each themes as [theme_name, theme_id]}
+                    <option value={theme_id}>{theme_name}</option>
+                {/each}
+            </select>
+        </div>
     </div>
 
     <div class="playground">
         <div class="editor">
             <div class="editor-container">
-                <div id="code-editor" contenteditable="true"></div>
+                <div id="code-editor"></div>
             </div>
 
             <div id="console">
@@ -197,7 +249,21 @@ while_loop(() => c < 10, () {
             <div id="sketch" />
         </div>
     </div>
+    
+    <div class="docs-window" on:mousedown={startDrag} style={`
+        left: ${docsPos.x}px;
+        top: ${docsPos.y}px;
+        display: ${viewingDocs ? "inline" : "none"};
+    `}>
+        <embed class="docs" src="https://spu7nix.net/spwn/#" on:mouseup={() => dragging = false} style={`pointer-events: ${dragging ? "none" : "all"};`}>
+    </div>
+    
+    
+
+    
 </div>
+
+<svelte:window on:mouseup={() => dragging = false} on:mousemove={drag} />
 
 <P5 sketch={triggerSketch} />
 
@@ -214,6 +280,39 @@ while_loop(() => c < 10, () {
         flex-direction: column;
         box-sizing: border-box;
     }
+
+    .docs-window {
+        position: absolute;
+        width: 50vw;
+        height: 80vh;
+        padding: 40px 6px 6px 6px;
+        background-color: rgba(75, 69, 87, 0.5);
+        border: 1px solid #fff2;
+        border-radius: 24px;
+        z-index: 1000;
+        box-shadow: 8px 8px 36px 3px rgba(0, 0, 0, 0.637);
+        backdrop-filter: blur(6px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        font-family: 'Source Code Pro', monospace;
+        font-size: 24px;
+        gap: 100px;
+        font-weight: 600;
+        text-align: center;
+        box-sizing: border-box;
+
+    }
+
+    .docs {
+        width: 100%;
+        height: 100%;
+        border-radius: 18px;
+        border: 1px solid #fff2;
+        box-sizing: border-box;
+    }
+
 
     .simulation {
         height: 100%;
@@ -250,16 +349,67 @@ while_loop(() => c < 10, () {
         padding: 8px;
         border: 2px solid #3b3b3b;
         box-shadow: 3px 3px 10px 0px #0005;
-        /* background-color: #0002; */
+        /* background-color: #0003; */
         resize: none;
-        color:rgba(255, 255, 255, 0.886);
+        /* color:rgba(255, 255, 255, 0.886); */
         font-family: 'Source Code Pro', monospace;
         font-size: 16px;
-        font-weight: 0;
+        font-weight: 600;
     }
 
+    .header-right {
+        margin: 0 0 0 0;
+        padding: 0;
+        margin-left: auto;
+        font-family: 'Source Code Pro', monospace;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    .header-right > select {
+        margin: 0;
+        padding: 0;
+        color: white;
 
+        font-family: 'Source Code Pro', monospace;
+        font-size: 16px;
+        font-weight: 600;
+        background-color: #fff3;
+        border: none;
+    }
 
+    option {
+        margin: 0;
+        padding: 0;
+        color: black;
+
+        font-family: 'Source Code Pro', monospace;
+        font-size: 16px;
+        font-weight: 600;
+        background-color: transparent;
+        border: none;
+    }
+
+    .docs-button {
+        margin: 0;
+        padding: 3px 6px 3px 6px;
+        margin: 0 0 1px 0;
+        background-color: #fff4;
+        color: white;
+        font-weight: 600;
+        font-family: 'Source Code Pro', monospace;
+        box-shadow: 3px 3px 10px 0px #0005;
+        border-radius: 6px;
+        border: none;
+        transition: 0.1s all;
+    }
+
+    .docs-button:hover {
+        background-color: #fff6;
+    }
+    .docs-button:active {
+        background-color: #fff2;
+    }
+    
     .logo {
         display: block;
         transition: 0.5s all;
@@ -294,7 +444,7 @@ while_loop(() => c < 10, () {
 
     .playground {
         width: 100%;
-        height: calc(100% - 53px);
+        height: 100%;
         background-color: rgb(20, 20, 26);
         display: flex;
         flex-direction: row;
@@ -336,27 +486,28 @@ while_loop(() => c < 10, () {
     input[type="checkbox"] {
         margin: 0;
         padding: 0;
-    }
+    } 
 
-    * ::-webkit-scrollbar {
+    ::-webkit-scrollbar {
         width: 10px;
     }
+    :global(.ace_scrollbar-v) {
+        display: none;
+    }
 
-    * ::-webkit-scrollbar-track {
+    ::-webkit-scrollbar-track {
         background: rgba(255, 255, 255, 0.15);
         margin: 4px;
         border-radius: 10px;
     }
 
-    /* Handle */
-    * ::-webkit-scrollbar-thumb {
+    ::-webkit-scrollbar-thumb {
         background: rgba(255, 255, 255, 0.486);
         border-radius: 10px;
         transition: 0.2s all;
     }
 
-    /* Handle on hover */
-    * ::-webkit-scrollbar-thumb:hover {
+    ::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.886);
     }
     

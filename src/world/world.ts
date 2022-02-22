@@ -29,8 +29,9 @@ class MoveCommand {
         public moveX: number,
         public moveY: number,
         public duration: number,
+        public easingFunc: Function,
         public startTime: number
-    ) {}
+    ) {console.log(this.easingFunc)}
 
     getDisplacement(
         time: number
@@ -39,6 +40,7 @@ class MoveCommand {
         if (this.duration === 0) {
             lerp = 1;
         }
+        lerp = this.easingFunc(lerp)
         let newVec = {
             x: this.moveX * lerp,
             y: this.moveY * lerp,
@@ -205,6 +207,7 @@ class World {
         moveX: number,
         moveY: number,
         duration: number,
+        easingFunc: Function,
     ) {
         if (!(groupID in this.groupIDs))
             return
@@ -215,6 +218,7 @@ class World {
                 moveX,
                 moveY,
                 duration,
+                easingFunc,
                 this.time
             )
         )

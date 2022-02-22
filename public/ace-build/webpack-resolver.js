@@ -205,6 +205,7 @@ ace.config.setModuleUrl('ace/mode/xquery', require('file-loader?esModule=false!.
 ace.config.setModuleUrl('ace/mode/yaml', require('file-loader?esModule=false!./src-noconflict/mode-yaml.js'))
 ace.config.setModuleUrl('ace/mode/zeek', require('file-loader?esModule=false!./src-noconflict/mode-zeek.js'))
 
+ace.config.setModuleUrl('ace/theme/MaterialOceanHighContrast', require('file-loader?esModule=false!./src-noconflict/theme-MaterialOceanHighContrast.js'))
 ace.config.setModuleUrl('ace/theme/ambiance', require('file-loader?esModule=false!./src-noconflict/theme-ambiance.js'))
 ace.config.setModuleUrl('ace/theme/chaos', require('file-loader?esModule=false!./src-noconflict/theme-chaos.js'))
 ace.config.setModuleUrl('ace/theme/chrome', require('file-loader?esModule=false!./src-noconflict/theme-chrome.js'))

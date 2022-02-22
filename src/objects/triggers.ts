@@ -23,7 +23,7 @@ class ToggleTrigger extends OutputTrigger {
     target: number = 0;
     activate: boolean = false;
     draw(p5: any, world: World) {
-        draw_trigger(p5, this.activate ? [30, 255, 30] : [255, 30, 30], "Toggle", `${this.target}`, this.lastTrigger)
+        draw_trigger(p5, world, this, this.activate ? [30, 255, 30] : [255, 30, 30], "Toggle", `${this.target}`)
     }
     trigger(world: World) {
         world.toggleGroupID(this.target, this.activate)
@@ -36,25 +36,44 @@ class MoveTrigger extends OutputTrigger {
     moveX: number = 0;
     moveY: number = 0;
     moveTime: number = 0;
+    easingFunc: Function = x => x;
+
+    useTarget: boolean = false;
+    moveToID: number = 0;
+    moveAxes: number = 0;
+
 
     draw(p5: any, world: World) {
-        draw_trigger(p5, [91, 38, 175], "Move", `${this.target}`, this.lastTrigger)
+        draw_trigger(p5, world, this, [91, 38, 175], "Move", `${this.target}`)
     }
 
     trigger(world: World) {
-        world.addMoveCommand(
-            this.target, 
-            this.moveX, 
-            this.moveY, 
-            this.moveTime,
-        )
+        if (!this.useTarget) {
+            world.addMoveCommand(
+                this.target,
+                this.moveX,
+                this.moveY,
+                this.moveTime,
+                this.easingFunc,
+            )
+        } else if (world.groupIDs[this.target].objects.length == 1 && world.groupIDs[this.moveToID].objects.length == 1) {
+            let targetObject = world.objects[world.groupIDs[this.target].objects[0]];
+            let toObject = world.objects[world.groupIDs[this.moveToID].objects[0]];
+            world.addMoveCommand(
+                this.target,
+                (this.moveAxes == 0 || this.moveAxes == 1) ? (toObject.pos.x - targetObject.pos.x) : 0,
+                (this.moveAxes == 0 || this.moveAxes == 2) ? (toObject.pos.y - targetObject.pos.y) : 0,
+                this.moveTime,
+                this.easingFunc,
+            )
+        }
     }
 }
 
 class SpawnTrigger extends FunctionTrigger {
     delay: number = 0;
     draw(p5: any, world: World) {
-        draw_trigger(p5, [62, 173, 119], "Spawn", `${this.delay}`.replace(/\.?0*$/,''), this.lastTrigger)
+        draw_trigger(p5, world, this, [62, 173, 119], "Spawn", `${this.delay}`.replace(/\.?0*$/,''))
     }
 
     spawn(world: World) {
@@ -82,7 +101,7 @@ class PickupTrigger extends OutputTrigger {
     amount: number = 0;
     
     draw(p5: any, world: World) {
-        draw_trigger(p5, [247, 151, 25], "Pickup", `${this.itemID}i${this.amount >= 0 ? "+" : ""}${this.amount}`, this.lastTrigger)
+        draw_trigger(p5, world, this, [247, 151, 25], "Pickup", `${this.itemID}i${this.amount >= 0 ? "+" : ""}${this.amount}`)
     }
     trigger(world: World): void {
         world.changeItemID(this.itemID, this.amount)
@@ -100,7 +119,7 @@ class InstantCountTrigger extends FunctionTrigger {
 
     draw(p5: any, world: World) {
         let cmp: string = this.cmpType == Cmp.EQUAL ? "=" : this.cmpType == Cmp.LESSER ? "<" : ">";
-        draw_trigger(p5, [245, 137, 137], "IC", `${this.itemID}i${cmp}${this.amount}`, this.lastTrigger)
+        draw_trigger(p5, world, this, [245, 137, 137], "IC", `${this.itemID}i${cmp}${this.amount}`)
         const d = new Date();
         const time = d.getTime();
         const flashlen = 300

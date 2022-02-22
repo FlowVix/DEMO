@@ -185,6 +185,18 @@ const createObject = (
                                     case Constants.OBJ_PROPS.DURATION:
                                         obj.moveTime = parseFloat(props[i])
                                         break;
+                                    case Constants.OBJ_PROPS.EASING:
+                                        obj.easingFunc = Object.values(Constants.EASING_FUNCS)[ parseFloat(props[i]) ]
+                                        break;
+                                    case Constants.OBJ_PROPS.USE_TARGET:
+                                        obj.useTarget = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.TARGET_POS:
+                                        obj.moveToID = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.TARGET_POS_AXES:
+                                        obj.moveAxes = parseInt(props[i])
+                                        break;
                                 }
                             } else if (obj instanceof SpawnTrigger) {
                                 switch (parseInt(i)) {

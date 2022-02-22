@@ -12,7 +12,6 @@ class GDObject {
         y: number,
     } = {x: 1, y: 1}
     rotation: number = 0;
-
     disables: number = 0;
     groups: number[] = [];
 
@@ -24,7 +23,7 @@ class GDObject {
         this.disables += 1
     }
     toggleOn() {
-        this.disables -= 1
+        if (this.disables > 0) this.disables -= 1
     }
 
     drawFull(p5: any, world: World) {
