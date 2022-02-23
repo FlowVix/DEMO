@@ -16,7 +16,7 @@
     import P5 from "p5-svelte"
     import World from "./world/world"
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
-    import worldSketch from "./sketch/sketch"
+    import {worldSketch} from "./sketch/sketch"
     import { createObject } from "./world/objectHandler"
 
     export let run_spwn
@@ -78,9 +78,10 @@
     import { Trigger } from "./objects/triggers"
     
     const [triggerSketch, updateBodies] = triggerGraphSketch(world)
-    const gdWorldSketch = worldSketch(world)
+    const [gdWorldSketch] = worldSketch(world)
 
     import def_examples from "./examples"
+    import {setG5} from './gp5'
     let examples = def_examples
     
     let current_example = Object.keys(def_examples)[0]
@@ -97,6 +98,11 @@
             return
         }
 
+        
+
+
+        lvlStr = ""
+        
         world.reset()
         lvlStr
             .split(";")
@@ -231,6 +237,14 @@
 // awesome
     let maximized = false;
 
+
+    let globalP5 = (p5) => {
+        p5.setup = () => {
+            setG5(p5)
+        }
+    }
+    
+
 </script>
 
 <!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
@@ -250,7 +264,7 @@
         >
         <span class="logo-text">SPWN Playground</span>
         <input type="file" accept=".spwn" style="display: none" bind:this={importFile} bind:files={importedFile} on:change={fileImported} />
-        <button class="header-button" on:click={()=>viewingDocs=!viewingDocs}>{viewingDocs ? "Close Docs" : "Open Docs"}</button>
+        <button class="header-button" on:click={()=>{viewingDocs=!viewingDocs}}>{viewingDocs ? "Close Docs" : "Open Docs"}</button>
         <button class="header-button" on:click={importFile.click()}>Import .spwn</button>
         <button class="header-button" on:click={()=>{maximized=!maximized; setTimeout(() => {codeEditor.resize()}, 10)}}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button>
         <a style="margin: 0; padding: 0;" href="https://github.com/Spu7Nix/SPWN-language">
@@ -328,6 +342,7 @@
     <P5 sketch={triggerSketch} />
     <P5 sketch={gdWorldSketch} />
 {/if}
+<P5 sketch={globalP5} />
 
 <style>
     .everything {

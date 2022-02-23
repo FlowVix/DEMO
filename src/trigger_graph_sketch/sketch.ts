@@ -194,7 +194,6 @@ const triggerGraphSketch = (
         }
 
         let tmouse = {x:0, y:0};
-    
         
         p5.setup = () => {
             cnv = p5.createCanvas(400, 400);

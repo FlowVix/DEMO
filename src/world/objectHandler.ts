@@ -26,7 +26,7 @@ import {
     CollisionObject
 } from "../objects/special"
 import {
-    Block
+    Regular
 } from "../objects/regular"
 
 
@@ -133,7 +133,7 @@ const createObject = (
             obj = new CollisionObject(0, 0, idx)
             break;
 		default:
-			obj = new Block(0, 0, idx)
+			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]))
             break;
     }
 
@@ -154,7 +154,7 @@ const createObject = (
                 obj.scale.y = props[i] ? (-1) : 1
                 break;
             case Constants.OBJ_PROPS.ROTATION:
-                obj.rotation = parseFloat(props[i])
+                obj.rotation = -parseFloat(props[i])
                 break;
             case Constants.OBJ_PROPS.SCALING:
                 obj.scale.x *= parseFloat(props[i])
