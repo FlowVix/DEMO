@@ -14,16 +14,24 @@ class GDObject {
     rotation: number = 0;
     disables: number = 0;
     groups: number[] = [];
+    index: number
 
-    constructor(x: number, y: number) {
+    constructor(x: number, y: number, idx: number) {
         this.pos = {x, y}
-    }
+        this.index = idx
+    } // the test example works with optimisation off :oooooooh:
 
     toggleOff() {
         this.disables += 1
     }
     toggleOn() {
         if (this.disables > 0) this.disables -= 1
+    }
+
+    getTotalOpacity(world: World) {
+        let total = 1
+        this.groups.forEach((g) => total *= world.groupIDs[g].opacity)
+        return total
     }
 
     drawFull(p5: any, world: World) {

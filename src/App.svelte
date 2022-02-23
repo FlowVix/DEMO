@@ -1,4 +1,12 @@
-
+<!--  did you see the test example thing -->
+<!--  its supposed to toggle off the else case first -->
+<!-- its doing both -->
+<!-- yeah, isnt that just the wellknown gd quirk -->
+<!-- hm -->
+<!-- in the graph, are triggers orderered vertically after their order in world.objects? -->
+<!-- yes they are in their trigger order, from what ive seen -->
+<!--  they are in the correct order in the example -->
+<!-- ill debug the order they're triggered in -->
 
 <svelte:head>
     <script src="/ace-build/src-noconflict/ace.js" type="text/javascript" charset="utf-8" on:load={initializeEditor}></script>
@@ -70,6 +78,7 @@
     import { Trigger } from "./objects/triggers"
     
     const [triggerSketch, updateBodies] = triggerGraphSketch(world)
+    const gdWorldSketch = worldSketch(world)
 
     import def_examples from "./examples"
     let examples = def_examples
@@ -95,13 +104,13 @@
             .forEach((objStr) => {
                 world.objects.push(createObject(objStr, world, world.objects.length))
             })
-
+            // that quirk is kinda sick
         updateBodies(world)
 
         editor_console = txt
         is_showing_error = false
 
-        console.log(world.objects)
+        //console.log(world.objects)
 
     }
 
@@ -125,10 +134,15 @@
         })
         Object.keys(world.groupIDs).forEach((id) => {
             world.groupIDs[id].on = true
+            world.groupIDs[id].opacity = 1
         })
         world.objects.forEach((_, i) => {
             world.objects[i].disables = 0
         })
+        world.moveCommands = []
+        world.alphaCommands = {}
+        world.touchListeners = []
+
         world.objects.forEach((obj) => {
             if (obj instanceof Trigger && !obj.spawnTriggered) {
                 obj.trigger(world)
@@ -153,6 +167,7 @@
         codeEditor.moveCursorTo(0, 0)
         codeEditor.setShowPrintMargin(false)
         codeEditor.setKeyboardHandler('ace/keyboard/vscode');
+        codeEditor.setAutoScrollEditorIntoView(true);
         console.log(codeEditor.renderer)
     }
     
@@ -188,6 +203,34 @@
 
 
     run_code()
+
+    let importFile;
+    let importedFile;
+
+    const fileImported = () => {
+        console.log('a')
+        if (importedFile && importedFile.length > 0) {
+            let reader = new FileReader();
+            reader.readAsText(importedFile[0], "UTF-8")
+            reader.onload = function (evt) {
+                examples[current_example] = evt.target.result
+                codeEditor.setValue(examples[current_example]);
+            }
+        }
+    }
+// lol
+// i think they are going outside the quadtree
+// solution: make tree bigger
+// so the physics break down
+// oh interesting
+// adaptive tree :flushed:
+// im realizing that movement doesnt reset when you simulate again
+// should we store the amount a group has moves so it can be moved back
+// ig
+// i shall make touch trigger now
+// awesome
+    let maximized = false;
+
 </script>
 
 <!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
@@ -197,15 +240,25 @@
 <!-- yeah but the world sketch has an always running draw call accessing the world -->
 <!-- unless im not understanding, the triggerSketch code just runs once on creation -->
 
-
+<!-- yo sput -->
+<!-- i got an epic one -->
 
 <div class="everything">
     <div class="header">
-        <a href="https://spu7nix.net/spwn"
-            ><img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a
+        <a href="https://spu7nix.net/spwn">
+            <img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a
         >
         <span class="logo-text">SPWN Playground</span>
-        <button class="docs-button" on:click={()=>viewingDocs=!viewingDocs}>{viewingDocs ? "Close Docs" : "Open Docs"}</button>
+        <input type="file" accept=".spwn" style="display: none" bind:this={importFile} bind:files={importedFile} on:change={fileImported} />
+        <button class="header-button" on:click={()=>viewingDocs=!viewingDocs}>{viewingDocs ? "Close Docs" : "Open Docs"}</button>
+        <button class="header-button" on:click={importFile.click()}>Import .spwn</button>
+        <button class="header-button" on:click={()=>{maximized=!maximized; setTimeout(() => {codeEditor.resize()}, 10)}}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button>
+        <a style="margin: 0; padding: 0;" href="https://github.com/Spu7Nix/SPWN-language">
+            <img style="margin: 4px 0 0 0;" src="assets/images/github.png" alt="Github Icon" height="26" /></a
+        >
+        <a style="margin: 0; padding: 0;" href="https://discord.gg/kUzdUpNgZk">
+            <img style="margin: 4px 0 0 0;" src="assets/images/discord.svg" alt="Discord Icon" height="26" /></a
+        >
         <div class="header-right">
             Example:
             <select bind:value={current_example} on:change={() => {codeEditor.setValue(examples[current_example])}}>
@@ -228,26 +281,29 @@
                 <div id="code-editor"></div>
             </div>
 
-            <div id="console">
-                {@html ansiUp.ansi_to_html(editor_console)}
-            </div>
+            {#if !maximized}
+                <div id="console">
+                    {@html ansiUp.ansi_to_html(editor_console)}
+                </div>
 
-            <div class="buttons">
-                <button id="run_button" class="big-button" on:click={run_code}> build </button>
-                <button id="sim_button" class="big-button" style="background:#09493a" on:click={simulate_triggers}>
-                    simulate
-                </button>
-            </div>
-            <div class="optimize">
-                <input type="checkbox" bind:checked={optimize} />
-                Optimize Triggers
-            </div>
+                <div class="buttons">
+                    <button id="run_button" class="big-button" on:click={run_code}> build </button>
+                    <button id="sim_button" class="big-button" style="background:#09493a" on:click={simulate_triggers}>
+                        simulate
+                    </button>
+                </div>
+                <div class="optimize">
+                    <input type="checkbox" bind:checked={optimize} />
+                    Optimize Triggers
+                </div>
+            {/if}
         </div>
-
-        <div class="simulation">
-            <div id="trigger-graph-sketch" />
-            <div id="sketch" />
-        </div>
+        {#if !maximized}
+            <div class="simulation">
+                <div id="trigger-graph-sketch" />
+                <div id="sketch" />
+            </div>
+        {/if}
     </div>
     
     <div class="docs-window" on:mousedown={startDrag} style={`
@@ -255,7 +311,10 @@
         top: ${docsPos.y}px;
         display: ${viewingDocs ? "inline" : "none"};
     `}>
-        <embed class="docs" src="https://spu7nix.net/spwn/#" on:mouseup={() => dragging = false} style={`pointer-events: ${dragging ? "none" : "all"};`}>
+        <embed class="docs" src="https://spu7nix.net/spwn/#" on:mouseup={() => dragging = false} style={`
+            pointer-events: ${dragging ? "none" : "all"};
+            opacity: 0.98;
+        `}>
     </div>
     
     
@@ -265,9 +324,10 @@
 
 <svelte:window on:mouseup={() => dragging = false} on:mousemove={drag} />
 
-<P5 sketch={triggerSketch} />
-
-<P5 sketch={worldSketch(world)} />
+{#if !maximized}
+    <P5 sketch={triggerSketch} />
+    <P5 sketch={gdWorldSketch} />
+{/if}
 
 <style>
     .everything {
@@ -303,6 +363,8 @@
         text-align: center;
         box-sizing: border-box;
 
+        /* gonna go sleep now, gotta get some rest before i tackle those optimization bugs tommorow */
+
     }
 
     .docs {
@@ -327,7 +389,7 @@
     .editor-container {
         position: relative;
         width: 100%;
-        height: 75%;
+        height: 100%;
         font-family: 'Source Code Pro', monospace;
         font-size: 16px;
         font-weight: 600;
@@ -389,7 +451,7 @@
         border: none;
     }
 
-    .docs-button {
+    .header-button {
         margin: 0;
         padding: 3px 6px 3px 6px;
         margin: 0 0 1px 0;
@@ -403,10 +465,10 @@
         transition: 0.1s all;
     }
 
-    .docs-button:hover {
+    .header-button:hover {
         background-color: #fff6;
     }
-    .docs-button:active {
+    .header-button:active {
         background-color: #fff2;
     }
     
@@ -440,6 +502,7 @@
 
         font-family: "Source Code Pro", monospace;
         color: #efefef;
+        box-sizing: border-box;
     }
 
     .playground {
@@ -491,9 +554,9 @@
     ::-webkit-scrollbar {
         width: 10px;
     }
-    :global(.ace_scrollbar-v) {
+    /* :global(.ace_scrollbar-v) {
         display: none;
-    }
+    } */
 
     ::-webkit-scrollbar-track {
         background: rgba(255, 255, 255, 0.15);
@@ -512,7 +575,7 @@
     }
     
     #console {
-        height: 40%;
+        height: 50%;
         line-height: 20px;
         color: white;
         background: black;
@@ -524,8 +587,6 @@
 
         padding: 10px;
         font-size: 16px;
-        min-height: 100px;
-        max-height: 500px;
         overflow-x: auto;
         white-space: pre-wrap;
         white-space: -moz-pre-wrap;
@@ -535,6 +596,7 @@
 
         box-shadow: 3px 3px 10px 0px #0005;
     }
+    /*  you can now counter multiply without everyithing going to shit :DDD */
     .big-button {
         width: 100%;
         height: 60px;

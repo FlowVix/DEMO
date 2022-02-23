@@ -1,9 +1,9 @@
 
 import P5 from 'p5-svelte';
-import { FunctionTrigger, SpawnTrigger, ToggleTrigger, Trigger } from '../objects/triggers';
+import { FunctionTrigger, SpawnTrigger, StopTrigger, ToggleTrigger, Trigger } from '../objects/triggers';
 import type World from '../world/world';
 import {QuadTree, Box, Point, Circle} from 'js-quadtree';
-import Body, { GROUP_OBJ_SPACING } from './graph';
+import Body, { COLLAPSE_LEN, GROUP_OBJ_SPACING } from './graph';
 
 export type BodyIdx = number;
 export type BodyChildIdx = number;
@@ -71,10 +71,10 @@ const triggerGraphSketch = (
         // get spawn groups
         world.objects.forEach((obj, idx) => {
             if (obj instanceof Trigger) {
-                if (obj instanceof FunctionTrigger) {
-                    const targets = world.groupIDs[obj.target];
+                if (obj.kind instanceof FunctionTrigger) {
+                    const targets = world.groupIDs[obj.kind.target];
                     if (targets) {
-                        spawn_groups.add(obj.target)
+                        spawn_groups.add(obj.kind.target)
                     }
                 }
             }
@@ -134,8 +134,8 @@ const triggerGraphSketch = (
         bodies.forEach((body, idx) => {
             body.objs.forEach((obj, child_idx) => {
                 const object = world.objects[obj]
-                if (object instanceof FunctionTrigger) {
-                    const targets = world.groupIDs[object.target];
+                if (object instanceof Trigger && object.kind instanceof FunctionTrigger) {
+                    const targets = world.groupIDs[object.kind.target];
                     if (targets) {
                         targets.objects.forEach(target => {
                             const target_body_idx = obj_to_body_idx[target][0]
@@ -159,9 +159,10 @@ const triggerGraphSketch = (
         // Specify a custom method to compare point for removal (default: (point1, point2) => point1.x === point2.x && point1.y === point2.y).
         //arePointsEqual: (point1, point2) => point1.data.foo === point2.data.foo      
     };
-
+    
+    // touch triggers? collision? color triggers?? pulse?
     const affectBodies = (bodies: Body[], graph: Graph, reverse_graph: ReverseGraph, tmouse) => {
-        let qtree = new QuadTree(new Box(-5000, -5000, 10000, 10000), qtree_config);
+        let qtree = new QuadTree(new Box(-5000, -5000, 100000, 10000), qtree_config);
         bodies.forEach((body, i) => {
             qtree.insert(new Point(body.pos.x, body.pos.y, i));
         })
@@ -192,7 +193,7 @@ const triggerGraphSketch = (
             }
         }
 
-        let tmouse;
+        let tmouse = {x:0, y:0};
     
         
         p5.setup = () => {
@@ -246,11 +247,21 @@ const triggerGraphSketch = (
         let prevMousePos = {x: 0, y: 0};
     
         p5.mousePressed = () => {
+            if (p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height) return
 
             for (let i = 0; i < bodies.length; i++) {
+                const y_offset = bodies[i].collapsible ? -8 : 0
+                const height_offset = ((bodies[i].collapsible && bodies[i].collapsed) ? 34 : 26) - y_offset
+                const height = GROUP_OBJ_SPACING * (bodies[i].child_num() - 1)
+                const trigger_button_h = height + height_offset + y_offset
+                
                 if (bodies[i].contains(tmouse)) {
                     bodies[i].selected = true;
                     is_selecting = true;
+                } else if (tmouse.y > bodies[i].pos.y + trigger_button_h - 5 && tmouse.y < bodies[i].pos.y + trigger_button_h + 5 && Math.abs(tmouse.x - bodies[i].pos.x) < 10) {
+                    world.spawnObjects(bodies[i].objs)
+                } else if (bodies[i].collapsible && tmouse.y < bodies[i].pos.y && tmouse.y > bodies[i].pos.y - 20 && Math.abs(tmouse.x - bodies[i].pos.x) < 4) {
+                    bodies[i].collapsed = !bodies[i].collapsed;
                 }
             }
 
@@ -326,6 +337,8 @@ const triggerGraphSketch = (
 
             bodies.forEach(body => {
                 // if spawn triggered
+                const y_offset = body.collapsible ? -8 : 0
+                const height_offset = ((body.collapsible && body.collapsed) ? 34 : 26) - y_offset
                 if (!body.pinned) {
                     p5.push()
                     p5.translate(body.connection_point().x, body.connection_point().y)
@@ -335,8 +348,9 @@ const triggerGraphSketch = (
                     p5.pop()
                 }
 
-                body.objs.forEach((obj, idx) => {
-                    if (world.objects[obj] instanceof FunctionTrigger) {
+                for (let idx = 0; idx < body.objs.length; idx++) {
+                    const object = world.objects[body.objs[idx]]
+                    if (object instanceof Trigger && object.kind instanceof FunctionTrigger) {
                         p5.push()
                         const output_point = body.output_point(idx)
                         p5.translate(output_point.x, output_point.y)
@@ -344,8 +358,13 @@ const triggerGraphSketch = (
                         p5.noStroke()
                         p5.ellipse(-0, -0, 6, 6)
                         p5.pop()
+                        // only draw bottom output once
+                        if (idx > body.child_num()) {
+                            break
+                        }
                     }
-                })
+                }
+
 
                 p5.push()
                 p5.translate(body.pos.x, body.pos.y)
@@ -354,113 +373,185 @@ const triggerGraphSketch = (
                 p5.strokeWeight(2)
                 p5.stroke(50, 50, 50)
                 p5.fill(30, 30, 30)
-                p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
-                body.objs.forEach(obj => {
+                const height = GROUP_OBJ_SPACING * (body.child_num() - 1)
+
+                p5.rect(-13, -13 + y_offset, 26, height_offset + height, 3, 3, 3, 3)
+                p5.fill(50, 50, 50)
+                p5.noStroke()
+                p5.textAlign(p5.CENTER, p5.CENTER)
+                // console.log(body, body.collapsible)
+                if (body.collapsed && body.collapsible) {
+                    p5.textSize(7)
+                    p5.fill(100, 100, 100)
+                    p5.text(`...${body.objs.length - COLLAPSE_LEN}`, 0, 15 + height)
+
+                    p5.fill(50, 50, 50)
+                    p5.triangle(-3, -16, 3, -16, 0, -13)
+                } else if (body.collapsible) {
+                    p5.triangle(-3, -13, 3, -13, 0, -16)
+                }
+
+                const trigger_button_h = height + height_offset + y_offset
+                const hover = tmouse.y > body.pos.y + trigger_button_h - 5 && tmouse.y < body.pos.y + trigger_button_h + 5 && Math.abs(tmouse.x - body.pos.x) < 10
+
+                p5.fill(50, 150, 50, hover ? 255 : 50)
+                p5.stroke(100, 255, 100, hover ? 255 : 50)
+                p5.strokeWeight(1)
+                
+                p5.triangle(-3, trigger_button_h - 5, -3, trigger_button_h + 1, 3, trigger_button_h - 2)
+                // poggers momentus
+                // time to make mastergame example
+                for (let i = 0; i < body.child_num(); i++) {
+                    const obj = body.objs[i]
                     p5.push()
                     p5.scale(0.7)
                     world.objects[obj].draw(p5, world)
                     p5.pop()
                     p5.translate(0, GROUP_OBJ_SPACING)
-                })
+                }
                 
                 p5.pop()
                 if (body.pinned) {
                     p5.strokeWeight(1)
                     p5.stroke(255, 0, 0, 150)
                     p5.noFill()
-                    p5.rect(-13, -13, 26, 26 + GROUP_OBJ_SPACING * (body.objs.length - 1), 3, 3, 3, 3)
+                    p5.rect(-13, -13 + y_offset, 26, height_offset + height, 3, 3, 3, 3)
                 }
                 if (body.selected) {
                     p5.strokeWeight(1)
                     p5.stroke(0, 100, 255, 200)
                     p5.noFill()
-                    p5.rect(-15, -15, 30, 30 + GROUP_OBJ_SPACING * (body.objs.length - 1), 5, 5, 5, 5)
+                    p5.rect(-15, -15 + y_offset, 30, height_offset + height + 4, 5, 5, 5, 5)
                 }
                 p5.pop()
             })
+            // hot sex
+            const MAX_ARROWS = 3000
+            let arrow_count = 0;
+            (() => {
+                for (let body_idx = 0; body_idx < bodies.length; body_idx++) {
+                    let bottom_done = new Set()
 
-            for (let body_idx = 0; body_idx < bodies.length; body_idx++) {
-                for (let child_idx = 0; child_idx < bodies[body_idx].objs.length; child_idx++) {
+                    for (let child_idx = 0; child_idx < bodies[body_idx].objs.length; child_idx++) {
 
-                    const body = bodies[body_idx]
-                    const obj = world.objects[body.objs[child_idx]]
+                        const body = bodies[body_idx]
+                        const obj = world.objects[body.objs[child_idx]]
+                        const bottom: boolean = child_idx >= body.child_num()
 
-                    if (graph[body_idx] && graph[body_idx][child_idx]) {
-                        graph[body_idx][child_idx].forEach(other_body => {
-                            const body2 = bodies[other_body]
-                            
-                            
-                            p5.strokeWeight(1)
-                            
-                            const flashlen = 700;
-                            let time_since_last_spawn = obj instanceof FunctionTrigger ? 
-                                (obj instanceof SpawnTrigger ? 
-                                    time - (obj.last_spawn + obj.delay * 1000)
-                                    : (time - obj.last_spawn))
-                                : Infinity;
-                            if (time_since_last_spawn < 0) time_since_last_spawn = Infinity;
+                        if (graph[body_idx] && graph[body_idx][child_idx]) {
+                            graph[body_idx][child_idx].forEach(other_body => {
+                                if (!(bottom && bottom_done.has(other_body))) {
+                                    if (bottom)
+                                        bottom_done.add(other_body)
 
-                            if (time_since_last_spawn < flashlen) {
-                                const progress = time_since_last_spawn / flashlen;
-                                p5.fill(255 * progress, 255, 255 * progress)
-                                p5.stroke(255 * progress, 255, 255 * progress)
-                            } else {
-                                p5.fill(255)
-                                p5.stroke(255)
-                            }
-                            const output_point = body.output_point(child_idx)
-                            const input_point = body2.connection_point()
-                            arrow(p5, output_point.x, output_point.y, input_point.x, input_point.y)
-            
-                            if (obj instanceof SpawnTrigger) {
-                                if (time - obj.last_spawn < obj.delay * 1000) {
-                                    const progress = (time - obj.last_spawn) / (obj.delay * 1000)
+                                    const body2 = bodies[other_body]
                                     
-                                    p5.stroke(0, 255, 255, 200)
-                                    p5.strokeWeight(3)
-                                    p5.fill(0, 255, 255, 200)
-                                    arrow(
-                                        p5, 
-                                        output_point.x, 
-                                        output_point.y, 
-                                        input_point.x, 
-                                        input_point.y,
-                                        progress,
-                                    )       
+                                    p5.strokeWeight(1)
+                                    
+                                    const flashlen = 700;
+                                    let time_since_last_spawn = obj instanceof Trigger && obj.kind instanceof FunctionTrigger ? 
+                                        (obj instanceof SpawnTrigger ? 
+                                            time - (obj.kind.last_spawn + obj.delay * 1000)
+                                            : (time - obj.kind.last_spawn))
+                                        : Infinity;
+                                    if (time_since_last_spawn < 0) time_since_last_spawn = Infinity;
+
+                                    if (time_since_last_spawn < flashlen) {
+                                        const progress = time_since_last_spawn / flashlen;
+                                        p5.fill(255 * progress, 255, 255 * progress)
+                                        p5.stroke(255 * progress, 255, 255 * progress)
+                                    } else {
+                                        p5.fill(255)
+                                        p5.stroke(255)
+                                    } // yo sput because if you change example you shouldnt lose all the stuff you did yes
+                                    
+                                    
+                                    const output_point = body.output_point(child_idx)
+                                    const input_point = body2.connection_point()
+                                    arrow(p5, output_point.x, output_point.y, input_point.x, input_point.y)
+                                    arrow_count++
+                                    if (arrow_count > MAX_ARROWS) return
+                    
+                                    if (obj instanceof SpawnTrigger) {
+                                        if (time - obj.kind.last_spawn < obj.delay * 1000) {
+                                            const progress = (time - obj.kind.last_spawn) / (obj.delay * 1000)
+                                            
+                                            p5.stroke(0, 255, 255, 200)
+                                            p5.strokeWeight(3)
+                                            p5.fill(0, 255, 255, 200)
+                                            arrow(
+                                                p5, 
+                                                output_point.x, 
+                                                output_point.y, 
+                                                input_point.x, 
+                                                input_point.y,
+                                                progress,
+                                            )       
+                                            arrow_count++
+                                            if (arrow_count > MAX_ARROWS) return
+                                        }
+                                    }
                                 }
-                            }
-                        })
-                    }
-
-                    // toggle trigger arrows
-                    if (obj instanceof ToggleTrigger) {
-                        p5.strokeWeight(1)
-                        p5.noFill()
-                        const p1 = {
-                            x: body.pos.x,
-                            y: body.pos.y + GROUP_OBJ_SPACING * child_idx
-                        }
-                        let prog = 1 - Math.max(0.5 - (time - obj.lastTrigger) / 1000, 0);;
-                        if (obj.activate) {
-                            p5.stroke(255 * prog, 255, 255 * prog, 20)
-                        } else {
-                            p5.stroke(255, 255 * prog, 255 * prog, 20)
-                        }
-
-                        // epic 
-                        
-                        if (bodies_per_group[obj.target]) {
-                            bodies_per_group[obj.target].forEach(body2idx => {
-                                const body2 = bodies[body2idx]
-                                const p2 = bodies[body2idx].connection_point()
-
-                                arrow(p5, p1.x, p1.y, p2.x, p2.y)
                             })
+                            if (arrow_count > MAX_ARROWS) return
                         }
-                    }
 
+                        // toggle trigger arrows
+                        if (child_idx < body.child_num() && (obj instanceof ToggleTrigger || obj instanceof StopTrigger)) {
+                            p5.strokeWeight(1)
+                            p5.noFill()
+                            const p1 = {
+                                x: body.pos.x,
+                                y: body.pos.y + GROUP_OBJ_SPACING * child_idx
+                            }
+                            let prog = 1 - Math.max(0.5 - (time - obj.lastTrigger) / 1000, 0);;
+                            if (obj instanceof ToggleTrigger && obj.activate) {
+                                p5.stroke(255 * prog, 255, 255 * prog, 20)
+                            } else {
+                                p5.stroke(255, 255 * prog, 255 * prog, 20)
+                            }
+                            
+                            if (bodies_per_group[obj.target]) {
+                                bodies_per_group[obj.target].forEach(body2idx => {
+                                    const body2 = bodies[body2idx]
+                                    const p2 = bodies[body2idx].connection_point()
+
+                                    arrow(p5, p1.x, p1.y, p2.x, p2.y)
+                                    arrow_count++
+                                    if (arrow_count > MAX_ARROWS) return
+                                })
+                                if (arrow_count > MAX_ARROWS) return
+                            } else if (world.groupIDs[obj.target]) {
+                                world.groupIDs[obj.target].objects.forEach(obj2idx => {
+                                    const [bodyidx, child_idx] = obj_to_body_idx[obj2idx]
+                                    const body2 = bodies[bodyidx]
+                                    if (child_idx < body2.child_num()) {
+                                        const p2 = {
+                                            x: body2.pos.x,
+                                            y: body2.pos.y + GROUP_OBJ_SPACING * child_idx
+                                        }
+                                        arrow(p5, p1.x, p1.y, p2.x, p2.y)
+                                        arrow_count++
+                                        if (arrow_count > MAX_ARROWS) return
+                                    }
+                                })
+                                if (arrow_count > MAX_ARROWS) return
+                            } // ok wait but what does dual mode actually do cuz so far it just seems to be limiting touch input to 1 player
+                        } // yea thats what it does
+                        // its kinda stupid but dual off means both dual and non dual work
+                        // but i dont rly get what it is supposed to do
+                        
+                        // mouse click activates both dual touch triggers and normal ones | this is actually not  | ok nerd
+                        // mouse click acts like a tap and it does different things depending on the half of the screen
+                        // space bar only activates dual touch triggers :sunglaseerdnmvhjfghfjgh jh
+                        
+                        
+                        // wait you mean like touch triggers linked to other touch triggers?
+
+                        // oh yeah i rember now thanke np
+                    }
                 }
-            }
+            })()
     
             p5.pop()
 

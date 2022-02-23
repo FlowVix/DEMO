@@ -2,7 +2,7 @@
 import P5 from 'p5-svelte';
 import type World from '../world/world';
 import type GDObject from '../objects/object'
-import { InstantCountTrigger, SpawnTrigger } from '../objects/triggers';
+import { InstantCountTrigger, SpawnTrigger, TouchMode } from '../objects/triggers';
 
 
 interface Vector {
@@ -29,6 +29,38 @@ const worldSketch = (
 
     let p5div, cnv;
 
+    let pressingInput1 = false;
+    let pressingInput2 = false;
+
+    const activateListeners = (activate: boolean, touch2: boolean) => {
+        if (touch2) pressingInput2 = activate
+        else pressingInput1 = activate
+
+        world.touchListeners.forEach((tl) => {
+            if (tl.dualMode && touch2) return
+            if ((!tl.holdMode) && (!activate)) return
+            switch (tl.touchMode) {
+                case TouchMode.Normal:
+                    world.toggleGroupID(tl.groupID, !world.groupIDs[tl.groupID].on)
+                    break;
+                case TouchMode.On:
+                    world.toggleGroupID(tl.groupID, activate)
+                    break;
+                case TouchMode.Off:
+                    world.toggleGroupID(tl.groupID, !activate)
+                    break;
+            }
+            if (world.groupIDs[tl.groupID].on) {
+                world.spawnGroupID(tl.groupID)
+            }
+        })
+    }
+
+
+    const mouseInside = (left = 0, right = p5.width, top = 0, bottom = p5.height): boolean => {
+        return !(p5.mouseX < left || p5.mouseX > right || p5.mouseY < top || p5.mouseY > bottom)
+    }
+
     p5.preload = () => {
         const PUSAB_FONT = p5.loadFont('assets/fonts/pusab.otf');
     }
@@ -40,67 +72,97 @@ const worldSketch = (
     };
 
     p5.keyPressed = () => {
-        if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height))
+        if (mouseInside())
             switch (p5.keyCode) {
-                case 37:
+                case 65:
                     cameraMove.x -= CAMERA_SPEED;
                     break;
                 
-                case 38:
+                case 87:
                     cameraMove.y += CAMERA_SPEED;
                     break;
                     
-                case 39:
+                case 68:
                     cameraMove.x += CAMERA_SPEED;
                     break;
                 
-                case 40:
+                case 83:
                     cameraMove.y -= CAMERA_SPEED;
                     break;
 
-                case 69:
-                    console.log(JSON.stringify(world.moveCommands))
+                case 38:
+                    activateListeners(true, false)
                     break;
 
-                case 83:
-                    console.log(JSON.stringify(world.scheduled_spawns))
+                case 32:
+                    activateListeners(true, true)
                     break;
             }
     }
     p5.keyReleased = () => {
         switch (p5.keyCode) {
-            case 37:
+            case 65:
                 cameraMove.x = 0;
                 break;
             
-            case 38:
+            case 87:
                 cameraMove.y = 0;
                 break;
                 
-            case 39:
+            case 68:
                 cameraMove.x = 0;
                 break;
             
-            case 40:
+            case 83:
                 cameraMove.y = 0;
+                break;
+            
+            case 38:
+                activateListeners(false, false)
+                break;
+
+            case 32:
+                activateListeners(false, true)
                 break;
         }
     }
-
+    // the buttons do be on top of eachother
     let dragging = false;
     let prevCameraPos = {x: 0, y: 0};
     let prevMousePos = {x: 0, y: 0};
     p5.mousePressed = () => {
-        dragging = true;
-        [prevCameraPos.x, prevCameraPos.y] = [cameraPos.x, cameraPos.y];
-        prevMousePos.x = p5.mouseX;
-        prevMousePos.y = p5.mouseY;
+        console.log(p5.mouseX, p5.mouseY)
+
+        if (mouseInside(15, 15+140, 15, 15+50)) {
+            activateListeners(true, false)
+            return
+        }
+
+        if (mouseInside(15, 15+140, 15+60, 15+50+60)) {
+            activateListeners(true, true)
+            return
+        }
+
+        if (mouseInside()) {
+            dragging = true;
+            [prevCameraPos.x, prevCameraPos.y] = [cameraPos.x, cameraPos.y];
+            prevMousePos.x = p5.mouseX;
+            prevMousePos.y = p5.mouseY;
+        }
     }
     p5.mouseReleased = () => {
         dragging = false;
+        if (pressingInput1) {
+            activateListeners(false, false)
+        }
+        if (pressingInput2) {
+            activateListeners(false, true)
+        }
     }
 
     p5.draw = () => {
+        
+        //console.log(p5div)
 
         cnv.position(
             p5div.offsetLeft,
@@ -113,7 +175,7 @@ const worldSketch = (
         
 
         // stop dragging when mouse leaves the canvas
-        if (p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height) dragging = false;
+        if (!mouseInside()) dragging = false;
         //else if (p5.mouseIsPressed) dragging = true;
         
         cameraPos.x += cameraMove.x
@@ -165,44 +227,44 @@ const worldSketch = (
         let time = date.getTime()
         world.time = time;
         
-        if (true) {
-            world.objects.forEach(obj => {
-                // draw connections for spawn triggers etc
-                if (obj instanceof SpawnTrigger || obj instanceof InstantCountTrigger) {
-                    let target = obj.target
-                    let group = world.groupIDs[target]
-                    if (group)
-                        group.objects.forEach(targetObjIdx => {
-                            const targetObj = world.objects[targetObjIdx]
-                            p5.stroke(255, 0, 0, group.on ? 100 : 50)
-                            p5.noFill()
-                            p5.strokeWeight(3)
-                            arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
-                        })
-                }
+        // if (true) {
+        //     world.objects.forEach(obj => {
+        //         // draw connections for spawn triggers etc
+        //         if (obj instanceof SpawnTrigger || obj instanceof InstantCountTrigger) {
+        //             let target = obj.kind.target
+        //             let group = world.groupIDs[target]
+        //             if (group)
+        //                 group.objects.forEach(targetObjIdx => {
+        //                     const targetObj = world.objects[targetObjIdx]
+        //                     p5.stroke(255, 0, 0, group.on ? 100 : 50)
+        //                     p5.noFill()
+        //                     p5.strokeWeight(3)
+        //                     arrow(p5, obj.pos.x, -obj.pos.y, targetObj.pos.x, -targetObj.pos.y)
+        //                 })
+        //         }
 
-                if (obj instanceof SpawnTrigger) {
-                    if (time - obj.last_spawn < obj.delay * 1000) {
-                        const progress = (time - obj.last_spawn) / (obj.delay * 1000)
-                        let target = obj.target
-                        let group = world.groupIDs[target]
-                        group.objects.forEach(targetObjIdx => {
-                            const targetObj = world.objects[targetObjIdx]
-                            p5.stroke(0, 255, 255, 200)
-                            p5.strokeWeight(3)
-                            p5.noFill()
-                            arrow(
-                                p5, 
-                                obj.pos.x, 
-                                -obj.pos.y, 
-                                obj.pos.x + (targetObj.pos.x - obj.pos.x) * progress, 
-                                -obj.pos.y + (-targetObj.pos.y - -obj.pos.y) * progress,
-                            )
-                        })
-                    }
-                }
-            })
-        }
+        //         if (obj instanceof SpawnTrigger) {
+        //             if (time - obj.kind.last_spawn < obj.delay * 1000) {
+        //                 const progress = (time - obj.kind.last_spawn) / (obj.delay * 1000)
+        //                 let target = obj.kind.target
+        //                 let group = world.groupIDs[target]
+        //                 group.objects.forEach(targetObjIdx => {
+        //                     const targetObj = world.objects[targetObjIdx]
+        //                     p5.stroke(0, 255, 255, 200)
+        //                     p5.strokeWeight(3)
+        //                     p5.noFill()
+        //                     arrow(
+        //                         p5, 
+        //                         obj.pos.x, 
+        //                         -obj.pos.y, 
+        //                         obj.pos.x + (targetObj.pos.x - obj.pos.x) * progress, 
+        //                         -obj.pos.y + (-targetObj.pos.y - -obj.pos.y) * progress,
+        //                     )
+        //                 })
+        //             }
+        //         }
+        //     })
+        // }
 
         p5.pop()
 
@@ -214,22 +276,38 @@ const worldSketch = (
         p5.rect(-38, -38, p5.width+44, p5.height+44, 18)
 
         
+        if (world.touchListeners.length > 0 || true) {
+            p5.stroke(0)
+            p5.strokeWeight(3)
+            p5.fill(0, pressingInput1 ? 220 : 150)
+            p5.rect(15, 15, 140, 50, 6)
+            p5.fill(0, pressingInput2 ? 220 : 150)
+            p5.rect(15, 75, 140, 50, 6)
+            p5.noStroke()
+            p5.fill(255)
+            p5.textSize(20)
+            p5.textAlign(p5.CENTER)
+            p5.text("Touch Input 1", 15 + 140/2, 22 + 50/2)
+            p5.text("Touch Input 2", 15 + 140/2, 22 + 50/2 + 60)
+        }
+
+        
         // p5.fill(255)
         // p5.textSize(20)
         // p5.text(cameraPos.x + " " + cameraPos.y, 30, 30)
         // p5.text(screenWorldBounds.left + " " + screenWorldBounds.up + " " + screenWorldBounds.right + " " + screenWorldBounds.down, 30, 60)
 
 
-        let to_remove = []
+        let to_remove = Array(world.scheduled_spawns.length).fill(false)
         world.scheduled_spawns.forEach((spawn, i) => {
             // console.log("c:", time)
             if (spawn.time <= time) {
                 // console.log("a:", spawn.group)
                 world.spawnGroupID(spawn.group)
-                to_remove.push(i)
+                to_remove[i] = true
             }
         })
-        world.scheduled_spawns = world.scheduled_spawns.filter((_, i) => !to_remove.includes(i))
+        world.scheduled_spawns = world.scheduled_spawns.filter((_, i) => !to_remove[i])
         
         // silly spunix the ids will change!!! !
         // to_remove.forEach(i => world.scheduled_spawns.splice(i, 1))
@@ -256,6 +334,52 @@ const worldSketch = (
             }
         }
 
+        let angleIncrements = {}
+        to_remove = []
+        world.rotateCommands.forEach((cmd, i) => {
+            let {x: centerX, y: centerY} = world.objects[world.groupIDs[cmd.centerID].objects[0]].pos
+            if (!(cmd.groupID in angleIncrements)) {
+                angleIncrements[cmd.groupID] = []
+            }
+
+            let increment = cmd.getAngleIncrement(time)
+            angleIncrements[cmd.groupID].push( {increment, centerX, centerY, lock: cmd.lockRotation} )
+            if (time >= cmd.startTime + cmd.duration * 1000) {
+                to_remove.push(i)
+            }
+        })
+        world.rotateCommands = world.rotateCommands.filter((_, i) => !to_remove.includes(i))
+        
+        for (const i in angleIncrements) {
+            for (const entry of angleIncrements[i]) {
+                for (const objIdx of world.groupIDs[i].objects) {
+                    let cos = Math.cos(-entry.increment * Math.PI / 180);
+                    let sin = Math.sin(-entry.increment * Math.PI / 180);
+                    let [vecX, vecY] = [
+                        world.objects[objIdx].pos.x - entry.centerX,
+                        world.objects[objIdx].pos.y - entry.centerY,
+                    ];
+                    [vecX, vecY] = [cos*vecX - sin*vecY, sin*vecX + cos*vecY]
+
+                    world.objects[objIdx].pos.x = entry.centerX + vecX
+                    world.objects[objIdx].pos.y = entry.centerY + vecY
+
+                    if (!entry.lock) {
+                        world.objects[objIdx].rotation -= entry.increment
+                    }
+                }
+            }
+        } 
+        
+        to_remove = []
+        for (const i in world.alphaCommands) {
+            world.groupIDs[i].opacity = world.alphaCommands[i].getOpacity(time)
+            if (time >= world.alphaCommands[i].startTime + world.alphaCommands[i].duration * 1000) {
+                to_remove.push(i)
+            }
+        }
+        to_remove.forEach((i) => delete world.alphaCommands[i])
+
 
 
     };
@@ -264,18 +388,20 @@ const worldSketch = (
 
 };
 
-function arrow(p5, x1, y1, x2, y2) {
-    const offset = 5;
-    p5.line(x1, y1, x2, y2); //draw a line beetween the vertices
 
-    // this code is to make the arrow point
-    p5.push() //start new drawing state
-    var angle = p5.atan2(y1 - y2, x1 - x2) - Math.PI / 2; //gets the angle of the line
-    p5.translate(x2, y2); //translates to the destination vertex
-    p5.rotate(angle); //rotates the arrow point
-    p5.triangle(-offset*0.5, offset, offset*0.5, offset, 0, -offset/2); //draws the arrow point as a triangle
-    p5.pop();
-}
+
+// function arrow(p5, x1, y1, x2, y2) {
+//     const offset = 5;
+//     p5.line(x1, y1, x2, y2); //draw a line beetween the vertices
+
+//     // this code is to make the arrow point
+//     p5.push() //start new drawing state
+//     var angle = p5.atan2(y1 - y2, x1 - x2) - Math.PI / 2; //gets the angle of the line
+//     p5.translate(x2, y2); //translates to the destination vertex
+//     p5.rotate(angle); //rotates the arrow point
+//     p5.triangle(-offset*0.5, offset, offset*0.5, offset, 0, -offset/2); //draws the arrow point as a triangle
+//     p5.pop();
+// }
 
 export default worldSketch
 

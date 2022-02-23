@@ -6,6 +6,8 @@ const RELATION_POWER = 3000;
 const SPRING_COEF = 0.01;
 const MAX_VEL = 300;
 
+export const COLLAPSE_LEN = 8;
+
 export const GROUP_OBJ_SPACING = 25
 
 class Body {
@@ -15,24 +17,37 @@ class Body {
     selected: boolean = false;
     objs: number[];
     index: BodyIdx;
+    collapsed: boolean;
+    collapsible: boolean;
 
     input_side: number;
     output_side: number;
 
-    connection_point() {
-        return { x: this.pos.x + 13 * this.input_side, y: this.pos.y - 13 +  (GROUP_OBJ_SPACING * this.objs.length) * 0.5 }
+    connection_point(): { x: number, y: number } {
+        return { x: this.pos.x + 13 * this.input_side, y: this.pos.y - 13 +  (GROUP_OBJ_SPACING * this.child_num()) * 0.5 }
     }
 
-    output_point(child_idx: number) {
+    output_point(child_idx: number): { x: number, y: number } {
+        if (child_idx >= this.child_num()) {
+            return { x: this.pos.x, y: this.pos.y + (GROUP_OBJ_SPACING * (this.child_num() - 1)) + 23 }
+        } 
         return { x: this.pos.x + 13 * this.output_side, y: this.pos.y + (GROUP_OBJ_SPACING * child_idx) + 5 }
     }
 
-    contains(pos) {
+    child_num(): number {
+        if (this.collapsed) {
+            return Math.min(this.objs.length, COLLAPSE_LEN)
+        }
+        return this.objs.length
+        
+    }
+
+    contains(pos): boolean {
         return (
             pos.x > this.pos.x - 13 &&
             pos.x < this.pos.x + 13 &&
             pos.y > this.pos.y - 13 &&
-            pos.y < this.pos.y + GROUP_OBJ_SPACING * this.objs.length + 13
+            pos.y < this.pos.y + GROUP_OBJ_SPACING * (this.child_num() - 1) + 13
         )
     }
 
@@ -44,6 +59,8 @@ class Body {
         this.index = index;
         this.input_side = -1;
         this.output_side = 1;
+        this.collapsed = true;
+        this.collapsible = this.objs.length > COLLAPSE_LEN;
     }
 
     calc_input_side(bodies: Body[], reverse_graph: ReverseGraph) {
@@ -91,7 +108,7 @@ class Body {
         }
 
 
-        const end_y = (this.pos.y + GROUP_OBJ_SPACING * this.objs.length)
+        const end_y = (this.pos.y + GROUP_OBJ_SPACING * this.child_num())
 
         // const connected_to = (other: BodyIdx) => {
         //     if (graph[this.index])
@@ -100,7 +117,7 @@ class Body {
         //     else return false
         // }
         // repel close objects
-        const close_points = qtree.query(new Box(this.pos.x - 300, this.pos.y - 300, 600, this.objs.length * GROUP_OBJ_SPACING + 600))
+        const close_points = qtree.query(new Box(this.pos.x - 300, this.pos.y - 300, 600, this.child_num() * GROUP_OBJ_SPACING + 600))
         let bodies_done = Array(bodies.length).fill(false)
 
         close_points.forEach((point, i) => {
@@ -109,7 +126,7 @@ class Body {
             bodies_done[point.data] = true
 
             const body2 = bodies[point.data]
-            const body2_end_y = (body2.pos.y + GROUP_OBJ_SPACING * body2.objs.length)
+            const body2_end_y = (body2.pos.y + GROUP_OBJ_SPACING * body2.child_num())
 
             let dist;
             let to;
@@ -140,7 +157,7 @@ class Body {
         bodies_done = Array(bodies.length).fill(false)         
         let connected_bodies = []
         
-        for (let child_idx = 0; child_idx < this.objs.length; child_idx++) {
+        for (let child_idx = 0; child_idx < this.child_num(); child_idx++) {
             if (!graph[this.index] || !graph[this.index][child_idx]) continue
             const child_pos = this.output_point(child_idx)
             graph[this.index][child_idx].forEach(body_idx => {
@@ -182,8 +199,8 @@ class Body {
         })
         
 
-        // force.x /= this.objs.length ** 2;
-        // force.y /= this.objs.length ** 2;
+        // force.x /= this.child_num() ** 2;
+        // force.y /= this.child_num() ** 2;
 
         this.vel.x += force.x;
         this.vel.y += force.y;

@@ -13,10 +13,17 @@ import {
     PickupTrigger,
     InstantCountTrigger,
     MoveTrigger,
-    Cmp
+    AlphaTrigger,
+    TouchTrigger,
+    RotateTrigger,
+
+    TouchMode,
+    Cmp,
+    StopTrigger
 } from "../objects/triggers"
 import {
-    Display
+    Display,
+    CollisionObject
 } from "../objects/special"
 import {
     Block
@@ -93,25 +100,40 @@ const createObject = (
 
     switch (parseInt(props[Constants.OBJ_PROPS.OBJ_ID])) {
         case Constants.OBJ_IDS.Triggers.TOGGLE:
-			obj = new ToggleTrigger(0, 0)
+			obj = new ToggleTrigger(0, 0, idx)
             break;
 		case Constants.OBJ_IDS.Triggers.SPAWN:
-			obj = new SpawnTrigger(0, 0)
+			obj = new SpawnTrigger(0, 0, idx)
             break;
 		case Constants.OBJ_IDS.Triggers.PICKUP:
-			obj = new PickupTrigger(0, 0)
+			obj = new PickupTrigger(0, 0, idx)
             break;
 		case Constants.OBJ_IDS.Triggers.INSTANT_COUNT:
-			obj = new InstantCountTrigger(0, 0)
+			obj = new InstantCountTrigger(0, 0, idx)
             break;
         case Constants.OBJ_IDS.Triggers.MOVE:
-            obj = new MoveTrigger(0, 0)
+            obj = new MoveTrigger(0, 0, idx)
+            break;
+        case Constants.OBJ_IDS.Triggers.ALPHA:
+            obj = new AlphaTrigger(0, 0, idx)
+            break;
+        case Constants.OBJ_IDS.Triggers.TOUCH:
+            obj = new TouchTrigger(0, 0, idx)
+            break;
+        case Constants.OBJ_IDS.Triggers.STOP:
+            obj = new StopTrigger(0, 0, idx)
+            break;
+        case Constants.OBJ_IDS.Triggers.ROTATE:
+            obj = new RotateTrigger(0, 0, idx)
             break;
 		case Constants.OBJ_IDS.Special.ITEM_DISPLAY:
-			obj = new Display(0, 0)
+			obj = new Display(0, 0, idx)
+            break;
+        case Constants.OBJ_IDS.Special.COLLISION_BLOCK:
+            obj = new CollisionObject(0, 0, idx)
             break;
 		default:
-			obj = new Block(0, 0)
+			obj = new Block(0, 0, idx)
             break;
     }
 
@@ -149,6 +171,13 @@ const createObject = (
                     if (parseInt(i) == Constants.OBJ_PROPS.ITEM) {
                         obj.itemID = parseInt(props[i])
                         world.addItemID(idx, parseInt(props[i]))
+                    }
+                } else if (obj instanceof CollisionObject) {
+                    if (parseInt(i) == Constants.OBJ_PROPS.BLOCK_A) {
+                        obj.blockID = parseInt(props[i])
+                        world.addBlockID(idx, parseInt(props[i]))
+                    } else if (parseInt(i) == Constants.OBJ_PROPS.DYNAMIC_BLOCK) {
+                        obj.dynamic = props[i] == "1"
                     }
                 } else if (obj instanceof Trigger) {
                     switch (parseInt(i)) {
@@ -201,10 +230,67 @@ const createObject = (
                             } else if (obj instanceof SpawnTrigger) {
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET:
-										obj.target = parseInt(props[i])
+										obj.kind.target = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.SPAWN_DURATION:
 										obj.delay = parseFloat(props[i])
+                                        break;
+                                }
+                            } else if (obj instanceof RotateTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.target = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.CENTER:
+                                        obj.center = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.ROTATE_DEGREES:
+                                        obj.degrees = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.TIMES_360:
+                                        obj.times360 = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.EASING:
+                                        obj.easingFunc = Object.values(Constants.EASING_FUNCS)[ parseFloat(props[i]) ]
+                                        break;
+                                    case Constants.OBJ_PROPS.DURATION:
+                                        obj.rotateTime = parseFloat(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.LOCK_OBJECT_ROTATION:
+                                        obj.lockRotation = props[i]
+                                        break;
+                                }
+                            } else if (obj instanceof StopTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.target = parseInt(props[i])
+                                        break;
+                                }
+                            } else if (obj instanceof AlphaTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.target = parseInt(props[i])
+                                        break;
+									case Constants.OBJ_PROPS.DURATION:
+										obj.fadeTime = parseFloat(props[i])
+                                        break;
+									case Constants.OBJ_PROPS.OPACITY:
+										obj.opacity = Math.min(1.0, Math.max(0.0, parseFloat(props[i])))
+                                        break;
+                                }
+                            } else if (obj instanceof TouchTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.kind.target = parseInt(props[i])
+                                        break;
+									case Constants.OBJ_PROPS.TOGGLE_MODE:
+										obj.touchMode = parseInt(props[i])
+                                        break;
+									case Constants.OBJ_PROPS.HOLD_MODE:
+										obj.holdMode = props[i]
+                                        break;
+									case Constants.OBJ_PROPS.DUAL_MODE:
+										obj.dualMode = props[i]
                                         break;
                                 }
                             } else if (obj instanceof PickupTrigger) {
@@ -228,7 +314,7 @@ const createObject = (
 										obj.activate = props[i]
                                         break;
 									case Constants.OBJ_PROPS.TARGET:
-										obj.target = parseInt(props[i])
+										obj.kind.target = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.COMPARISON:
 										switch (parseInt(props[i])) {
