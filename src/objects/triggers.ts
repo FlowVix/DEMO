@@ -362,6 +362,43 @@ class CountTrigger extends Trigger {
     }
 }
 
+class CollisionTrigger extends Trigger {
+
+    kind = new FunctionTrigger()
+
+    blockA: number = 0;
+    blockB: number = 0;
+    
+    activateGroup: boolean = false;
+    onExit: boolean = false;
+
+    draw(p5: any, world: World) {
+        draw_trigger(p5, world, this, [31, 42, 107], "Collision", `${this.blockA}b ${this.blockB}b`)
+    }
+    trigger(world: World): void {
+        world.addCollisionListener(
+            this.kind.target,
+            this.blockA,
+            this.blockB,
+            this.activateGroup,
+            this.onExit,
+            this.index,
+        )
+    }
+}
+
+class OnDeathTrigger extends Trigger {
+    kind = new FunctionTrigger()
+
+    draw(p5: any, world: World) {
+        draw_trigger(p5, world, this, [119, 68, 68], "On Death", `${this.kind.target}`)
+    }
+
+    trigger(world: World): void {
+        // literally nothing
+    }
+}
+
 
 export {
     Trigger,
@@ -376,7 +413,9 @@ export {
     RotateTrigger,
     FollowTrigger,
     CountTrigger,
+    OnDeathTrigger,
+    CollisionTrigger,
     
     TouchMode,
-    Cmp
+    Cmp,
 };

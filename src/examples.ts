@@ -142,5 +142,43 @@ $.add(obj{
 -> 3g.rotate(2g, 4*360, duration = 10)
 wait(1)
 -> 2g.rotate(1g, 2*360, duration = 10)
-`
+`,
+    "cube": 
+`extract obj_props
+
+add_point = (x, y, group) {
+    $.add(obj{
+        OBJ_ID: 1764,
+        X: x * 30,
+        Y: y * 30,
+        GROUPS: group,
+    })
+}
+
+Y_FAC = 0.3
+REF_OFFSET = [3, 30]
+CUBE_OFFSET = [3, 3]
+
+center = ?g
+ref = ?g
+
+add_point(REF_OFFSET[0], REF_OFFSET[1], center)
+
+add_vertex = (x, y) {
+    ref_group = ?g
+    follow_group = ?g
+    add_point(REF_OFFSET[0] + x, REF_OFFSET[1] + y, [ref, ref_group])
+    // top face
+    add_point(CUBE_OFFSET[0] + x, CUBE_OFFSET[1] + y * Y_FAC, follow_group)
+    // bottom face
+    add_point(CUBE_OFFSET[0] + x, CUBE_OFFSET[1] + y * Y_FAC - $.cos(Y_FAC * 3.14 / 2) * 2, follow_group)
+    follow_group.follow(ref_group, y_mod = Y_FAC)
+}
+
+add_vertex(-1, 1)
+add_vertex(1, 1)
+add_vertex(-1, -1)
+add_vertex(1, -1)
+
+ref.rotate(center, 360 * 10, 30)`
 }

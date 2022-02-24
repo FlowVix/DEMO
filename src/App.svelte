@@ -1,22 +1,8 @@
-<!--  did you see the test example thing -->
-<!--  its supposed to toggle off the else case first -->
-<!-- its doing both -->
-<!-- yeah, isnt that just the wellknown gd quirk -->
-<!-- hm -->
-<!-- in the graph, are triggers orderered vertically after their order in world.objects? -->
-<!-- yes they are in their trigger order, from what ive seen -->
-<!--  they are in the correct order in the example -->
-<!-- ill debug the order they're triggered in -->
-
-<svelte:head>
-    <script src="/ace-build/src-noconflict/ace.js" type="text/javascript" charset="utf-8" on:load={initializeEditor}></script>
-</svelte:head>
-
 <script lang="ts">
     import P5 from "p5-svelte"
     import World from "./world/world"
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
-    import {worldSketch} from "./sketch/sketch"
+    import { worldSketch } from "./sketch/sketch"
     import { createObject } from "./world/objectHandler"
 
     export let run_spwn
@@ -26,7 +12,7 @@
 
     import AnsiUp from "ansi_up"
     let ansiUp = new AnsiUp()
-    
+
     const themes = [
         ["Ambiance", "ambiance"],
         ["Chaos", "chaos"],
@@ -70,26 +56,24 @@
         ["XCode", "xcode"],
     ]
 
-    let selectedTheme = "MaterialOceanHighContrast";
+    let selectedTheme = "MaterialOceanHighContrast"
 
     let world = new World()
     let optimize = true
 
     import { Trigger } from "./objects/triggers"
-    
+
     const [triggerSketch, updateBodies] = triggerGraphSketch(world)
     const [gdWorldSketch] = worldSketch(world)
 
     import def_examples from "./examples"
-    import {setG5} from './gp5'
+    import { setG5 } from "./gp5"
     let examples = def_examples
-    
-    let current_example = Object.keys(def_examples)[0]
 
+    let current_example = Object.keys(def_examples)[0]
 
     let editor_console = ""
     let is_showing_error = false
-
 
     const buildLevel = (lvlStr) => {
         world.reset()
@@ -99,12 +83,12 @@
             .forEach((objStr) => {
                 world.objects.push(createObject(objStr, world, world.objects.length))
             })
-            // that quirk is kinda sick
+        world.init()
+        // that quirk is kinda sick
         updateBodies(world)
     }
 
-
-    const run_code = async () => { 
+    const run_code = async () => {
         let code = examples[current_example]
         let [txt, lvlStr, status] = run_spwn(code, optimize)
         if (status == "error") {
@@ -120,7 +104,6 @@
         is_showing_error = false
 
         //console.log(world.objects)
-
     }
 
     const check_syntax_code = async () => {
@@ -136,7 +119,6 @@
     }
 
     const simulate_triggers = () => {
-        
         // reset items
         Object.keys(world.itemIDs).forEach((id) => {
             world.itemIDs[id].value = 0
@@ -154,44 +136,44 @@
 
         world.objects.forEach((obj) => {
             if (obj instanceof Trigger && !obj.spawnTriggered) {
+                console.log("trig:", obj)
                 obj.trigger(world)
             }
         })
     }
 
-    let codeEditor;
-    
-    const initializeEditor = () => { 
-        codeEditor = window.ace.edit("code-editor");
-        codeEditor.setTheme("ace/theme/ambiance");
-        codeEditor.setValue(examples[current_example]);
-        codeEditor.setBehavioursEnabled(true);
+    let codeEditor
+
+    const initializeEditor = () => {
+        codeEditor = window.ace.edit("code-editor")
+        codeEditor.setTheme("ace/theme/ambiance")
+        codeEditor.setValue(examples[current_example])
+        codeEditor.setBehavioursEnabled(true)
         codeEditor.setOption("scrollPastEnd", true)
         //codeEditor.setOption("showGutter", false)
-        codeEditor.session.setMode("ace/mode/spwn");
+        codeEditor.session.setMode("ace/mode/spwn")
         codeEditor.on("change", () => {
             examples[current_example] = codeEditor.getValue()
             check_syntax_code()
         })
         codeEditor.moveCursorTo(0, 0)
         codeEditor.setShowPrintMargin(false)
-        codeEditor.setKeyboardHandler('ace/keyboard/vscode');
-        codeEditor.setAutoScrollEditorIntoView(true);
+        codeEditor.setKeyboardHandler("ace/keyboard/vscode")
+        codeEditor.setAutoScrollEditorIntoView(true)
         console.log(codeEditor.renderer)
     }
-    
 
-    $: codeEditor ? codeEditor.setTheme(`ace/theme/${selectedTheme}`) : "";
+    $: codeEditor ? codeEditor.setTheme(`ace/theme/${selectedTheme}`) : ""
 
-    let viewingDocs = false;
-    let dragging = false;
+    let viewingDocs = false
+    let dragging = false
 
-    let docsPos = {x: 40, y: 40}
+    let docsPos = { x: 40, y: 40 }
 
-    let prevDocsPos = {x: 0, y: 0}
+    let prevDocsPos = { x: 0, y: 0 }
     prevDocsPos.x = docsPos.x
     prevDocsPos.y = docsPos.y
-    let prevMousePos = {x: 0, y: 0}
+    let prevMousePos = { x: 0, y: 0 }
     const startDrag = (e) => {
         prevMousePos.x = e.screenX
         prevMousePos.y = e.screenY
@@ -210,35 +192,49 @@
         }
     }
 
-
     run_code()
 
-    let importFile;
-    let importedFile;
+    let importFile
+    let importedFile
 
     const fileImported = () => {
-        console.log('a')
+        console.log("a")
         if (importedFile && importedFile.length > 0) {
-            let reader = new FileReader();
+            let reader = new FileReader()
             reader.readAsText(importedFile[0], "UTF-8")
             reader.onload = function (evt) {
                 examples[current_example] = evt.target.result
-                codeEditor.setValue(examples[current_example]);
+                codeEditor.setValue(examples[current_example])
             }
         }
     }
 
-    let maximized = false;
-
+    let maximized = false
 
     let globalP5 = (p5) => {
         p5.setup = () => {
             setG5(p5)
         }
     }
-    
-
 </script>
+
+<!--  did you see the test example thing -->
+<!--  its supposed to toggle off the else case first -->
+<!-- its doing both -->
+<!-- yeah, isnt that just the wellknown gd quirk -->
+<!-- hm -->
+<!-- in the graph, are triggers orderered vertically after their order in world.objects? -->
+<!-- yes they are in their trigger order, from what ive seen -->
+<!--  they are in the correct order in the example -->
+<!-- ill debug the order they're triggered in -->
+
+<svelte:head>
+    <script
+        src="/ace-build/src-noconflict/ace.js"
+        type="text/javascript"
+        charset="utf-8"
+        on:load={initializeEditor}></script>
+</svelte:head>
 
 <!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
 <link href="prism-atom-dark.css" rel="stylesheet" />
@@ -256,10 +252,30 @@
             <img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a
         >
         <span class="logo-text">SPWN Playground</span>
-        <input type="file" accept=".spwn" style="display: none" bind:this={importFile} bind:files={importedFile} on:change={fileImported} />
-        <button class="header-button" on:click={()=>{viewingDocs=!viewingDocs}}>{viewingDocs ? "Close Docs" : "Open Docs"}</button>
+        <input
+            type="file"
+            accept=".spwn"
+            style="display: none"
+            bind:this={importFile}
+            bind:files={importedFile}
+            on:change={fileImported}
+        />
+        <button
+            class="header-button"
+            on:click={() => {
+                viewingDocs = !viewingDocs
+            }}>{viewingDocs ? "Close Docs" : "Open Docs"}</button
+        >
         <button class="header-button" on:click={importFile.click()}>Import .spwn</button>
-        <button class="header-button" on:click={()=>{maximized=!maximized; setTimeout(() => {codeEditor.resize()}, 10)}}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button>
+        <button
+            class="header-button"
+            on:click={() => {
+                maximized = !maximized
+                setTimeout(() => {
+                    codeEditor.resize()
+                }, 10)
+            }}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button
+        >
         <a style="margin: 0; padding: 0;" href="https://github.com/Spu7Nix/SPWN-language">
             <img style="margin: 4px 0 0 0;" src="assets/images/github.png" alt="Github Icon" height="26" /></a
         >
@@ -268,7 +284,12 @@
         >
         <div class="header-right">
             Example:
-            <select bind:value={current_example} on:change={() => {codeEditor.setValue(examples[current_example])}}>
+            <select
+                bind:value={current_example}
+                on:change={() => {
+                    codeEditor.setValue(examples[current_example])
+                }}
+            >
                 {#each Object.keys(examples) as name}
                     <option value={name}>{name}</option>
                 {/each}
@@ -285,7 +306,7 @@
     <div class="playground">
         <div class="editor">
             <div class="editor-container">
-                <div id="code-editor"></div>
+                <div id="code-editor" />
             </div>
 
             {#if !maximized}
@@ -312,24 +333,29 @@
             </div>
         {/if}
     </div>
-    
-    <div class="docs-window" on:mousedown={startDrag} style={`
+
+    <div
+        class="docs-window"
+        on:mousedown={startDrag}
+        style={`
         left: ${docsPos.x}px;
         top: ${docsPos.y}px;
         display: ${viewingDocs ? "inline" : "none"};
-    `}>
-        <embed class="docs" src="https://spu7nix.net/spwn/#" on:mouseup={() => dragging = false} style={`
+    `}
+    >
+        <embed
+            class="docs"
+            src="https://spu7nix.net/spwn/#"
+            on:mouseup={() => (dragging = false)}
+            style={`
             pointer-events: ${dragging ? "none" : "all"};
             opacity: 0.98;
-        `}>
+        `}
+        />
     </div>
-    
-    
-
-    
 </div>
 
-<svelte:window on:mouseup={() => dragging = false} on:mousemove={drag} />
+<svelte:window on:mouseup={() => (dragging = false)} on:mousemove={drag} />
 
 {#if !maximized}
     <P5 sketch={triggerSketch} />
@@ -364,7 +390,7 @@
         flex-direction: column;
         justify-content: center;
         color: white;
-        font-family: 'Source Code Pro', monospace;
+        font-family: "Source Code Pro", monospace;
         font-size: 24px;
         gap: 100px;
         font-weight: 600;
@@ -372,7 +398,6 @@
         box-sizing: border-box;
 
         /* gonna go sleep now, gotta get some rest before i tackle those optimization bugs tommorow */
-
     }
 
     .docs {
@@ -383,7 +408,6 @@
         box-sizing: border-box;
     }
 
-
     .simulation {
         height: 100%;
         width: 100%;
@@ -393,21 +417,20 @@
         gap: 1rem;
     }
 
-
     .editor-container {
         position: relative;
         width: 100%;
         height: 100%;
-        font-family: 'Source Code Pro', monospace;
+        font-family: "Source Code Pro", monospace;
         font-size: 16px;
         font-weight: 600;
         margin: 0;
     }
 
     * {
-        -moz-tab-size : 4;
-        -o-tab-size : 4;
-        tab-size : 4;
+        -moz-tab-size: 4;
+        -o-tab-size: 4;
+        tab-size: 4;
     }
 
     #code-editor {
@@ -422,7 +445,7 @@
         /* background-color: #0003; */
         resize: none;
         /* color:rgba(255, 255, 255, 0.886); */
-        font-family: 'Source Code Pro', monospace;
+        font-family: "Source Code Pro", monospace;
         font-size: 16px;
         font-weight: 600;
     }
@@ -431,7 +454,7 @@
         margin: 0 0 0 0;
         padding: 0;
         margin-left: auto;
-        font-family: 'Source Code Pro', monospace;
+        font-family: "Source Code Pro", monospace;
         font-size: 16px;
         font-weight: 600;
     }
@@ -440,7 +463,7 @@
         padding: 0;
         color: white;
 
-        font-family: 'Source Code Pro', monospace;
+        font-family: "Source Code Pro", monospace;
         font-size: 16px;
         font-weight: 600;
         background-color: #fff3;
@@ -452,7 +475,7 @@
         padding: 0;
         color: black;
 
-        font-family: 'Source Code Pro', monospace;
+        font-family: "Source Code Pro", monospace;
         font-size: 16px;
         font-weight: 600;
         background-color: transparent;
@@ -466,7 +489,7 @@
         background-color: #fff4;
         color: white;
         font-weight: 600;
-        font-family: 'Source Code Pro', monospace;
+        font-family: "Source Code Pro", monospace;
         box-shadow: 3px 3px 10px 0px #0005;
         border-radius: 6px;
         border: none;
@@ -479,7 +502,7 @@
     .header-button:active {
         background-color: #fff2;
     }
-    
+
     .logo {
         display: block;
         transition: 0.5s all;
@@ -523,7 +546,7 @@
         padding: 1rem;
         gap: 1rem;
     }
-    
+
     .editor {
         width: 100%;
         height: 100%;
@@ -550,14 +573,14 @@
         flex-direction: row;
         justify-content: center;
         align-items: center;
-        gap: .5rem;
+        gap: 0.5rem;
         color: rgba(255, 255, 255, 0.886);
     }
 
     input[type="checkbox"] {
         margin: 0;
         padding: 0;
-    } 
+    }
 
     ::-webkit-scrollbar {
         width: 10px;
@@ -581,7 +604,7 @@
     ::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.886);
     }
-    
+
     #console {
         height: 50%;
         line-height: 20px;

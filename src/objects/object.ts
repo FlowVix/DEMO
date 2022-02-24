@@ -13,7 +13,7 @@ class GDObject {
     } = {x: 1, y: 1}
     rotation: number = 0;
     disables: number = 0;
-    groups: number[] = [];
+    groups: number[] = []; 
     index: number
 
     constructor(x: number, y: number, idx: number) {
@@ -41,7 +41,7 @@ class GDObject {
             p5.rotate(- this.rotation * Math.PI / 180)
             p5.scale(this.scale.x, this.scale.y)
 
-            let g = p5.createGraphics(p5.width, p5.height, p5.WEBGL)
+            
     
             this.draw(p5, world)
     

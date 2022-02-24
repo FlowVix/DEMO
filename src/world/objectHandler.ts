@@ -21,8 +21,9 @@ import {
     TouchMode,
     Cmp,
     StopTrigger,
-    CountTrigger
-} from "../objects/triggers"
+    CountTrigger,
+    OnDeathTrigger
+} from "../objects/triggers" 
 import {
     Display,
     CollisionObject
@@ -140,6 +141,9 @@ const createObject = (
         case Constants.OBJ_IDS.Special.COLLISION_BLOCK:
             obj = new CollisionObject(0, 0, idx)
             break;
+        case Constants.OBJ_IDS.Triggers.ON_DEATH:
+            obj = new OnDeathTrigger(0, 0, idx)
+            break;
 		default:
 			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]))
             break;
@@ -185,7 +189,7 @@ const createObject = (
                         obj.blockID = parseInt(props[i])
                         world.addBlockID(idx, parseInt(props[i]))
                     } else if (parseInt(i) == Constants.OBJ_PROPS.DYNAMIC_BLOCK) {
-                        obj.dynamic = props[i] == "1"
+                        obj.dynamic = props[i]
                     }
                 } else if (obj instanceof Trigger) {
                     switch (parseInt(i)) {
@@ -372,6 +376,12 @@ const createObject = (
                                                 obj.cmpType = Cmp.LESSER
                                                 break;
                                         }
+                                        break;
+                                }
+                            }  else if (obj instanceof OnDeathTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.kind.target = parseInt(props[i])
                                         break;
                                 }
                             }

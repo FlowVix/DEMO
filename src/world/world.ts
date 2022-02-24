@@ -1,6 +1,6 @@
 import type Object from "../objects/object"
-import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger, TouchMode, MoveTrigger, AlphaTrigger, TouchTrigger} from "../objects/triggers"
-import {Display} from "../objects/special"
+import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger, TouchMode, MoveTrigger, AlphaTrigger, TouchTrigger, RotateTrigger, CountTrigger, CollisionTrigger} from "../objects/triggers"
+import {CollisionObject, Display} from "../objects/special"
  
 type ObjIndex = number;
 
@@ -164,12 +164,22 @@ class CountListener {
         public multi_activate: boolean,
         public activate_group: boolean,
         public trigger_obj: ObjIndex,
-        activated_before = false,
+        public activated_before = false,
     ) {}
 }
 
+class CollisionListener {
 
+    collidingIDs: number[] = [];
 
+    constructor(
+        public groupID: number,
+        public blockB: number,
+        public activateGroup: boolean,
+        public onExit: boolean,
+        public trigger_obj: ObjIndex,
+    ) {}
+} 
 
 class World {
 
@@ -181,12 +191,18 @@ class World {
     blockIDs: Record<number, BlockIDData> = {};
 
     scheduled_spawns: {time: number, group: number}[] = [];
+
     moveCommands: MoveCommand[] = [];
     rotateCommands: RotateCommand[] = [];
     followCommands: FollowCommand[] = [];
     alphaCommands: Record<number, AlphaCommand> = {};
+
     touchListeners: TouchListener[] = [];
     countListeners: CountListener[] = [];
+    collisionListeners: Record<number, CollisionListener[]> = [];
+
+    collisionBlocks: ObjIndex[] = [];
+    dynamicCollisionBlocks: ObjIndex[] = [];
 
     time: number = 0;
 
@@ -207,6 +223,15 @@ class World {
         this.countListeners = []
         this.touchListeners = [] // count triggers now work
         this.time = 0; // had to make a new count macro because the std one doesnt have an option to disable multi activate
+    }
+
+    init() {
+        this.objects.forEach((obj, i) => {
+            if (obj instanceof CollisionObject) {
+                this.collisionBlocks.push(i)
+                if (obj.dynamic) this.dynamicCollisionBlocks.push(i)
+            }
+        })
     }
 
     addGroupID(
@@ -410,8 +435,6 @@ class World {
         this.touchListeners.push(new TouchListener(
             groupID, touchMode, holdMode, dualMode, trigger_obj
         ))
-
-        console.log(this.touchListeners)
     }
 
     addCountListener(groupID: number, itemID: number, target_count: number, multi_activate: boolean, activate_group: boolean, trigger_obj: number) {
@@ -420,6 +443,26 @@ class World {
 
         this.countListeners.push(new CountListener(
             groupID, itemID, target_count, multi_activate, activate_group, trigger_obj
+        ))
+    }
+
+    addCollisionListener(
+        groupID: number,
+        blockA: number,
+        blockB: number,
+        activateGroup: boolean,
+        onExit: boolean,
+        trigger_obj: ObjIndex
+    ) {
+        if (!(groupID in this.groupIDs))
+            return
+
+        if (!(blockA in this.collisionListeners))
+            this.collisionListeners[blockA] = []
+
+        
+        this.collisionListeners[blockA].push(new CollisionListener(
+            groupID, blockB, activateGroup, onExit, trigger_obj
         ))
     }
 
@@ -524,11 +567,17 @@ a.start_group.stop()
             }
             if (obj instanceof MoveTrigger) {
                 this.moveCommands = this.moveCommands.filter(c => c.trigger_obj != obj_idx)
+            } else if (obj instanceof RotateTrigger) {
+                this.rotateCommands = this.rotateCommands.filter(c => c.trigger_obj != obj_idx)
             } else if (obj instanceof AlphaTrigger) {
                 const t = obj.target
                 delete this.alphaCommands[t]
             } else if (obj instanceof TouchTrigger) {
                 this.touchListeners = this.touchListeners.filter(c => c.trigger_obj != obj_idx)
+            } else if (obj instanceof CountTrigger) {
+                this.countListeners = this.countListeners.filter(c => c.trigger_obj != obj_idx)
+            } else if (obj instanceof CollisionTrigger) {
+                // TODO
             }
         });
     }

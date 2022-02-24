@@ -59,11 +59,6 @@ const worldSketch = (
         }
 
 
-        let textures = {
-            main: [],
-            detail: [],
-        }
-
 
         const mouseInside = (left = 0, right = p5.width, top = 0, bottom = p5.height): boolean => {
             return !(p5.mouseX < left || p5.mouseX > right || p5.mouseY < top || p5.mouseY > bottom)
@@ -297,7 +292,7 @@ const worldSketch = (
             p5.rect(-38, -38, p5.width+44, p5.height+44, 18)
 
             
-            if (world.touchListeners.length > 0 || true) {
+            if (world.touchListeners.length > 0) {
                 p5.stroke(0)
                 p5.strokeWeight(3)
                 p5.fill(0, pressingInput1 ? 220 : 150)
@@ -412,7 +407,8 @@ const worldSketch = (
                         }
                     }
                 }
-            } 
+            } // hey uuuh i need to sleep now
+            // gonna end the live share and push, ok?
             
             to_remove = []
             for (const i in world.alphaCommands) {
@@ -422,6 +418,15 @@ const worldSketch = (
                 }
             }
             to_remove.forEach((i) => delete world.alphaCommands[i])
+
+
+            for (const blockA in world.collisionListeners) {
+                world.collisionListeners[blockA].forEach((listener) => {
+                    world.blockIDs[blockA].objects.forEach((idx) => {
+                        
+                    })
+                })
+            }
 
 
 

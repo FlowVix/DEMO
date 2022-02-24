@@ -1,7 +1,7 @@
 import {QuadTree, Circle, Box} from 'js-quadtree';
 import type { BodyIdx, Graph, ReverseGraph } from './sketch';
 
-const IDEAL_DIST = 100;
+const IDEAL_DIST = 60;
 const RELATION_POWER = 3000;
 const SPRING_COEF = 0.01;
 const MAX_VEL = 300;
