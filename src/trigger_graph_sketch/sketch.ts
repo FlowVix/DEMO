@@ -524,16 +524,18 @@ const triggerGraphSketch = (
                                 if (arrow_count > MAX_ARROWS) return
                             } else if (world.groupIDs[obj.target]) {
                                 world.groupIDs[obj.target].objects.forEach(obj2idx => {
-                                    const [bodyidx, child_idx] = obj_to_body_idx[obj2idx]
-                                    const body2 = bodies[bodyidx]
-                                    if (child_idx < body2.child_num()) {
-                                        const p2 = {
-                                            x: body2.pos.x,
-                                            y: body2.pos.y + GROUP_OBJ_SPACING * child_idx
+                                    if (obj_to_body_idx[obj2idx]) {
+                                        const [bodyidx, child_idx] = obj_to_body_idx[obj2idx]
+                                        const body2 = bodies[bodyidx]
+                                        if (child_idx < body2.child_num()) {
+                                            const p2 = {
+                                                x: body2.pos.x,
+                                                y: body2.pos.y + GROUP_OBJ_SPACING * child_idx
+                                            }
+                                            arrow(p5, p1.x, p1.y, p2.x, p2.y)
+                                            arrow_count++
+                                            if (arrow_count > MAX_ARROWS) return
                                         }
-                                        arrow(p5, p1.x, p1.y, p2.x, p2.y)
-                                        arrow_count++
-                                        if (arrow_count > MAX_ARROWS) return
                                     }
                                 })
                                 if (arrow_count > MAX_ARROWS) return

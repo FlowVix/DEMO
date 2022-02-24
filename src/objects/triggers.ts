@@ -387,6 +387,39 @@ class CollisionTrigger extends Trigger {
     }
 }
 
+class ColorTrigger extends Trigger {
+
+    kind = new OutputTrigger()
+
+    colorID: number = 0;
+
+    red: number = 0;
+    green: number = 255;
+    blue: number = 255;
+
+    opacity: number = 1;
+
+    fadeTime: number = 0;
+
+    blending: boolean = false;
+
+    draw(p5: any, world: World) {
+        draw_trigger(p5, world, this, [116, 60, 122], "Color", `${this.colorID}c`)
+    }
+    trigger(world: World): void {
+        world.addColorFade(
+            this.colorID,
+            this.red,
+            this.green,
+            this.blue,
+            this.opacity,
+            this.fadeTime,
+            this.blending,
+            this.index,
+        )
+    }
+}
+
 class OnDeathTrigger extends Trigger {
     kind = new FunctionTrigger()
 

@@ -149,7 +149,7 @@ const createObject = (
             obj = new CollisionTrigger(0, 0, idx)
             break;
 		default:
-			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]), 1, 1)
+			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]))
             break;
     }
 
@@ -187,6 +187,12 @@ const createObject = (
                     if (parseInt(i) == Constants.OBJ_PROPS.ITEM) {
                         obj.itemID = parseInt(props[i])
                         world.addItemID(idx, parseInt(props[i]))
+                    }
+                } if (obj instanceof Regular) {
+                    if (parseInt(i) == Constants.OBJ_PROPS.COLOR) {
+                        obj.mainID = parseInt(props[i])
+                    } else if (parseInt(i) == Constants.OBJ_PROPS.COLOR_2) {
+                        obj.detailID = parseInt(props[i])
                     }
                 } else if (obj instanceof CollisionObject) {
                     if (parseInt(i) == Constants.OBJ_PROPS.BLOCK_A) {

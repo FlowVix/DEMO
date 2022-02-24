@@ -192,6 +192,25 @@ class CollisionListener {
     ) {}
 } 
 
+class ColorFade {
+
+    constructor(
+        public colorID: number,
+        public red: number,
+        public green: number,
+        public blue: number,
+        public opacity: number,
+        public duration: number,
+        public startTime: number,
+        public startRed: number,
+        public startGreen: number,
+        public startBlue: number,
+        public startOpacity: number,
+        public triggerObj: ObjIndex,
+    ) {}
+
+}
+
 class World {
 
     objects: Object[] = [];
@@ -214,6 +233,8 @@ class World {
 
     collisionBlocks: ObjIndex[] = [];
     dynamicCollisionBlocks: ObjIndex[] = [];
+
+    colorFades: Record<number, ColorFade> = {};
 
     time: number = 0;
 
@@ -546,6 +567,35 @@ class World {
 
         console.log(this.followCommands)
         
+    }
+
+    addColorFade(
+        colorID: number,
+        red: number,
+        green: number,
+        blue: number,
+        opacity: number,
+        duration: number,
+        blending: boolean,
+        trigger_obj: ObjIndex,
+    ) {
+
+        let current: ChannelData = colorID in this.colorIDs ? this.colorIDs[colorID] : new ChannelData();
+
+        this.colorFades[colorID] = new ColorFade(
+            colorID,
+            red,
+            green,
+            blue,
+            opacity,
+            duration,
+            this.time,
+            current.color.r,
+            current.color.g,
+            current.color.b,
+            current.opacity,
+            trigger_obj,
+        )
     }
 
     /*
