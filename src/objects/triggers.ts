@@ -117,6 +117,35 @@ class RotateTrigger extends Trigger {
     }
 }
 
+class FollowTrigger extends Trigger {
+    target: number = 0;
+    follow: number = 0;
+
+    xMod: number = 0;
+    yMod: number = 0;
+    followTime: number = 0;
+
+    kind = new OutputTrigger()
+
+    draw(p5: any, world: World) {
+        const d = new Date()
+        const time = d.getTime()
+        const progress = Math.min((time - this.lastTrigger) / (this.followTime * 1000), 1)
+        draw_trigger(p5, world, this, [163, 93, 67], "Follow", `${this.target}`, progress)
+    }
+
+    trigger(world: World) {
+        world.addFollowCommand(
+            this.target,
+            this.follow,
+            this.xMod,
+            this.yMod,
+            this.followTime,
+            this.index,
+        )
+    }
+}
+
 class AlphaTrigger extends Trigger {
     target: number = 0;
 
@@ -316,6 +345,22 @@ class StopTrigger extends Trigger {
     }
 }
 
+class CountTrigger extends Trigger {
+
+    kind = new FunctionTrigger()
+    multi_activate: boolean = false;
+
+    itemID: number = 0;
+    target_count: number = 0;
+    activate_group: boolean = false;
+
+    draw(p5: any, world: World) {
+        draw_trigger(p5, world, this, [229, 133, 210], "Count", `${this.itemID}i=${this.target_count}`)
+    }
+    trigger(world: World): void {
+        world.addCountListener(this.kind.target, this.itemID, this.target_count, this.multi_activate, this.activate_group, this.index)
+    }
+}
 
 
 export {
@@ -329,6 +374,8 @@ export {
     TouchTrigger,
     StopTrigger,
     RotateTrigger,
+    FollowTrigger,
+    CountTrigger,
     
     TouchMode,
     Cmp

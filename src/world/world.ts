@@ -88,6 +88,41 @@ class RotateCommand {
 
 }
 
+class FollowCommand {
+
+    lastVec: {x: number, y: number} = {x: 0, y: 0};
+
+    constructor(
+        public groupID: number,
+        public followID: number,
+        {x: lastX, y: lastY},
+        public xMod: number,
+        public yMod: number,
+        public duration: number,
+        public startTime: number,
+        public trigger_obj: ObjIndex
+    ) {
+        this.lastVec.x = lastX
+        this.lastVec.y = lastY
+        console.log("baba:", lastX, lastY, followID)
+    }
+
+    getDisplacement(
+        {x: followX, y: followY}
+    ): {x: number, y: number} {
+
+        console.log(followX, followY)
+        let displacement = {
+            x: (followX - this.lastVec.x)*this.xMod,
+            y: (followY - this.lastVec.y)*this.yMod,
+        }
+        this.lastVec.x = followX
+        this.lastVec.y = followY
+        return displacement
+    }
+
+}
+
 
 class AlphaCommand {
 
@@ -121,6 +156,19 @@ class TouchListener {
     ) {}
 }
 
+class CountListener {
+    constructor(
+        public groupID: number,
+        public itemID: number,
+        public target_count: number,
+        public multi_activate: boolean,
+        public activate_group: boolean,
+        public trigger_obj: ObjIndex,
+        activated_before = false,
+    ) {}
+}
+
+
 
 
 class World {
@@ -135,8 +183,10 @@ class World {
     scheduled_spawns: {time: number, group: number}[] = [];
     moveCommands: MoveCommand[] = [];
     rotateCommands: RotateCommand[] = [];
+    followCommands: FollowCommand[] = [];
     alphaCommands: Record<number, AlphaCommand> = {};
     touchListeners: TouchListener[] = [];
+    countListeners: CountListener[] = [];
 
     time: number = 0;
 
@@ -151,9 +201,12 @@ class World {
         this.blockIDs = {}
         this.scheduled_spawns = []
         this.moveCommands = []
+        this.rotateCommands = []
         this.alphaCommands = {}
-        this.touchListeners = []
-        this.time = 0;
+        this.followCommands = []
+        this.countListeners = []
+        this.touchListeners = [] // count triggers now work
+        this.time = 0; // had to make a new count macro because the std one doesnt have an option to disable multi activate
     }
 
     addGroupID(
@@ -272,6 +325,19 @@ class World {
             this.itemIDs[itemID] = {value: 0, objects: []};
         
         this.itemIDs[itemID].value += amount;
+
+        this.countListeners.forEach((l, i) => {
+            if (l.itemID == itemID && this.itemIDs[itemID].value == l.target_count) {
+                this.countListeners[i].activated_before = true
+                if (l.activate_group) {
+                    this.spawnGroupID(l.groupID)
+                }
+                this.toggleGroupID(l.groupID, l.activate_group)
+            }
+        })
+        
+        
+        this.countListeners = this.countListeners.filter(l => !(l.activated_before && !l.multi_activate))
     
         for (let i = 0; i < this.itemIDs[itemID].objects.length; i++) {
             let obj = this.objects[this.itemIDs[itemID].objects[i]]
@@ -348,6 +414,15 @@ class World {
         console.log(this.touchListeners)
     }
 
+    addCountListener(groupID: number, itemID: number, target_count: number, multi_activate: boolean, activate_group: boolean, trigger_obj: number) {
+        if (!(groupID in this.groupIDs))
+            return
+
+        this.countListeners.push(new CountListener(
+            groupID, itemID, target_count, multi_activate, activate_group, trigger_obj
+        ))
+    }
+
     addRotateCommand(
         groupID: number,
         centerID: number,
@@ -366,9 +441,7 @@ class World {
             return
 
         this.rotateCommands = this.rotateCommands.filter((cmd) => cmd.groupID != groupID)
-        if (this.groupIDs[centerID].objects.length != 1)
-                return
-
+    
         this.rotateCommands.push(
             new RotateCommand(
                 groupID,
@@ -381,6 +454,41 @@ class World {
                 trigger_obj
             )
         )
+        
+    }
+
+    addFollowCommand(
+        groupID: number,
+        followID: number,
+        xMod: number,
+        yMod: number,
+        duration: number,
+        trigger_obj: ObjIndex
+    ) {
+        if (!(groupID in this.groupIDs))
+            return
+        if (!(followID in this.groupIDs))
+            return
+        
+        if (this.groupIDs[followID].objects.length != 1)
+            return
+
+        this.followCommands = this.followCommands.filter((cmd) => !(cmd.groupID == groupID && cmd.followID == followID))
+    
+        this.followCommands.push(
+            new FollowCommand(
+                groupID,
+                followID,
+                this.objects[this.groupIDs[followID].objects[0]].pos,
+                xMod,
+                yMod,
+                duration,
+                this.time,
+                trigger_obj
+            )
+        )
+
+        console.log(this.followCommands)
         
     }
 

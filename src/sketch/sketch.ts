@@ -174,6 +174,12 @@ const worldSketch = (
             }
         }
 
+        p5.mouseWheel = (event) => {
+            if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height))
+                zoom -= event.delta * 0.001;
+                zoom = Math.max(Math.min(zoom, 10), 0.1);
+        }
+
         p5.draw = () => {
 
             
@@ -341,6 +347,28 @@ const worldSketch = (
                 }
             })
             world.moveCommands = world.moveCommands.filter((_, i) => !to_remove.includes(i))
+            
+            for (const i in displacements) {
+                for (const objIdx of world.groupIDs[i].objects) {
+                    world.objects[objIdx].pos.x += displacements[i].x
+                    world.objects[objIdx].pos.y += displacements[i].y
+                }
+            }
+
+            displacements = {}
+            to_remove = []
+            world.followCommands.forEach((cmd, i) => {
+                if (!(cmd.groupID in displacements)) {
+                    displacements[cmd.groupID] = {x: 0, y: 0}
+                }
+                let displacement = cmd.getDisplacement( world.objects[world.groupIDs[cmd.followID].objects[0]].pos )
+                displacements[cmd.groupID].x += displacement.x;
+                displacements[cmd.groupID].y += displacement.y;
+                if (time >= cmd.startTime + cmd.duration * 1000) {
+                    to_remove.push(i)
+                }
+            })
+            world.followCommands = world.followCommands.filter((_, i) => !to_remove.includes(i))
             
             for (const i in displacements) {
                 for (const objIdx of world.groupIDs[i].objects) {

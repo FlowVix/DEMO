@@ -40,6 +40,8 @@ class GDObject {
             p5.translate(this.pos.x, -this.pos.y)
             p5.rotate(- this.rotation * Math.PI / 180)
             p5.scale(this.scale.x, this.scale.y)
+
+            let g = p5.createGraphics(p5.width, p5.height, p5.WEBGL)
     
             this.draw(p5, world)
     

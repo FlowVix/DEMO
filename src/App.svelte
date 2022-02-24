@@ -89,20 +89,9 @@
 
     let editor_console = ""
     let is_showing_error = false
-    const run_code = async () => { 
-        let code = examples[current_example]
-        let [txt, lvlStr, status] = run_spwn(code, optimize)
-        if (status == "error") {
-            editor_console = txt
-            is_showing_error = true
-            return
-        }
-
-        
 
 
-        lvlStr = ""
-        
+    const buildLevel = (lvlStr) => {
         world.reset()
         lvlStr
             .split(";")
@@ -112,6 +101,20 @@
             })
             // that quirk is kinda sick
         updateBodies(world)
+    }
+
+
+    const run_code = async () => { 
+        let code = examples[current_example]
+        let [txt, lvlStr, status] = run_spwn(code, optimize)
+        if (status == "error") {
+            editor_console = txt
+            is_showing_error = true
+            return
+        }
+
+        console.log(lvlStr)
+        buildLevel(lvlStr)
 
         editor_console = txt
         is_showing_error = false
@@ -224,17 +227,7 @@
             }
         }
     }
-// lol
-// i think they are going outside the quadtree
-// solution: make tree bigger
-// so the physics break down
-// oh interesting
-// adaptive tree :flushed:
-// im realizing that movement doesnt reset when you simulate again
-// should we store the amount a group has moves so it can be moved back
-// ig
-// i shall make touch trigger now
-// awesome
+
     let maximized = false;
 
 

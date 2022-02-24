@@ -16,10 +16,12 @@ import {
     AlphaTrigger,
     TouchTrigger,
     RotateTrigger,
+    FollowTrigger,
 
     TouchMode,
     Cmp,
-    StopTrigger
+    StopTrigger,
+    CountTrigger
 } from "../objects/triggers"
 import {
     Display,
@@ -120,11 +122,17 @@ const createObject = (
         case Constants.OBJ_IDS.Triggers.TOUCH:
             obj = new TouchTrigger(0, 0, idx)
             break;
+        case Constants.OBJ_IDS.Triggers.COUNT:
+            obj = new CountTrigger(0, 0, idx)
+            break;
         case Constants.OBJ_IDS.Triggers.STOP:
             obj = new StopTrigger(0, 0, idx)
             break;
         case Constants.OBJ_IDS.Triggers.ROTATE:
             obj = new RotateTrigger(0, 0, idx)
+            break;
+        case Constants.OBJ_IDS.Triggers.FOLLOW:
+            obj = new FollowTrigger(0, 0, idx)
             break;
 		case Constants.OBJ_IDS.Special.ITEM_DISPLAY:
 			obj = new Display(0, 0, idx)
@@ -260,6 +268,24 @@ const createObject = (
                                         obj.lockRotation = props[i]
                                         break;
                                 }
+                            } else if (obj instanceof FollowTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.target = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.FOLLOW:
+                                        obj.follow = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.X_MOD:
+                                        obj.xMod = parseFloat(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.Y_MOD:
+                                        obj.yMod = parseFloat(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.DURATION:
+                                        obj.followTime = parseFloat(props[i])
+                                        break;
+                                }
                             } else if (obj instanceof StopTrigger) {
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET:
@@ -291,6 +317,24 @@ const createObject = (
                                         break;
 									case Constants.OBJ_PROPS.DUAL_MODE:
 										obj.dualMode = props[i]
+                                        break;
+                                }
+                            } else if (obj instanceof CountTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.kind.target = parseInt(props[i])
+                                        break;
+									case Constants.OBJ_PROPS.COUNT_MULTI_ACTIVATE:
+										obj.multi_activate = props[i] == "1"
+                                        break;
+									case Constants.OBJ_PROPS.ITEM:
+										obj.itemID = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.COUNT:
+                                        obj.target_count = parseInt(props[i])
+                                        break;
+									case Constants.OBJ_PROPS.ACTIVATE_GROUP:
+										obj.activate_group = props[i] == "1"
                                         break;
                                 }
                             } else if (obj instanceof PickupTrigger) {

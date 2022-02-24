@@ -114,5 +114,33 @@ $.print("They will move ~PI blocks up!")
 
 wait(0.5)
 -> 1g.rotate(2g, 180, duration = 5)
--> 2g.rotate(1g, -180, duration = 5)`
+-> 2g.rotate(1g, -180, duration = 5)`,
+    "orbit": `extract obj_props
+
+$.add(obj{
+    OBJ_ID: 1764,
+    X: 45,
+    Y: 45,
+    GROUPS: 1g,
+    SCALING: 2.0,
+})
+$.add(obj{
+    OBJ_ID: 1764,
+    X: 45+4*30,
+    Y: 45,
+    GROUPS: 2g,
+})
+$.add(obj{
+    OBJ_ID: 1764,
+    X: 45+5*30,
+    Y: 45,
+    GROUPS: 3g,
+})
+
+3g.follow(2g)
+
+-> 3g.rotate(2g, 4*360, duration = 10)
+wait(1)
+-> 2g.rotate(1g, 2*360, duration = 10)
+`
 }
