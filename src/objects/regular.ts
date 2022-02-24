@@ -22,7 +22,7 @@ class Regular extends GDObject {
     mainGraphics: any = undefined;
     detailGraphics: any = undefined;
 
-    constructor(x: number, y: number, idx: number, obj_id: number) {
+    constructor(x: number, y: number, idx: number, obj_id: number, mainColorID: number, detailColorID: number) {
         super(x, y, idx)
         this.sheet = obj_id < 1000 ? 0 : 1;
 
@@ -31,6 +31,9 @@ class Regular extends GDObject {
 
         this.mainSheetPos = [sheets[this.sheet][obj_id][0][0], sheets[this.sheet][obj_id][0][1]]
         this.detailSheetPos = [sheets[this.sheet][obj_id][1][0], sheets[this.sheet][obj_id][1][1]]
+
+        this.mainID = mainColorID
+        this.detailID = detailColorID
     }
     
     draw(p5: any, world: World) {

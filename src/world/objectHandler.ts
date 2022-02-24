@@ -149,7 +149,7 @@ const createObject = (
             obj = new CollisionTrigger(0, 0, idx)
             break;
 		default:
-			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]))
+			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]), 1, 1)
             break;
     }
 
