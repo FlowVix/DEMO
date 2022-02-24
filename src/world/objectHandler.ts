@@ -1,7 +1,7 @@
 
 
 import Constants from "../constants";
-import type World from "./world";
+import type {World} from "./world";
 
 
 
@@ -17,6 +17,7 @@ import {
     TouchTrigger,
     RotateTrigger,
     FollowTrigger,
+    CollisionTrigger,
 
     TouchMode,
     Cmp,
@@ -143,6 +144,9 @@ const createObject = (
             break;
         case Constants.OBJ_IDS.Triggers.ON_DEATH:
             obj = new OnDeathTrigger(0, 0, idx)
+            break;
+        case Constants.OBJ_IDS.Triggers.COLLISION:
+            obj = new CollisionTrigger(0, 0, idx)
             break;
 		default:
 			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]))
@@ -296,6 +300,24 @@ const createObject = (
 										obj.target = parseInt(props[i])
                                         break;
                                 }
+                            } else if (obj instanceof CollisionTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										obj.kind.target = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.BLOCK_A:
+										obj.blockA = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.BLOCK_B:
+										obj.blockB = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.ACTIVATE_GROUP:
+										obj.activateGroup = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.ACTIVATE_ON_EXIT:
+										obj.onExit = props[i]
+                                        break;
+                                }
                             } else if (obj instanceof AlphaTrigger) {
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET:
@@ -329,7 +351,7 @@ const createObject = (
 										obj.kind.target = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.COUNT_MULTI_ACTIVATE:
-										obj.multi_activate = props[i] == "1"
+										obj.multi_activate = props[i]
                                         break;
 									case Constants.OBJ_PROPS.ITEM:
 										obj.itemID = parseInt(props[i])
@@ -338,7 +360,7 @@ const createObject = (
                                         obj.target_count = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.ACTIVATE_GROUP:
-										obj.activate_group = props[i] == "1"
+										obj.activate_group = props[i]
                                         break;
                                 }
                             } else if (obj instanceof PickupTrigger) {

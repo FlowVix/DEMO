@@ -1,5 +1,5 @@
 import GDObject from "./object";
-import type World from "../world/world";
+import type {World} from "../world/world";
 import {draw_trigger} from "./util";
 
 class Trigger extends GDObject {

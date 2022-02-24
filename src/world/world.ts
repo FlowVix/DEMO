@@ -4,14 +4,24 @@ import {CollisionObject, Display} from "../objects/special"
  
 type ObjIndex = number;
 
+
+
+class ChannelData {
+    color: {r: number, g: number, b: number} = {r: 255, g: 255, b: 255};
+    opacity: number = 1;
+    blending: boolean = false;
+}
+
+
+
+
+
 interface GroupIDData {
     objects: ObjIndex[];
     on: boolean;
     opacity: number;
 }
-interface ColorIDData {
-    objects: ObjIndex[];
-}
+
 interface ItemIDData {
     objects: ObjIndex[];
     value: number;
@@ -170,7 +180,8 @@ class CountListener {
 
 class CollisionListener {
 
-    collidingIDs: number[] = [];
+    collidingAmount: number = 0;
+    prevAmount: number = 0;
 
     constructor(
         public groupID: number,
@@ -186,7 +197,7 @@ class World {
     objects: Object[] = [];
 
     groupIDs: Record<number, GroupIDData> = {};
-    colorIDs: Record<number, ColorIDData> = {};
+    colorIDs: Record<number, ChannelData> = {};
     itemIDs: Record<number, ItemIDData> = {};
     blockIDs: Record<number, BlockIDData> = {};
 
@@ -221,7 +232,8 @@ class World {
         this.alphaCommands = {}
         this.followCommands = []
         this.countListeners = []
-        this.touchListeners = [] // count triggers now work
+        this.collisionListeners = []
+        this.touchListeners = [] // count triggers now work  // epic
         this.time = 0; // had to make a new count macro because the std one doesnt have an option to disable multi activate
     }
 
@@ -247,17 +259,17 @@ class World {
             this.groupIDs[groupID].objects.push( obj );
         }
     }
-    addColorID(
-        obj: ObjIndex,
-        colorID: number,
-    ) {
-        if (!(colorID in this.colorIDs)) {
-            this.colorIDs[colorID] = {objects: []};
-        }
-        if (!(this.colorIDs[colorID].objects.includes(obj))) {
-            this.colorIDs[colorID].objects.push( obj );
-        }
-    }
+    // addColorID(
+    //     obj: ObjIndex,
+    //     colorID: number,
+    // ) {
+    //     if (!(colorID in this.colorIDs)) {
+    //         this.colorIDs[colorID] = {objects: []};
+    //     }
+    //     if (!(this.colorIDs[colorID].objects.includes(obj))) {
+    //         this.colorIDs[colorID].objects.push( obj );
+    //     }
+    // }
     addItemID(
         obj: ObjIndex,
         itemID: number,
@@ -354,10 +366,10 @@ class World {
         this.countListeners.forEach((l, i) => {
             if (l.itemID == itemID && this.itemIDs[itemID].value == l.target_count) {
                 this.countListeners[i].activated_before = true
+                this.toggleGroupID(l.groupID, l.activate_group)
                 if (l.activate_group) {
                     this.spawnGroupID(l.groupID)
                 }
-                this.toggleGroupID(l.groupID, l.activate_group)
             }
         })
         
@@ -460,10 +472,11 @@ class World {
         if (!(blockA in this.collisionListeners))
             this.collisionListeners[blockA] = []
 
-        
-        this.collisionListeners[blockA].push(new CollisionListener(
+        let juj = new CollisionListener(
             groupID, blockB, activateGroup, onExit, trigger_obj
-        ))
+        )
+        console.log(juj)
+        this.collisionListeners[blockA].push(juj)
     }
 
     addRotateCommand(
@@ -588,5 +601,8 @@ a.start_group.stop()
 
 
 
-export default World
+export {
+    World,
+    ChannelData
+}
 

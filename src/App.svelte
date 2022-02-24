@@ -1,6 +1,6 @@
 <script lang="ts">
     import P5 from "p5-svelte"
-    import World from "./world/world"
+    import {World} from "./world/world"
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
     import { worldSketch } from "./sketch/sketch"
     import { createObject } from "./world/objectHandler"
@@ -136,7 +136,6 @@
 
         world.objects.forEach((obj) => {
             if (obj instanceof Trigger && !obj.spawnTriggered) {
-                console.log("trig:", obj)
                 obj.trigger(world)
             }
         })
@@ -145,8 +144,7 @@
     let codeEditor
 
     const initializeEditor = () => {
-        codeEditor = window.ace.edit("code-editor")
-        codeEditor.setTheme("ace/theme/ambiance")
+        codeEditor = (<any>window).ace.edit("code-editor")
         codeEditor.setValue(examples[current_example])
         codeEditor.setBehavioursEnabled(true)
         codeEditor.setOption("scrollPastEnd", true)
@@ -164,6 +162,9 @@
     }
 
     $: codeEditor ? codeEditor.setTheme(`ace/theme/${selectedTheme}`) : ""
+
+
+    let docsMaximized = false;
 
     let viewingDocs = false
     let dragging = false
@@ -248,7 +249,7 @@
 
 <div class="everything">
     <div class="header">
-        <a href="https://spu7nix.net/spwn">
+        <a target="_blank" href="https://spu7nix.net/spwn">
             <img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a
         >
         <span class="logo-text">SPWN Playground</span>
@@ -276,11 +277,11 @@
                 }, 10)
             }}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button
         >
-        <a style="margin: 0; padding: 0;" href="https://github.com/Spu7Nix/SPWN-language">
-            <img style="margin: 4px 0 0 0;" src="assets/images/github.png" alt="Github Icon" height="26" /></a
+        <a style="margin: 0; padding: 0;" target="_blank" href="https://github.com/Spu7Nix/SPWN-language">
+            <img class="header-icons" src="assets/images/github.png" alt="Github Icon" height="26" /></a
         >
-        <a style="margin: 0; padding: 0;" href="https://discord.gg/kUzdUpNgZk">
-            <img style="margin: 4px 0 0 0;" src="assets/images/discord.svg" alt="Discord Icon" height="26" /></a
+        <a style="margin: 0; padding: 0;" target="_blank" href="https://discord.gg/kUzdUpNgZk">
+            <img class="header-icons" src="assets/images/discord.svg" alt="Discord Icon" height="26" /></a
         >
         <div class="header-right">
             Example:
@@ -316,7 +317,7 @@
 
                 <div class="buttons">
                     <button id="run_button" class="big-button" on:click={run_code}> build </button>
-                    <button id="sim_button" class="big-button" style="background:#09493a" on:click={simulate_triggers}>
+                    <button id="sim_button" class="big-button" on:click={simulate_triggers}>
                         simulate
                     </button>
                 </div>
@@ -340,15 +341,18 @@
         style={`
         left: ${docsPos.x}px;
         top: ${docsPos.y}px;
-        display: ${viewingDocs ? "inline" : "none"};
+        opacity: ${viewingDocs ? "1" : "0"};
+        pointer-events: ${!viewingDocs ? "none" : "all"};
+        transition: opacity 0.3s;
     `}
     >
-        <embed
+        <iframe
+            title="sex"
             class="docs"
             src="https://spu7nix.net/spwn/#"
             on:mouseup={() => (dragging = false)}
             style={`
-            pointer-events: ${dragging ? "none" : "all"};
+            pointer-events: ${dragging || !viewingDocs ? "none" : "all"};
             opacity: 0.98;
         `}
         />
@@ -470,6 +474,10 @@
         border: none;
     }
 
+    /* :global(embed .markdown-section#main) {
+        background-color: red;
+    } */
+
     option {
         margin: 0;
         padding: 0;
@@ -503,6 +511,14 @@
         background-color: #fff2;
     }
 
+    .header-icons {
+        margin: 4px 0 0 0;
+        transition: all 0.3s;
+    }
+    .header-icons:hover {
+        transform: scale(1.2);
+    }
+
     .logo {
         display: block;
         transition: 0.5s all;
@@ -521,6 +537,7 @@
     }
 
     .header {
+        max-height: 53px;
         border-bottom: 1px solid rgb(58, 58, 58);
         padding: 8px;
         background: linear-gradient(180deg, rgba(40, 40, 40, 1) 0%, rgba(20, 20, 20, 1) 100%);
@@ -530,10 +547,14 @@
         justify-content: left;
         align-items: center;
         gap: 12px;
+        overflow: clip;
+
+        margin: 0;
 
         font-family: "Source Code Pro", monospace;
         color: #efefef;
         box-sizing: border-box;
+        animation: open-header 0.5s ease-in-out forwards;
     }
 
     .playground {
@@ -631,7 +652,6 @@
     .big-button {
         width: 100%;
         height: 60px;
-        background: #551c1c;
         font-family: "Source Code Pro", monospace;
         color: #ffffff;
         font-size: 30px;
@@ -648,7 +668,27 @@
     }
 
     .big-button:hover {
+        content: "gaga";
         border-radius: 14px 0px 14px 0px;
+    }
+
+    #run_button {
+        background: #551c1c;
+    }
+
+
+    #run_button:hover {
+        background: #2a1313;
+    }
+    #run_button:active::after {
+        content: 'ing...';
+    }
+
+    #sim_button {
+        background: #09493a;
+    }
+    #sim_button:hover {
+        background: #0e2520;
     }
 
     .buttons {

@@ -30,6 +30,7 @@
   "dependencies": {
     "@novacbn/svelte-codejar": "^0.1.1",
     "ansi_up": "^5.1.0",
+    "detect-collisions": "^3.2.5",
     "highlight.js": "^11.4.0",
     "js-quadtree": "^3.3.6",
     "p5-svelte": "^3.0.1",

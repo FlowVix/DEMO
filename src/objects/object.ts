@@ -1,5 +1,5 @@
 
-import type World from "../world/world";
+import type {World} from "../world/world";
 
 class GDObject {
 

@@ -1,9 +1,11 @@
 
 import P5 from 'p5-svelte';
-import type World from '../world/world';
+import type {World} from '../world/world';
 import type GDObject from '../objects/object'
-import { InstantCountTrigger, SpawnTrigger, TouchMode } from '../objects/triggers';
+import { CollisionTrigger, InstantCountTrigger, SpawnTrigger, TouchMode } from '../objects/triggers';
 import { Regular } from '../objects/regular';
+import Col from 'detect-collisions'
+import type { CollisionObject } from '../objects/special';
 
 
 
@@ -22,12 +24,12 @@ const worldSketch = (
     world: World,
 ): [(any) => any] => {
 
+    let zoom = 1;
+    let cameraPos = {x: 0, y: 0};
+    let cameraMove = {x: 0, y: 0};
 
     const sketch = (p5: any) => {
 
-        let zoom = 1;
-        let cameraPos = {x: 0, y: 0};
-        let cameraMove = {x: 0, y: 0};
 
         let p5div, cnv;
 
@@ -63,6 +65,7 @@ const worldSketch = (
         const mouseInside = (left = 0, right = p5.width, top = 0, bottom = p5.height): boolean => {
             return !(p5.mouseX < left || p5.mouseX > right || p5.mouseY < top || p5.mouseY > bottom)
         }
+        let system: Col.System;
 
         p5.preload = () => {
             const PUSAB_FONT = p5.loadFont('assets/fonts/pusab.otf');
@@ -70,6 +73,7 @@ const worldSketch = (
                 p5.loadImage(`assets/images/objects/spritesheet_1.png`),
                 p5.loadImage(`assets/images/objects/spritesheet_2.png`)
             ]
+            system = new Col.System();
         }
 
         
@@ -127,11 +131,15 @@ const worldSketch = (
                     break;
                 
                 case 38:
-                    activateListeners(false, false)
+                    if (pressingInput1) {
+                        activateListeners(false, false)
+                    }
                     break;
 
                 case 32:
-                    activateListeners(false, true)
+                    if (pressingInput2) {
+                        activateListeners(false, true)
+                    }
                     break;
             }
         }
@@ -421,15 +429,55 @@ const worldSketch = (
 
 
             for (const blockA in world.collisionListeners) {
-                world.collisionListeners[blockA].forEach((listener) => {
-                    world.blockIDs[blockA].objects.forEach((idx) => {
-                        
+                world.collisionListeners[blockA].forEach(listener => {
+                    listener.collidingAmount = 0
+                    world.blockIDs[blockA].objects.forEach(b1 => {
+                        if (world.objects[b1].disables > 0) { return }
+                        const s1 = 15 * world.objects[b1].scale.x
+                        const a1 = world.objects[b1].rotation * Math.PI / 180
+                        let p1 = new Col.Polygon(world.objects[b1].pos,[
+                            {x: s1, y: s1},
+                            {x: -s1, y: s1},
+                            {x: -s1, y: -s1},
+                            {x: s1, y: -s1},
+                        ])
+                        p1.setAngle(a1)
+                        console.log(p1.angle, world.objects[b1].rotation)
+                        world.blockIDs[listener.blockB].objects.forEach(b2 => {
+                            if (world.objects[b2].disables > 0) { return }
+                            if (!(<CollisionObject>world.objects[b1]).dynamic && !(<CollisionObject>world.objects[b2]).dynamic) { return }
+                            if ((world.objects[b2].pos.x - world.objects[b1].pos.x) ** 2 + (world.objects[b2].pos.y - world.objects[b1].pos.y) ** 2 > (60*world.objects[b1].scale.x + 60*world.objects[b2].scale.x) ** 2) {
+                                return
+                            }
+                            const s2 = 15 * world.objects[b2].scale.x
+                            const a2 = world.objects[b2].rotation * Math.PI / 180
+                            let p2 = new Col.Polygon(world.objects[b2].pos,[
+                                {x: s2, y: s2},
+                                {x: -s2, y: s2},
+                                {x: -s2, y: -s2},
+                                {x: s2, y: -s2},
+                            ])
+                            p2.setAngle(a2)
+                            if (system.checkCollision(p1, p2)) {
+                                listener.collidingAmount += 1
+                            }
+                        })
                     })
+                    if (!listener.onExit) {
+                        if (listener.collidingAmount > 0 && listener.prevAmount == 0) {
+                            if (listener.activateGroup) { world.spawnGroupID(listener.groupID); (<CollisionTrigger>(world.objects[listener.trigger_obj])).kind.last_spawn = (new Date).getTime() }
+                            world.toggleGroupID(listener.groupID, listener.activateGroup) 
+                        }
+                    } else {
+                        if (listener.collidingAmount == 0 && listener.prevAmount > 0) {
+                            if (listener.activateGroup) { world.spawnGroupID(listener.groupID); (<CollisionTrigger>(world.objects[listener.trigger_obj])).kind.last_spawn = (new Date).getTime() }
+                            world.toggleGroupID(listener.groupID, listener.activateGroup) 
+                        }
+                    }
+                    listener.prevAmount = listener.collidingAmount
                 })
             }
-
-
-
+            
         };
 
 

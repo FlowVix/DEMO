@@ -158,7 +158,7 @@ var SPWNHighlightRules = function() {
             regex: /\b[a-zA-Z_]\w*\b\s*(?=\(|![^{=])/
         }],
         "#punctuation": [{
-            token: "punctuation.other.spwn",
+            token: "punctuation.operator",
             regex: /[;,:]|->|=>|(?<!\.)\.(?!\.)/
         }],
         "#brackets": [{

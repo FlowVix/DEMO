@@ -180,5 +180,77 @@ add_vertex(1, 1)
 add_vertex(-1, -1)
 add_vertex(1, -1)
 
-ref.rotate(center, 360 * 10, 30)`
+ref.rotate(center, 360 * 10, 30)`,
+
+    "bouncing ball": `extract obj_props
+
+// setup
+[ball_id, wall_id, floor_id] = [?b, ?b, ?b]
+ball_group = ?g
+$.add(obj{
+    OBJ_ID: obj_ids.special.COLLISION_BLOCK,
+    X: 100, Y: 120, SCALING: 0.5,
+    BLOCK_A: ball_id,
+    GROUPS: ball_group,
+    DYNAMIC_BLOCK: true,
+})
+
+for i in 0..15 {
+    $.add(obj{
+        OBJ_ID: obj_ids.special.COLLISION_BLOCK,
+        X: 15+30*i, Y: -15,
+        BLOCK_A: floor_id,
+    })
+}
+for i in 0..5 {
+    $.add(obj{
+        OBJ_ID: obj_ids.special.COLLISION_BLOCK,
+        X: -15, Y: 15+30*i,
+        BLOCK_A: wall_id,
+    })
+    $.add(obj{
+        OBJ_ID: obj_ids.special.COLLISION_BLOCK,
+        X: 15+15*30, Y: 15+30*i,
+        BLOCK_A: wall_id,
+    })
+}
+
+//physics setup
+[pos, vel, hflip, vflip] = [?g, ?g, ?g, ?g]
+$.add(obj{
+    OBJ_ID: 1764, X: 0, Y: 30*30, GROUPS: pos,
+})
+$.add(obj{
+    OBJ_ID: 1764, X: 0, Y: 30*30, GROUPS: hflip, SCALING: 0.25
+})
+$.add(obj{
+    OBJ_ID: 1764, X: 30, Y: 30*30, GROUPS: vel, SCALING: 0.5,
+})
+$.add(obj{
+    OBJ_ID: 1764, X: 30, Y: 30*30, GROUPS: vflip, SCALING: 0.25,
+})
+
+// physics
+ball_group.follow(pos)
+
+vel.follow(pos)
+hflip.follow(pos, y_mod = 0); hflip.follow(vel, x_mod = 0); 
+vflip.follow(pos, x_mod = 0); vflip.follow(vel, y_mod = 0); 
+velocity = !{ pos.move_to(vel, duration = 0.3) }
+while_loop(() => true, (){
+    velocity.start_group.stop()
+    velocity!
+}, delay = 0.05)
+-> vel.move(0, -20000, duration = 999)
+
+
+// collision checking
+on(collision(ball_id, wall_id), !{
+    vel.rotate(hflip, 180)
+})
+on(collision(ball_id, floor_id), !{
+    vel.rotate(vflip, 180)
+})
+`,
+
 }

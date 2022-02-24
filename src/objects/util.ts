@@ -1,5 +1,5 @@
 import type {Trigger} from './triggers';
-import type World from "../world/world";
+import type {World} from "../world/world";
 
 export function draw_trigger(p5, world: World, trigger: Trigger, color: [number, number, number], name: string, text: string, progress: number = 1) {
     const last_trigger = trigger.lastTrigger;

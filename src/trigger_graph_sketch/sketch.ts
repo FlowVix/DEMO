@@ -171,12 +171,14 @@ const triggerGraphSketch = (
         }
     }
 
+    zoom = 1;
+    cameraPos = {x: 0, y: 0};
+    cameraMove = {x: 0, y: 0};
+    cameraZoom = 1;
+
     const sketch = (p5: any) => {
 
-        zoom = 1;
-        cameraPos = {x: 0, y: 0};
-        cameraMove = {x: 0, y: 0};
-        cameraZoom = 1;
+        
     
         let p5div, cnv;
 
