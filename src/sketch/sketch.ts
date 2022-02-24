@@ -477,6 +477,20 @@ const worldSketch = (
                     listener.prevAmount = listener.collidingAmount
                 })
             }
+
+            to_remove = []
+            for (const id in world.colorFades) {
+                let fade = world.colorFades[id].getColor(time)
+                world.colorIDs[id].color.r = fade.r
+                world.colorIDs[id].color.g = fade.g
+                world.colorIDs[id].color.b = fade.b
+                world.colorIDs[id].opacity = fade.opacity
+                if (time >= world.colorFades[id].startTime + world.colorFades[id].duration * 1000) {
+                    to_remove.push(id)
+                }
+            }
+            to_remove.forEach((i) => delete world.colorFades[i])
+
             
         };
 

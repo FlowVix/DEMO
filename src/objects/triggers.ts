@@ -404,7 +404,10 @@ class ColorTrigger extends Trigger {
     blending: boolean = false;
 
     draw(p5: any, world: World) {
-        draw_trigger(p5, world, this, [116, 60, 122], "Color", `${this.colorID}c`)
+        const d = new Date()
+        const time = d.getTime()
+        const progress = Math.min((time - this.lastTrigger) / (this.fadeTime * 1000), 1)
+        draw_trigger(p5, world, this, [116, 60, 122], "Color", `${this.colorID}c`, progress)
     }
     trigger(world: World): void {
         world.addColorFade(
@@ -448,6 +451,7 @@ export {
     CountTrigger,
     OnDeathTrigger,
     CollisionTrigger,
+    ColorTrigger,
     
     TouchMode,
     Cmp,

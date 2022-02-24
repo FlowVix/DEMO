@@ -195,7 +195,6 @@ class CollisionListener {
 class ColorFade {
 
     constructor(
-        public colorID: number,
         public red: number,
         public green: number,
         public blue: number,
@@ -208,6 +207,19 @@ class ColorFade {
         public startOpacity: number,
         public triggerObj: ObjIndex,
     ) {}
+
+    getColor(time: number) {
+        let lerp = Math.min(1, (time - this.startTime) / (this.duration * 1000));
+        if (this.duration === 0) {
+            lerp = 1;
+        }
+        return {
+            r: this.startRed + (this.red - this.startRed) * lerp,
+            g: this.startGreen + (this.green - this.startGreen) * lerp,
+            b: this.startBlue + (this.blue - this.startBlue) * lerp,
+            opacity: this.startOpacity + (this.opacity - this.startOpacity) * lerp,
+        }
+    }
 
 }
 
@@ -579,11 +591,13 @@ class World {
         blending: boolean,
         trigger_obj: ObjIndex,
     ) {
+        if (!(colorID in this.colorIDs))
+            return
 
-        let current: ChannelData = colorID in this.colorIDs ? this.colorIDs[colorID] : new ChannelData();
+        let current: ChannelData = this.colorIDs[colorID];
+        this.colorIDs[colorID].blending = blending
 
         this.colorFades[colorID] = new ColorFade(
-            colorID,
             red,
             green,
             blue,

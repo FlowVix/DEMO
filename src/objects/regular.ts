@@ -46,48 +46,9 @@ class Regular extends GDObject {
             let main: ChannelData = this.mainID in world.colorIDs ? world.colorIDs[this.mainID] : new ChannelData();
             let detail: ChannelData = this.detailID in world.colorIDs ? world.colorIDs[this.detailID] : new ChannelData();
             
-            let ctx = this.detailGraphics.drawingContext
-            this.detailGraphics.clear()
-
-            ctx.globalCompositeOperation = 'copy';
-            ctx.fillStyle = `rgb(0, 0, 0, 1)`;
-            ctx.fillRect(-270, -270, 540, 540);
-
-            ctx.globalCompositeOperation = 'source-over';
             
-            ctx.drawImage(
-                spritesheets[this.sheet].canvas,
-                this.detailSheetPos[0],
-                this.detailSheetPos[1],
-                this.detailSize,
-                this.detailSize,
-                - this.detailSize / 4,
-                - this.detailSize / 4,
-                this.detailSize / 2,
-                this.detailSize / 2,
-            )
 
-            ctx.globalCompositeOperation = 'multiply';
-            ctx.fillStyle = `rgb(${detail.color.r}, ${detail.color.g}, ${detail.color.b}, 1)`;
-            ctx.fillRect(-270, -270, 540, 540);
-
-
-            ctx.globalCompositeOperation = 'destination-atop';
-            ctx.drawImage(
-                spritesheets[this.sheet].canvas,
-                this.detailSheetPos[0],
-                this.detailSheetPos[1],
-                this.detailSize,
-                this.detailSize,
-                - this.detailSize / 4,
-                - this.detailSize / 4,
-                this.detailSize / 2,
-                this.detailSize / 2,
-            )
-
-            p5.image(this.detailGraphics, -270, -270)
-
-            ctx = this.mainGraphics.drawingContext
+            let ctx = this.mainGraphics.drawingContext
             this.mainGraphics.clear()
 
             ctx.globalCompositeOperation = 'copy';
@@ -127,6 +88,48 @@ class Regular extends GDObject {
             )
 
             p5.image(this.mainGraphics, -270, -270)
+
+
+            ctx = this.detailGraphics.drawingContext
+            this.detailGraphics.clear()
+
+            ctx.globalCompositeOperation = 'copy';
+            ctx.fillStyle = `rgb(0, 0, 0, 1)`;
+            ctx.fillRect(-270, -270, 540, 540);
+
+            ctx.globalCompositeOperation = 'source-over';
+            
+            ctx.drawImage(
+                spritesheets[this.sheet].canvas,
+                this.detailSheetPos[0],
+                this.detailSheetPos[1],
+                this.detailSize,
+                this.detailSize,
+                - this.detailSize / 4,
+                - this.detailSize / 4,
+                this.detailSize / 2,
+                this.detailSize / 2,
+            )
+
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.fillStyle = `rgb(${detail.color.r}, ${detail.color.g}, ${detail.color.b}, 1)`;
+            ctx.fillRect(-270, -270, 540, 540);
+
+
+            ctx.globalCompositeOperation = 'destination-atop';
+            ctx.drawImage(
+                spritesheets[this.sheet].canvas,
+                this.detailSheetPos[0],
+                this.detailSheetPos[1],
+                this.detailSize,
+                this.detailSize,
+                - this.detailSize / 4,
+                - this.detailSize / 4,
+                this.detailSize / 2,
+                this.detailSize / 2,
+            )
+
+            p5.image(this.detailGraphics, -270, -270)
             
         }
     }
