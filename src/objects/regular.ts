@@ -1,9 +1,11 @@
 
 import GDObject from "./object";
-import {ChannelData, World} from "../world/world"
+import type {ChannelData, World} from "../world/world"
 import {sheets} from "../sketch/spritesheets"
 import {spritesheets} from "../sketch/sketch"
 
+
+const ctxSize = 540
 
 class Regular extends GDObject {
 
@@ -34,26 +36,34 @@ class Regular extends GDObject {
     }
     
     draw(p5: any, world: World) {
+        console.log(typeof this.mainID, typeof this.detailID)
         if (this.mainGraphics == undefined) {
-            this.mainGraphics = p5.createGraphics(540, 540)
-            this.mainGraphics.translate(270, 270)
+            this.mainGraphics = p5.createGraphics(ctxSize, ctxSize)
+            this.mainGraphics.translate(ctxSize/2, ctxSize/2)
         } else if (this.detailGraphics == undefined) {
-            this.detailGraphics = p5.createGraphics(540, 540)
-            this.detailGraphics.translate(270, 270)
+            this.detailGraphics = p5.createGraphics(ctxSize, ctxSize)
+            this.detailGraphics.translate(ctxSize/2, ctxSize/2)
         } else if (spritesheets) {
             //let g = p5.createGraphics(p5.width, p5.height)
 
-            let main: ChannelData = this.mainID in world.colorIDs ? world.colorIDs[this.mainID] : new ChannelData();
-            let detail: ChannelData = this.detailID in world.colorIDs ? world.colorIDs[this.detailID] : new ChannelData();
+            let main: ChannelData = world.getColor(this.mainID)
+            let detail: ChannelData = world.getColor(this.detailID)
             
+            let triggerAlpha = 1;
+            this.groups.forEach(g => {
+                if (g in world.groupIDs) {
+                    triggerAlpha *= world.groupIDs[g].opacity
+                }
+            })
             
 
             let ctx = this.mainGraphics.drawingContext
             this.mainGraphics.clear()
+            ctx.globalAlpha = main.opacity * triggerAlpha
 
             ctx.globalCompositeOperation = 'copy';
             ctx.fillStyle = 'rgb(0, 0, 0, 1)';
-            ctx.fillRect(-270, -270, 540, 540);
+            ctx.fillRect(-ctxSize/2, -ctxSize/2, ctxSize, ctxSize);
 
             ctx.globalCompositeOperation = 'source-over';
             
@@ -71,7 +81,7 @@ class Regular extends GDObject {
 
             ctx.globalCompositeOperation = 'multiply';
             ctx.fillStyle = `rgb(${main.color.r}, ${main.color.g}, ${main.color.b}, 1)`;
-            ctx.fillRect(-270, -270, 540, 540);
+            ctx.fillRect(-ctxSize/2, -ctxSize/2, ctxSize, ctxSize);
 
 
             ctx.globalCompositeOperation = 'destination-atop';
@@ -87,15 +97,16 @@ class Regular extends GDObject {
                 this.mainSize / 2,
             )
 
-            p5.image(this.mainGraphics, -270, -270)
+            p5.image(this.mainGraphics, -ctxSize/2, -ctxSize/2)
 
 
             ctx = this.detailGraphics.drawingContext
             this.detailGraphics.clear()
+            ctx.globalAlpha = detail.opacity * triggerAlpha
 
             ctx.globalCompositeOperation = 'copy';
             ctx.fillStyle = `rgb(0, 0, 0, 1)`;
-            ctx.fillRect(-270, -270, 540, 540);
+            ctx.fillRect(-ctxSize/2, -ctxSize/2, ctxSize, ctxSize);
 
             ctx.globalCompositeOperation = 'source-over';
             
@@ -113,7 +124,7 @@ class Regular extends GDObject {
 
             ctx.globalCompositeOperation = 'multiply';
             ctx.fillStyle = `rgb(${detail.color.r}, ${detail.color.g}, ${detail.color.b}, 1)`;
-            ctx.fillRect(-270, -270, 540, 540);
+            ctx.fillRect(-ctxSize/2, -ctxSize/2, ctxSize, ctxSize);
 
 
             ctx.globalCompositeOperation = 'destination-atop';
@@ -129,7 +140,9 @@ class Regular extends GDObject {
                 this.detailSize / 2,
             )
 
-            p5.image(this.detailGraphics, -270, -270)
+            ctx.restore()
+
+            p5.image(this.detailGraphics, -ctxSize/2, -ctxSize/2)
             
         }
     }

@@ -288,6 +288,7 @@ class World {
                 if (obj.dynamic) this.dynamicCollisionBlocks.push(i)
             }
         })
+        this.colorIDs[1] = new ChannelData()
         this.colorIDs[1000] = new ChannelData(72, 119, 217)
         this.colorIDs[1001] = new ChannelData(54, 89, 163)
     }
