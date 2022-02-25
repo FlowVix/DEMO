@@ -148,7 +148,6 @@ const worldSketch = (
         let prevCameraPos = {x: 0, y: 0};
         let prevMousePos = {x: 0, y: 0};
         p5.mousePressed = () => {
-            console.log(p5.mouseX, p5.mouseY)
 
             if (mouseInside(15, 15+140, 15, 15+50)) {
                 activateListeners(true, false)

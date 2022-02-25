@@ -124,7 +124,6 @@ class FollowCommand {
     ) {
         this.lastVec.x = lastX
         this.lastVec.y = lastY
-        console.log("baba:", lastX, lastY, followID)
     }
 
     getDisplacement(
@@ -597,7 +596,6 @@ class World {
             )
         )
 
-        console.log(this.followCommands)
         
     }
 

@@ -70,6 +70,7 @@
 
     import def_examples from "./examples"
     import { setG5 } from "./gp5"
+import { each } from "svelte/internal";
     let examples = def_examples
 
     let current_example = Object.keys(def_examples)[0]
@@ -100,7 +101,6 @@
             return
         }
 
-        console.log(lvlStr)
         buildLevel(lvlStr)
 
         editor_console = txt
@@ -161,13 +161,20 @@
         codeEditor.setShowPrintMargin(false)
         codeEditor.setKeyboardHandler("ace/keyboard/vscode")
         codeEditor.setAutoScrollEditorIntoView(true)
-        console.log(codeEditor.renderer)
+
+        for (const i of document.getElementsByClassName("poop")) {
+            (<any>window).ace.edit(i)
+        }
+
+        // let otherPoop = (<any>window).ace.edit(document.getElementById("test"))
     }
 
-    $: codeEditor ? codeEditor.setTheme(`ace/theme/${selectedTheme}`) : ""
+    $: codeEditor ? (() => {
+        codeEditor.setTheme(`ace/theme/${selectedTheme}`)
+        tutSnippets.forEach(s => s.setTheme(`ace/theme/${selectedTheme}`))
+    })() : ""
 
 
-    let docsMaximized = false;
 
     let viewingDocs = false
     let dragging = false
@@ -192,7 +199,6 @@
         if (dragging) {
             docsPos.x = prevDocsPos.x + (e.screenX - prevMousePos.x)
             docsPos.y = prevDocsPos.y + (e.screenY - prevMousePos.y)
-            console.log(docsPos.x, docsPos.y)
         }
     }
 
@@ -202,7 +208,6 @@
     let importedFile
 
     const fileImported = () => {
-        console.log("a")
         if (importedFile && importedFile.length > 0) {
             let reader = new FileReader()
             reader.readAsText(importedFile[0], "UTF-8")
@@ -226,7 +231,49 @@
     let selectedTutorial = 0
 
 
+    let tutSnippets = [
 
+    ]
+
+    // evil, evil code
+    const selectTutorial = () => {
+
+        document.querySelectorAll('.snippet').forEach((g)=>{
+            g.remove()
+        })
+        tutSnippets = []
+        
+        setTimeout(()=>{
+            for (const i of document.querySelectorAll(".tutorial-content .highlight-spwn")) {
+                let snip = document.createElement('div')
+                snip.className = "snippet"
+                i.insertBefore(snip, i.children[0])
+                let gaga = i.children[1].innerHTML
+                let snippet = (<any>window).ace.edit(snip)
+                snippet.setValue(gaga)
+                snippet.setOption("scrollPastEnd", false)
+                snippet.setOption("showGutter", false)
+                snippet.session.setMode("ace/mode/spwn")
+                snippet.setTheme(`ace/theme/${selectedTheme}`)
+                snippet.moveCursorTo(0, 0)
+                snippet.setShowPrintMargin(false)
+                snippet.session.setUseWorker(false);
+                snippet.setReadOnly(true);
+                snippet.renderer.setPadding(6);
+                snippet.renderer.setScrollMargin(4, 6)
+                snippet.renderer.setStyle("disabled", true)
+                snippet.blur()
+                snippet.renderer.$cursorLayer.element.style.display = "none"
+                snippet.setOptions({
+                    maxLines: Infinity,
+                    highlightActiveLine: false,
+                    highlightGutterLine: false,
+                });
+                tutSnippets.push( snippet )
+            }
+        }, 1)
+        
+    }
 
 
 </script>
@@ -274,7 +321,7 @@
                 }, 10)
             }}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button
         >
-        <button class="header-button" on:click={()=>tutorialMode=!tutorialMode}>dog</button>
+        <button class="header-button" on:click={()=>{tutorialMode=!tutorialMode; tutorialMode && setTimeout(selectTutorial, 100)}}>dog</button>
         <a class="margin: 0; padding: 0;" target="_blank" href="https://github.com/Spu7Nix/SPWN-language">
             <img class="header-icons" src="assets/images/github.png" alt="Github Icon" height="26" /></a
         >
@@ -309,13 +356,13 @@
             <div class="tutorial" style={`
                 min-width: ${tutorialMode?500:0}px;
                 max-width: ${tutorialMode?500:0}px;
-                overflow-x: clip;
+                overflow-x: hidden;
                 padding: 5px ${tutorialMode?5:0}px 10px ${tutorialMode?5:0}px;
                 border-right: ${tutorialMode?1:0}px solid rgb(58, 58, 58);
             `}>
                 <div class="tutorial-header">
                     <img src="assets/images/arrow.svg" alt="Previous" height="24" style="user-select: none;"/>
-                    <select bind:value={selectedTutorial}>
+                    <select bind:value={selectedTutorial} on:change={selectTutorial}>
                         {#each tutorials as tutorial, id}
                             <option value={id}>{id+1}. {tutorial.name}</option>
                         {/each}
@@ -386,6 +433,9 @@
         `}
         />
     </div>
+
+
+    
 </div>
 
 <svelte:window on:mouseup={() => (dragging = false)} on:mousemove={drag} />
@@ -399,6 +449,7 @@
 <style>
 
     @import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
+
 
     .everything {
         position: absolute;
@@ -415,6 +466,25 @@
         max-height: 1px;
     }
 
+    :global(.highlight-spwn > code) {
+        display: none;
+    }
+
+    :global(.snippet) {
+        width: 100%;
+        height: 100%;
+        border-radius: 6px;
+        /* border: 1px solid #ffffff1e; */
+        box-shadow: 3px 3px 6px 0px rgba(0, 0, 0, 0.198);
+        /* background-color: #0003; */
+        resize: none;
+        /* color:rgba(255, 255, 255, 0.886); */
+        font-family: "Source Code Pro", monospace;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    :global(.snippet .ace_marker-layer .ace_bracket) { display: none }
 
     .content {
         width: 100%;
@@ -439,7 +509,7 @@
 
         font-family: 'Lato';
         font-size: 18px;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
         word-spacing: 2px;
         line-height: 1.5;
 
@@ -458,6 +528,7 @@
         padding: 0 4px 0 4px;
         box-sizing: border-box;
         border-radius: 6px;
+        overflow-x: hidden;
     }
 
     .tutorial-header > select {
@@ -470,14 +541,7 @@
         box-sizing: border-box;
         padding: 7px 12px 12px 12px;
         overflow-y: scroll;
-    }
-
-    :global(.tutorial-content pre) {
-        background-color: rgba(0, 0, 0, 0.237);
-        padding: 4px;
-        border-radius: 2px;
-        /* nice, btw how can we syntax hightlight this */
-        /* it seems to just put a "spwn" class on the thing */
+        overflow-x: hidden;
     }
 
     /* probably highlight js or smth */
@@ -564,6 +628,7 @@ https://newbedev.com/how-can-i-highlight-code-with-ace-editor
         gap: 1rem;
     }
 
+    
     .editor-container {
         position: relative;
         width: 100%;
@@ -651,11 +716,11 @@ https://newbedev.com/how-can-i-highlight-code-with-ace-editor
     }
 
     .header-button:hover {
-        background-color: rgba(71, 71, 71, 0.178);
+        background-color: rgba(255, 255, 255, 0.05);
         /* font-weight: 600; */
     }
     .header-button:active {
-        background-color: rgba(71, 71, 71, 0.3);
+        background-color: rgba(255, 255, 255, 0.2);
     }
 
     .header-icons {
