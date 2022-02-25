@@ -211,7 +211,11 @@ const worldSketch = (
 
             
             p5.push()
-            p5.background(50, 60, 70)
+            p5.background(
+                world.getColor(1000).color.r,
+                world.getColor(1000).color.g,
+                world.getColor(1000).color.b,
+            )
 
             p5.translate(p5.width/2, p5.height/2)
             
@@ -219,7 +223,7 @@ const worldSketch = (
             p5.scale(zoom)
 
             p5.stroke(0)
-            p5.strokeWeight(1)
+            p5.strokeWeight(1/zoom)
             p5.line(0,0,100*30,0)
             p5.line(0,0,0,-100*30)
 

@@ -362,7 +362,7 @@
 <svelte:window on:mouseup={() => (dragging = false)} on:mousemove={drag} />
 
 {#if !maximized}
-    <P5 sketch={triggerSketch} />
+    <!-- <P5 sketch={triggerSketch} /> -->
     <P5 sketch={gdWorldSketch} />
 {/if}
 <P5 sketch={globalP5} />

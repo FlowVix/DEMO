@@ -1,5 +1,5 @@
 import type Object from "../objects/object"
-import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger, TouchMode, MoveTrigger, AlphaTrigger, TouchTrigger, RotateTrigger, CountTrigger, CollisionTrigger} from "../objects/triggers"
+import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger, TouchMode, MoveTrigger, AlphaTrigger, TouchTrigger, RotateTrigger, CountTrigger, CollisionTrigger, ColorTrigger} from "../objects/triggers"
 import {CollisionObject, Display} from "../objects/special"
  
 type ObjIndex = number;
@@ -10,6 +10,17 @@ class ChannelData {
     color: {r: number, g: number, b: number} = {r: 255, g: 255, b: 255};
     opacity: number = 1;
     blending: boolean = false;
+
+    constructor(
+        r: number = 255,
+        g: number = 255,
+        b: number = 255,
+    ) {
+        this.color.r = r;
+        this.color.g = g;
+        this.color.b = b;
+    }
+
 }
 
 
@@ -277,6 +288,12 @@ class World {
                 if (obj.dynamic) this.dynamicCollisionBlocks.push(i)
             }
         })
+        this.colorIDs[1000] = new ChannelData(72, 119, 217)
+        this.colorIDs[1001] = new ChannelData(54, 89, 163)
+    }
+
+    getColor(colorID: number): ChannelData {
+        return colorID in this.colorIDs ? this.colorIDs[colorID] : new ChannelData();
     }
 
     addGroupID(
@@ -654,6 +671,8 @@ a.start_group.stop()
             } else if (obj instanceof CountTrigger) {
                 this.countListeners = this.countListeners.filter(c => c.trigger_obj != obj_idx)
             } else if (obj instanceof CollisionTrigger) {
+                // TODO
+            } else if (obj instanceof ColorTrigger) {
                 // TODO
             }
         });
