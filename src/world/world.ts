@@ -5,7 +5,6 @@ import {CollisionObject, Display} from "../objects/special"
 type ObjIndex = number;
 
 
-
 class ChannelData {
     color: {r: number, g: number, b: number} = {r: 255, g: 255, b: 255};
     opacity: number = 1;
@@ -289,8 +288,11 @@ class World {
             }
         })
         this.colorIDs[1] = new ChannelData()
-        this.colorIDs[1000] = new ChannelData(72, 119, 217)
-        this.colorIDs[1001] = new ChannelData(54, 89, 163)
+        // this.colorIDs[1000] = new ChannelData(72, 119, 217)
+        // this.colorIDs[1001] = new ChannelData(54, 89, 163)
+        this.colorIDs[1000] = new ChannelData(54, 66, 92)
+        this.colorIDs[1001] = new ChannelData(20, 31, 56)
+        
     }
 
     getColor(colorID: number): ChannelData {

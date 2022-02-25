@@ -38,6 +38,7 @@
     "rollup-plugin-rust": "^1.2.0",
     "sirv-cli": "^2.0.0",
     "svelte-ace": "^1.0.21",
-    "svelte-highlight": "^5.2.1"
+    "svelte-highlight": "^5.2.1",
+    "svelte-markdown": "^0.2.2"
   }
 }

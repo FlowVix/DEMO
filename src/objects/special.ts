@@ -1,6 +1,8 @@
 import GDObject from "./object";
 
-import type {World} from "../world/world";
+import type {ChannelData, World} from "../world/world";
+
+import { PUSAB_FONT } from "../trigger_graph_sketch/sketch";
 
 
 export class Display extends GDObject {
@@ -25,7 +27,6 @@ export class Display extends GDObject {
     }
 
 }
-// brb bat saber time !!
 export class CollisionObject extends GDObject {
     blockID: number = 0;
     dynamic: boolean = false;
@@ -34,20 +35,16 @@ export class CollisionObject extends GDObject {
         p5.stroke(170)
         p5.strokeWeight(2)
 
-        p5.line(-14, -14, -14 + 4.66, -14)
-        p5.line(-14, 14, -14 + 4.66, 14)
-        p5.line(-14 + 4.66*2, -14, -14 + 4.66*4, -14)
-        p5.line(-14 + 4.66*2, 14, -14 + 4.66*4, 14)
-        p5.line(14, -14, 14 - 4.66, -14)
-        p5.line(14, 14, 14 - 4.66, 14)
-        p5.rotate(p5.PI/2)
-        p5.line(-14, -14, -14 + 4.66, -14)
-        p5.line(-14, 14, -14 + 4.66, 14)
-        p5.line(-14 + 4.66*2, -14, -14 + 4.66*4, -14)
-        p5.line(-14 + 4.66*2, 14, -14 + 4.66*4, 14)
-        p5.line(14, -14, 14 - 4.66, -14)
-        p5.line(14, 14, 14 - 4.66, 14)
-        p5.rotate(-p5.PI/2)
+        for (let _ in [null, null]) {
+            p5.line(-14, -14, -14 + 4.66, -14)
+            p5.line(-14, 14, -14 + 4.66, 14)
+            p5.line(-14 + 4.66*2, -14, -14 + 4.66*4, -14)
+            p5.line(-14 + 4.66*2, 14, -14 + 4.66*4, 14)
+            p5.line(14, -14, 14 - 4.66, -14)
+            p5.line(14, 14, 14 - 4.66, 14)
+            p5.rotate(p5.PI/2)
+        }
+        
 
         p5.noStroke()
         p5.fill(255, 50)
@@ -56,8 +53,29 @@ export class CollisionObject extends GDObject {
             p5.fill(255, 200)
             p5.textSize(32 / `${this.blockID}b`.length)
             p5.textAlign(p5.CENTER, p5.CENTER)
-            p5.text(`${this.blockID}b${this.dynamic?'.':''}`, 0, 0)
+            p5.text(`${this.blockID}b${this.dynamic?'*':''}`, 0, 0)
         }
     }
 }
+export class TextObject extends GDObject {
+    text: string = ""
+    color_id: number = 1;
+    draw(p5: any, world: World) {
+        if (PUSAB_FONT) {
+            p5.textFont(PUSAB_FONT)
+        }
 
+        let c: ChannelData = world.getColor(this.color_id)
+        let triggerAlpha = 1
+        this.groups.forEach(g => {
+            triggerAlpha *= world.groupIDs[g].opacity
+        })
+        // TODO: color shit
+        p5.textAlign(p5.CENTER, p5.CENTER)
+        p5.fill(c.color.r, c.color.g, c.color.b, c.opacity * triggerAlpha * 255)
+        p5.strokeWeight(2)
+        p5.stroke(0)
+        p5.textSize(16)
+        p5.text(this.text, 0, 0)
+    }
+}

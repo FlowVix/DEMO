@@ -68,7 +68,7 @@ const worldSketch = (
         let system: Col.System;
 
         p5.preload = () => {
-            const PUSAB_FONT = p5.loadFont('assets/fonts/pusab.otf');
+            //const PUSAB_FONT = p5.loadFont('assets/fonts/pusab.otf');
             spritesheets = [
                 p5.loadImage(`assets/images/objects/spritesheet_1.png`),
                 p5.loadImage(`assets/images/objects/spritesheet_2.png`)
@@ -297,8 +297,10 @@ const worldSketch = (
             p5.pop()
 
             p5.noFill()
-            p5.stroke(20, 20, 26)
             p5.strokeWeight(12)
+            p5.stroke(59, 59, 59)
+            p5.rect(-4, -4, p5.width+8, p5.height+8, 18)
+            p5.stroke(20, 20, 26)
             p5.rect(-6, -6, p5.width+12, p5.height+12, 18)
             p5.stroke(17, 17, 22)
             p5.rect(-38, -38, p5.width+44, p5.height+44, 18)

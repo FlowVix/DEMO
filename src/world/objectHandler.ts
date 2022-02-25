@@ -28,7 +28,8 @@ import {
 } from "../objects/triggers" 
 import {
     Display,
-    CollisionObject
+    CollisionObject,
+    TextObject,
 } from "../objects/special"
 import {
     Regular
@@ -143,6 +144,9 @@ const createObject = (
         case Constants.OBJ_IDS.Special.COLLISION_BLOCK:
             obj = new CollisionObject(0, 0, idx)
             break;
+        case Constants.OBJ_IDS.Special.TEXT:
+            obj = new TextObject(0, 0, idx)
+            break;
         case Constants.OBJ_IDS.Triggers.ON_DEATH:
             obj = new OnDeathTrigger(0, 0, idx)
             break;
@@ -206,6 +210,10 @@ const createObject = (
                         world.addBlockID(idx, parseInt(props[i]))
                     } else if (parseInt(i) == Constants.OBJ_PROPS.DYNAMIC_BLOCK) {
                         obj.dynamic = props[i]
+                    }
+                } else if (obj instanceof TextObject) {
+                    if (parseInt(i) == Constants.OBJ_PROPS.TEXT) {
+                        obj.text = atob(props[i])
                     }
                 } else if (obj instanceof Trigger) {
                     switch (parseInt(i)) {

@@ -7,6 +7,7 @@ import {spritesheets} from "../sketch/sketch"
 
 const ctxSize = 540
 
+
 class Regular extends GDObject {
 
     mainID: number = 1;
@@ -36,7 +37,7 @@ class Regular extends GDObject {
     }
     
     draw(p5: any, world: World) {
-        console.log(typeof this.mainID, typeof this.detailID)
+        //console.log(typeof this.mainID, typeof this.detailID)
         if (this.mainGraphics == undefined) {
             this.mainGraphics = p5.createGraphics(ctxSize, ctxSize)
             this.mainGraphics.translate(ctxSize/2, ctxSize/2)
@@ -49,11 +50,11 @@ class Regular extends GDObject {
             let main: ChannelData = world.getColor(this.mainID)
             let detail: ChannelData = world.getColor(this.detailID)
             
-            let triggerAlpha = 1;
+            let triggerAlpha = 1; // yea but youre multiplying EVERY group in the worldlol
+            
+
             this.groups.forEach(g => {
-                if (g in world.groupIDs) {
-                    triggerAlpha *= world.groupIDs[g].opacity
-                }
+                triggerAlpha *= world.groupIDs[g].opacity
             })
             
 

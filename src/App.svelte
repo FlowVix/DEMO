@@ -4,6 +4,8 @@
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
     import { worldSketch } from "./sketch/sketch"
     import { createObject } from "./world/objectHandler"
+    import SvelteMarkdown from 'svelte-markdown'
+    import {tutorials} from './tutorials'
 
     export let run_spwn
     export let init_panics
@@ -75,8 +77,10 @@
     let editor_console = ""
     let is_showing_error = false
 
+
     const buildLevel = (lvlStr) => {
         world.reset()
+        
         lvlStr
             .split(";")
             .filter((e) => e.length > 0)
@@ -84,7 +88,6 @@
                 world.objects.push(createObject(objStr, world, world.objects.length))
             })
         world.init()
-        // that quirk is kinda sick
         updateBodies(world)
     }
 
@@ -217,17 +220,16 @@
             setG5(p5)
         }
     }
-</script>
 
-<!--  did you see the test example thing -->
-<!--  its supposed to toggle off the else case first -->
-<!-- its doing both -->
-<!-- yeah, isnt that just the wellknown gd quirk -->
-<!-- hm -->
-<!-- in the graph, are triggers orderered vertically after their order in world.objects? -->
-<!-- yes they are in their trigger order, from what ive seen -->
-<!--  they are in the correct order in the example -->
-<!-- ill debug the order they're triggered in -->
+
+    let tutorialMode = false
+    let selectedTutorial = 0
+
+
+
+
+
+</script>
 
 <svelte:head>
     <script
@@ -240,12 +242,7 @@
 <!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
 <link href="prism-atom-dark.css" rel="stylesheet" />
 <link href="atom-one-dark.css" rel="stylesheet" />
-<!-- updates in the same way as the world sketch -->
-<!-- yeah but the world sketch has an always running draw call accessing the world -->
-<!-- unless im not understanding, the triggerSketch code just runs once on creation -->
-
-<!-- yo sput -->
-<!-- i got an epic one -->
+<!--  gonna head out for a bit -->
 
 <div class="everything">
     <div class="header">
@@ -267,7 +264,7 @@
                 viewingDocs = !viewingDocs
             }}>{viewingDocs ? "Close Docs" : "Open Docs"}</button
         >
-        <button class="header-button" on:click={importFile.click()}>Import .spwn</button>
+        <button class="header-button" on:click={importFile.click()}>Import File</button>
         <button
             class="header-button"
             on:click={() => {
@@ -277,7 +274,8 @@
                 }, 10)
             }}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button
         >
-        <a style="margin: 0; padding: 0;" target="_blank" href="https://github.com/Spu7Nix/SPWN-language">
+        <button class="header-button" on:click={()=>tutorialMode=!tutorialMode}>dog</button>
+        <a class="margin: 0; padding: 0;" target="_blank" href="https://github.com/Spu7Nix/SPWN-language">
             <img class="header-icons" src="assets/images/github.png" alt="Github Icon" height="26" /></a
         >
         <a style="margin: 0; padding: 0;" target="_blank" href="https://discord.gg/kUzdUpNgZk">
@@ -304,35 +302,66 @@
         </div>
     </div>
 
-    <div class="playground">
-        <div class="editor">
-            <div class="editor-container">
-                <div id="code-editor" />
+    <div class="content">
+
+
+        <!-- {#if tutorialMode} -->
+            <div class="tutorial" style={`
+                min-width: ${tutorialMode?500:0}px;
+                max-width: ${tutorialMode?500:0}px;
+                overflow-x: clip;
+                padding: 5px ${tutorialMode?5:0}px 10px ${tutorialMode?5:0}px;
+                border-right: ${tutorialMode?1:0}px solid rgb(58, 58, 58);
+            `}>
+                <div class="tutorial-header">
+                    <img src="assets/images/arrow.svg" alt="Previous" height="24" style="user-select: none;"/>
+                    <select bind:value={selectedTutorial}>
+                        {#each tutorials as tutorial, id}
+                            <option value={id}>{id+1}. {tutorial.name}</option>
+                        {/each}
+                    </select>
+                    <img src="assets/images/arrow.svg" alt="Next" height="24" style="user-select: none; transform: rotate(180deg)" />
+                </div>
+                <div class="tutorial-content">
+                    <div class="weird-size-fixer">
+                        <SvelteMarkdown source={tutorials[selectedTutorial].content}/>
+                    </div>
+                </div>
             </div>
+        <!-- {/if} -->
 
+
+
+        <div class="playground">
+            <div class="editor">
+                <div class="editor-container">
+                    <div id="code-editor" />
+                </div>
+    
+                {#if !maximized}
+                    <div id="console">
+                        {@html ansiUp.ansi_to_html(editor_console)}
+                    </div>
+    
+                    <div class="buttons">
+                        <button id="run_button" class="big-button" on:click={run_code}> build </button>
+                        <button id="sim_button" class="big-button" on:click={simulate_triggers}>
+                            simulate
+                        </button>
+                    </div>
+                    <div class="optimize">
+                        <input type="checkbox" bind:checked={optimize} />
+                        Optimize Triggers
+                    </div>
+                {/if}
+            </div>
             {#if !maximized}
-                <div id="console">
-                    {@html ansiUp.ansi_to_html(editor_console)}
-                </div>
-
-                <div class="buttons">
-                    <button id="run_button" class="big-button" on:click={run_code}> build </button>
-                    <button id="sim_button" class="big-button" on:click={simulate_triggers}>
-                        simulate
-                    </button>
-                </div>
-                <div class="optimize">
-                    <input type="checkbox" bind:checked={optimize} />
-                    Optimize Triggers
+                <div class="simulation">
+                    <div id="trigger-graph-sketch" />
+                    <div id="sketch" />
                 </div>
             {/if}
         </div>
-        {#if !maximized}
-            <div class="simulation">
-                <div id="trigger-graph-sketch" />
-                <div id="sketch" />
-            </div>
-        {/if}
     </div>
 
     <div
@@ -368,6 +397,9 @@
 <P5 sketch={globalP5} />
 
 <style>
+
+    @import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
+
     .everything {
         position: absolute;
         top: 0;
@@ -379,6 +411,117 @@
         box-sizing: border-box;
     }
 
+    .weird-size-fixer {
+        max-height: 1px;
+    }
+
+
+    .content {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+
+        box-sizing: border-box;
+    }
+
+    .tutorial {
+        height: 100%;
+        background-color: rgb(27, 27, 36);
+        box-shadow: 3px 3px 10px 0px #0005;
+        z-index: 10;
+        
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        box-sizing: border-box;
+        color: #ffffffed;
+
+        font-family: 'Lato';
+        font-size: 18px;
+        letter-spacing: 1px;
+        word-spacing: 2px;
+        line-height: 1.5;
+
+        transition: all 0.5s ease-in-out;
+    }
+
+
+    .tutorial-header {
+        min-height: 50px;
+        width: 100%;
+        background-color: rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 4px 0 4px;
+        box-sizing: border-box;
+        border-radius: 6px;
+    }
+
+    .tutorial-header > select {
+        margin-bottom: 2px;
+    }
+
+    .tutorial-content {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 7px 12px 12px 12px;
+        overflow-y: scroll;
+    }
+
+    :global(.tutorial-content pre) {
+        background-color: rgba(0, 0, 0, 0.237);
+        padding: 4px;
+        border-radius: 2px;
+        /* nice, btw how can we syntax hightlight this */
+        /* it seems to just put a "spwn" class on the thing */
+    }
+
+    /* probably highlight js or smth */
+    /* 
+function highlightSyntax(text) {
+    var res = [];
+
+    var Tokenizer = ace.require('ace/tokenizer').Tokenizer;
+    var Rules = ace.require('ace/mode/sql_highlight_rules').SqlHighlightRules;
+    var Text = ace.require('ace/layer/text').Text;
+
+    var tok = new Tokenizer(new Rules().getRules());
+    var lines = text.split('\n');
+
+    lines.forEach(function(line) {
+      var renderedTokens = [];
+      var tokens = tok.getLineTokens(line);
+
+      if (tokens && tokens.tokens.length) {
+        new Text(document.createElement('div')).$renderSimpleLine(renderedTokens, tokens.tokens);
+      }
+
+      res.push('<div class="ace_line">' + renderedTokens.join('') + '</div>');
+    });
+
+    return '<div class="ace_editor ace-tomorrow"><div class="ace_layer" style="position: static;">' + res.join('') + '</div></div>';
+}
+
+highlighText(text: string) {
+    const value = this.aceEditor.session.getValue();
+    const startRow = value.substr(0, value.indexOf(text)).split(/\r\n|\r|\n/).length - 1;
+    const startCol = this.aceEditor.session.getLine(startRow).indexOf(text);
+    const endRowOffset = text.split(/\r\n|\r|\n/).length;
+    const endRow = startRow + endRowOffset - 1;
+    const endCollOffset = text.split(/\r\n|\r|\n/)[endRowOffset - 1].length;
+    const endCol = startCol + (endCollOffset > 1 ? endCollOffset + 1 : endCollOffset);
+    const range = new ace.Range(startRow, startCol, endRow, endCol);
+
+    this.aceEditor.session.selection.setRange(range);
+    this.aceEditor.scrollToLine(startRow, true, true, () => {});
+}
+https://newbedev.com/how-can-i-highlight-code-with-ace-editor
+    */
+/* 😳 */
     .docs-window {
         position: absolute;
         width: 50vw;
@@ -462,7 +605,7 @@
         font-size: 16px;
         font-weight: 600;
     }
-    .header-right > select {
+    select {
         margin: 0;
         padding: 0;
         color: white;
@@ -472,6 +615,7 @@
         font-weight: 600;
         background-color: #fff3;
         border: none;
+        user-select: none;
     }
 
     /* :global(embed .markdown-section#main) {
@@ -494,28 +638,34 @@
         margin: 0;
         padding: 3px 6px 3px 6px;
         margin: 0 0 1px 0;
-        background-color: #fff4;
+        background-color: transparent;
         color: white;
-        font-weight: 600;
+        font-weight: 300;
+        font-size: 18px;
         font-family: "Source Code Pro", monospace;
-        box-shadow: 3px 3px 10px 0px #0005;
+        /* box-shadow: 3px 3px 10px 0px #0005; */
         border-radius: 6px;
         border: none;
         transition: 0.1s all;
+        user-select: none;
     }
 
     .header-button:hover {
-        background-color: #fff6;
+        background-color: rgba(71, 71, 71, 0.178);
+        /* font-weight: 600; */
     }
     .header-button:active {
-        background-color: #fff2;
+        background-color: rgba(71, 71, 71, 0.3);
     }
 
     .header-icons {
         margin: 4px 0 0 0;
+        opacity: 0.3;
         transition: all 0.3s;
+        user-select: none;
     }
     .header-icons:hover {
+        opacity: 1;
         transform: scale(1.2);
     }
 
@@ -533,7 +683,7 @@
         font-weight: 600;
         text-shadow: 2px 2px 5px #0005;
         margin: 0 0;
-        padding: 0 0 2px 0;
+        padding: 0 0 4px 0;
     }
 
     .header {

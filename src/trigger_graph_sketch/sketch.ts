@@ -1,7 +1,7 @@
 
 import P5 from 'p5-svelte';
 import { FunctionTrigger, SpawnTrigger, StopTrigger, ToggleTrigger, Trigger } from '../objects/triggers';
-import type World from '../world/world';
+import type {World} from '../world/world';
 import {QuadTree, Box, Point, Circle} from 'js-quadtree';
 import Body, { COLLAPSE_LEN, GROUP_OBJ_SPACING } from './graph';
 
@@ -17,6 +17,7 @@ interface Vector {
 }
 
 const CAMERA_SPEED = 10;
+export let PUSAB_FONT;
 
 const triggerGraphSketch = (
     world: World
@@ -176,6 +177,14 @@ const triggerGraphSketch = (
     cameraMove = {x: 0, y: 0};
     cameraZoom = 1;
 
+
+    let dragging = false;
+    let prevCameraPos = {x: 0, y: 0};
+    let prevMousePos = {x: 0, y: 0};
+
+
+    let camera_offset = {x: 0, y: 0};
+
     const sketch = (p5: any) => {
 
         
@@ -185,7 +194,7 @@ const triggerGraphSketch = (
         let is_selecting = false;
     
         p5.preload = () => {
-            const PUSAB_FONT = p5.loadFont('assets/fonts/pusab.otf');
+            PUSAB_FONT = p5.loadFont('assets/fonts/pusab.otf');
         }
 
         const get_translated_mouse = () => {
@@ -243,9 +252,6 @@ const triggerGraphSketch = (
             }
         }
     
-        let dragging = false;
-        let prevCameraPos = {x: 0, y: 0};
-        let prevMousePos = {x: 0, y: 0};
     
         p5.mousePressed = () => {
             if (p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height) return
@@ -297,12 +303,12 @@ const triggerGraphSketch = (
                 p5div.offsetHeight,
             )
     
-            let camera_offset = {x: 0, y: 0};
     
             bodies.forEach(body => {
                 camera_offset.x += body.pos.x
                 camera_offset.y += body.pos.y
             })
+            
             camera_offset.x /= bodies.length
             camera_offset.y /= bodies.length
     
@@ -326,10 +332,10 @@ const triggerGraphSketch = (
             p5.translate(cameraPos.x, -cameraPos.y)
             p5.scale(2)
 
-            for (let i = 0; i < bodies.length; i++) {
-                bodies[i].calc_input_side(bodies, reverse_graph)
-                bodies[i].calc_output_side(bodies, graph)
-            }
+            // for (let i = 0; i < bodies.length; i++) {
+            //     bodies[i].calc_input_side(bodies, reverse_graph)
+            //     bodies[i].calc_output_side(bodies, graph)
+            // }
             
             affectBodies(bodies, graph, reverse_graph, tmouse)
 
@@ -340,31 +346,25 @@ const triggerGraphSketch = (
                 // if spawn triggered
                 const y_offset = body.collapsible ? -8 : 0
                 const height_offset = ((body.collapsible && body.collapsed) ? 34 : 26) - y_offset
-                if (!body.pinned) {
+                body.get_input_points(bodies, reverse_graph).forEach((point) => {
                     p5.push()
-                    p5.translate(body.connection_point().x, body.connection_point().y)
+                    p5.translate(point.x, point.y)
                     p5.fill(255)
                     p5.noStroke()
                     p5.rect(-3, -3, 6, 6)
                     p5.pop()
-                }
+                })
 
-                for (let idx = 0; idx < body.objs.length; idx++) {
-                    const object = world.objects[body.objs[idx]]
-                    if (object instanceof Trigger && object.kind instanceof FunctionTrigger) {
-                        p5.push()
-                        const output_point = body.output_point(idx)
-                        p5.translate(output_point.x, output_point.y)
-                        p5.fill(255)
-                        p5.noStroke()
-                        p5.ellipse(-0, -0, 6, 6)
-                        p5.pop()
-                        // only draw bottom output once
-                        if (idx > body.child_num()) {
-                            break
-                        }
-                    }
-                }
+                body.get_output_points(bodies, graph).forEach((point) => {
+                    p5.push()
+                    const output_point = point
+                    p5.translate(output_point.x, output_point.y)
+                    p5.fill(255)
+                    p5.noStroke()
+                    p5.ellipse(-0, -0, 6, 6)
+                    p5.pop()
+                    // only draw bottom output once 
+                })
 
 
                 p5.push()
@@ -467,8 +467,8 @@ const triggerGraphSketch = (
                                     } // yo sput because if you change example you shouldnt lose all the stuff you did yes
                                     
                                     
-                                    const output_point = body.output_point(child_idx)
-                                    const input_point = body2.connection_point()
+                                    const output_point = body.output_point(child_idx, body2.pos.x)
+                                    const input_point = body2.connection_point(body.pos.x)
                                     arrow(p5, output_point.x, output_point.y, input_point.x, input_point.y)
                                     arrow_count++
                                     if (arrow_count > MAX_ARROWS) return
@@ -515,7 +515,7 @@ const triggerGraphSketch = (
                             if (bodies_per_group[obj.target]) {
                                 bodies_per_group[obj.target].forEach(body2idx => {
                                     const body2 = bodies[body2idx]
-                                    const p2 = bodies[body2idx].connection_point()
+                                    const p2 = bodies[body2idx].connection_point(body.pos.x)
 
                                     arrow(p5, p1.x, p1.y, p2.x, p2.y)
                                     arrow_count++
@@ -560,8 +560,10 @@ const triggerGraphSketch = (
 
             // dropped in to give your sketch rounded corners
             p5.noFill()
-            p5.stroke(20, 20, 26)
             p5.strokeWeight(12)
+            p5.stroke(59, 59, 59)
+            p5.rect(-4, -4, p5.width+8, p5.height+8, 18)
+            p5.stroke(20, 20, 26)
             p5.rect(-6, -6, p5.width+12, p5.height+12, 18)
             p5.stroke(17, 17, 22)
             p5.rect(-38, -38, p5.width+44, p5.height+44, 18)

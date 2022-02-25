@@ -3,7 +3,7 @@ import type { BodyIdx, Graph, ReverseGraph } from './sketch';
 
 const IDEAL_DIST = 60;
 const RELATION_POWER = 3000;
-const SPRING_COEF = 0.01;
+const SPRING_COEF = 0.05;
 const MAX_VEL = 300;
 
 export const COLLAPSE_LEN = 8;
@@ -20,18 +20,18 @@ class Body {
     collapsed: boolean;
     collapsible: boolean;
 
-    input_side: number;
-    output_side: number;
+    // input_side: number;
+    // output_side: number;
 
-    connection_point(): { x: number, y: number } {
-        return { x: this.pos.x + 13 * this.input_side, y: this.pos.y - 13 +  (GROUP_OBJ_SPACING * this.child_num()) * 0.5 }
+    connection_point(source_x): { x: number, y: number } {
+        return { x: this.pos.x + 13 * (source_x < this.pos.x ? -1 : 1), y: this.pos.y - 13 +  (GROUP_OBJ_SPACING * this.child_num()) * 0.5 }
     }
 
-    output_point(child_idx: number): { x: number, y: number } {
+    output_point(child_idx: number, source_x): { x: number, y: number } {
         if (child_idx >= this.child_num()) {
             return { x: this.pos.x, y: this.pos.y + (GROUP_OBJ_SPACING * (this.child_num() - 1)) + 23 }
         } 
-        return { x: this.pos.x + 13 * this.output_side, y: this.pos.y + (GROUP_OBJ_SPACING * child_idx) + 5 }
+        return { x: this.pos.x + 13 * (source_x < this.pos.x ? -1 : 1), y: this.pos.y + (GROUP_OBJ_SPACING * child_idx) + 5 }
     }
 
     child_num(): number {
@@ -57,42 +57,78 @@ class Body {
         this.pinned = pinned;
         this.objs = objs;
         this.index = index;
-        this.input_side = -1;
-        this.output_side = 1;
+        // this.input_side = -1;
+        // this.output_side = 1;
         this.collapsed = true;
         this.collapsible = this.objs.length > COLLAPSE_LEN;
     }
 
-    calc_input_side(bodies: Body[], reverse_graph: ReverseGraph) {
-        let sum = 0
-        if (reverse_graph[this.index])
-            reverse_graph[this.index].forEach(([body_idx, _]) => {
-                const child_pos = bodies[body_idx].pos.x
-                sum += child_pos - this.pos.x
-            })
-
-        if (sum > 0)
-            this.input_side = 1
-        else
-            this.input_side = -1
-    }
-
-    calc_output_side(bodies: Body[], graph: Graph) {
-        let sum = 0
-
+    get_output_points(bodies: Body[], graph: Graph): { x: number, y: number }[] {
+        let points = []
+        let bottom_done = false
         if (graph[this.index]) {
-            Object.values(graph[this.index]).forEach((set) => {
-                set.forEach(body_idx => {
-                    const body_pos = bodies[body_idx].pos.x
-                    sum += body_pos - this.pos.x
-                })
+            Object.entries(graph[this.index]).forEach(([child_idx, set]) => {
+                if (parseInt(child_idx) >= this.child_num()) {
+                    if (bottom_done) return
+                    else bottom_done = true
+                }
+
+                const arr = [...set.values()]
+                if (arr.some(i => bodies[i].pos.x > this.pos.x)) {
+                    points.push(this.output_point(parseInt(child_idx), this.pos.x + 1))
+                }
+                if (arr.some(i => bodies[i].pos.x < this.pos.x)) {
+                    points.push(this.output_point(parseInt(child_idx), this.pos.x - 1))
+                }
             })
         }
-        if (sum > 0)
-            this.output_side = 1
-        else
-            this.output_side = -1
+        return points
     }
+
+    get_input_points(bodies: Body[], reverse_graph: ReverseGraph): { x: number, y: number }[] {
+        let points = []
+        if (reverse_graph[this.index]) {
+            const arr = [...reverse_graph[this.index]]
+            if (arr.some(([i, _]) => bodies[i].pos.x > this.pos.x)) {
+                points.push(this.connection_point(this.pos.x + 1))
+            }
+            if (arr.some(([i, _]) => bodies[i].pos.x < this.pos.x)) {
+                points.push(this.connection_point(this.pos.x - 1))
+            }
+        }
+        return points
+    }
+
+    // calc_input_side(bodies: Body[], reverse_graph: ReverseGraph) {
+    //     let sum = 0
+    //     if (reverse_graph[this.index])
+    //         reverse_graph[this.index].forEach(([body_idx, _]) => {
+    //             const child_pos = bodies[body_idx].pos.x
+    //             sum += child_pos - this.pos.x
+    //         })
+
+    //     if (sum > 0)
+    //         this.input_side = 1
+    //     else
+    //         this.input_side = -1
+    // }
+
+    // calc_output_side(bodies: Body[], graph: Graph) {
+    //     let sum = 0
+
+    //     if (graph[this.index]) {
+    //         Object.values(graph[this.index]).forEach((set) => {
+    //             set.forEach(body_idx => {
+    //                 const body_pos = bodies[body_idx].pos.x
+    //                 sum += body_pos - this.pos.x
+    //             })
+    //         })
+    //     }
+    //     if (sum > 0)
+    //         this.output_side = 1
+    //     else
+    //         this.output_side = -1
+    // }
 
 //     type Graph =        Record<BodyIdx, Record<BodyChildIdx, Set<BodyIdx>>>;
 //     type ReverseGraph = Record<BodyIdx, Set<[BodyIdx, BodyChildIdx]>>;
@@ -159,11 +195,11 @@ class Body {
         
         for (let child_idx = 0; child_idx < this.child_num(); child_idx++) {
             if (!graph[this.index] || !graph[this.index][child_idx]) continue
-            const child_pos = this.output_point(child_idx)
             graph[this.index][child_idx].forEach(body_idx => {
                 if (!bodies_done[body_idx]) {
                     bodies_done[body_idx] = true
-                    const body_pos = bodies[body_idx].connection_point()
+                    const child_pos = this.output_point(child_idx, bodies[body_idx].pos.x)
+                    const body_pos = bodies[body_idx].connection_point(this.pos.x)
                     
                     const to = {
                         x: child_pos.x - body_pos.x,
@@ -177,10 +213,10 @@ class Body {
             reverse_graph[this.index].forEach(([body_idx, child_idx]) => {
                 if (!bodies_done[body_idx]) {
                     bodies_done[body_idx] = true
-                    const child_pos = bodies[body_idx].output_point(child_idx)
+                    const child_pos = bodies[body_idx].output_point(child_idx, this.pos.x)
                     const to = {
-                        x: this.connection_point().x - child_pos.x,
-                        y: this.connection_point().y - child_pos.y
+                        x: this.connection_point(bodies[body_idx].pos.x).x - child_pos.x,
+                        y: this.connection_point(bodies[body_idx].pos.x).y - child_pos.y
                     }
                     connected_bodies.push(to)
                 }

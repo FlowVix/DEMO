@@ -407,7 +407,7 @@ class ColorTrigger extends Trigger {
         const d = new Date()
         const time = d.getTime()
         const progress = Math.min((time - this.lastTrigger) / (this.fadeTime * 1000), 1)
-        draw_trigger(p5, world, this, [116, 60, 122], "Color", `${this.colorID}c`, progress)
+        draw_trigger(p5, world, this, [this.red, this.green, this.blue], "Color", `${this.colorID}c`, progress, [155 + this.red / 2.55, 155 + this.green / 2.55, 155 + this.blue / 2.55])
     }
     trigger(world: World): void {
         world.addColorFade(
