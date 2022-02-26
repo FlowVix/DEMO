@@ -672,9 +672,15 @@ a.start_group.stop()
             } else if (obj instanceof CountTrigger) {
                 this.countListeners = this.countListeners.filter(c => c.trigger_obj != obj_idx)
             } else if (obj instanceof CollisionTrigger) {
-                // TODO
+                let to_remove = []
+                for (const i in this.collisionListeners) {
+                    this.collisionListeners[i] = this.collisionListeners[i].filter(c => c.trigger_obj != obj_idx)
+                    if (this.collisionListeners[i].length == 0) to_remove.push(i)
+                }
+                for (const i of to_remove) delete this.collisionListeners[i]
             } else if (obj instanceof ColorTrigger) {
-                // TODO
+                const t = obj.colorID
+                delete this.colorFades[t]
             }
         });
     }

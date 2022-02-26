@@ -204,19 +204,6 @@ import { each } from "svelte/internal";
 
     run_code()
 
-    let importFile
-    let importedFile
-
-    const fileImported = () => {
-        if (importedFile && importedFile.length > 0) {
-            let reader = new FileReader()
-            reader.readAsText(importedFile[0], "UTF-8")
-            reader.onload = function (evt) {
-                examples[current_example] = evt.target.result
-                codeEditor.setValue(examples[current_example])
-            }
-        }
-    }
 
     let maximized = false
 
@@ -305,21 +292,12 @@ import { each } from "svelte/internal";
             <img class="logo" src="assets/images/spwn.svg" alt="SPWN Logo" height="36" /></a
         >
         <span class="logo-text">SPWN Playground</span>
-        <input
-            type="file"
-            accept=".spwn"
-            style="display: none"
-            bind:this={importFile}
-            bind:files={importedFile}
-            on:change={fileImported}
-        />
         <button
             class="header-button"
             on:click={() => {
                 viewingDocs = !viewingDocs
             }}>{viewingDocs ? "Close Docs" : "Open Docs"}</button
         >
-        <button class="header-button" on:click={importFile.click()}>Import File</button>
         <button
             class="header-button"
             on:click={() => {
