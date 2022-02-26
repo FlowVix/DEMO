@@ -47,6 +47,16 @@ border-color: #8F93A2\
 .ace--material-ocean-high-contrast .ace_keyword {\
 color: #C792EA\
 }\
+.ace--material-ocean-high-contrast .ace_keyword.ace_other {\
+color: #F78C6C\
+}\
+.ace--material-ocean-high-contrast .ace_keyword.ace_control {\
+font-style: italic;\
+color: #89DDFF\
+}\
+.ace--material-ocean-high-contrast .ace_punctuation {\
+color: #89DDFF\
+}\
 .ace--material-ocean-high-contrast .ace_keyword.ace_other.ace_unit {\
 color: #F78C6C\
 }\

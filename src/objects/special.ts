@@ -44,7 +44,7 @@ export class CollisionObject extends GDObject {
             p5.line(14, 14, 14 - 4.66, 14)
             p5.rotate(p5.PI/2)
         }
-        
+        p5.rotate(p5.PI)
 
         p5.noStroke()
         p5.fill(255, 50)

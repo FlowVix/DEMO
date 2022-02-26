@@ -234,6 +234,8 @@ import { each } from "svelte/internal";
     let tutSnippets = [
 
     ]
+    let solutionShown = false
+    $: showmeStyle = tutorials[selectedTutorial].solution ? "opacity: 1; pointer-events: all;" : "opacity: 0.3; pointer-events: none;"
 
     // evil, evil code
     const selectTutorial = () => {
@@ -242,6 +244,11 @@ import { each } from "svelte/internal";
             g.remove()
         })
         tutSnippets = []
+
+        codeEditor.setValue(tutorials[selectedTutorial].initialCode ?? "")
+        codeEditor.moveCursorTo(0, 0)
+        solutionShown = false
+        editor_console = ""
         
         setTimeout(()=>{
             for (const i of document.querySelectorAll(".tutorial-content .highlight-spwn")) {
@@ -260,9 +267,10 @@ import { each } from "svelte/internal";
                 snippet.session.setUseWorker(false);
                 snippet.setReadOnly(true);
                 snippet.renderer.setPadding(6);
-                snippet.renderer.setScrollMargin(4, 6)
+                snippet.renderer.setScrollMargin(5, 6)
                 snippet.renderer.setStyle("disabled", true)
                 snippet.blur()
+                snippet.getSession().setUseWrapMode(true)
                 snippet.renderer.$cursorLayer.element.style.display = "none"
                 snippet.setOptions({
                     maxLines: Infinity,
@@ -321,7 +329,7 @@ import { each } from "svelte/internal";
                 }, 10)
             }}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button
         >
-        <button class="header-button" on:click={()=>{tutorialMode=!tutorialMode; tutorialMode && setTimeout(selectTutorial, 100)}}>dog</button>
+        <button class="header-button" on:click={()=>{tutorialMode=!tutorialMode; tutorialMode && setTimeout(selectTutorial, 10)}}>dog</button>
         <a class="margin: 0; padding: 0;" target="_blank" href="https://github.com/Spu7Nix/SPWN-language">
             <img class="header-icons" src="assets/images/github.png" alt="Github Icon" height="26" /></a
         >
@@ -373,6 +381,21 @@ import { each } from "svelte/internal";
                     <div class="weird-size-fixer">
                         <SvelteMarkdown source={tutorials[selectedTutorial].content}/>
                     </div>
+                </div>
+                <div class="tutorial-footer">
+                    {#if solutionShown}
+                        <button class="showme" style={showmeStyle} on:click={()=>{
+                            codeEditor.setValue(tutorials[selectedTutorial].initialCode)
+                            codeEditor.moveCursorTo(0, 0)
+                            solutionShown = false
+                        }}>Reset</button>
+                    {:else}
+                        <button class="showme" style={showmeStyle} on:click={()=>{
+                            codeEditor.setValue(tutorials[selectedTutorial].solution)
+                            codeEditor.moveCursorTo(0, 0)
+                            solutionShown = true
+                        }}>Show me</button>
+                    {/if}
                 </div>
             </div>
         <!-- {/if} -->
@@ -474,7 +497,6 @@ import { each } from "svelte/internal";
         width: 100%;
         height: 100%;
         border-radius: 6px;
-        /* border: 1px solid #ffffff1e; */
         box-shadow: 3px 3px 6px 0px rgba(0, 0, 0, 0.198);
         /* background-color: #0003; */
         resize: none;
@@ -482,6 +504,15 @@ import { each } from "svelte/internal";
         font-family: "Source Code Pro", monospace;
         font-size: 16px;
         font-weight: 600;
+        border: 1.5px solid #ffffff26;
+    }
+
+    :global(.tutorial-content a) {
+        color: rgb(255, 205, 89);
+    }
+
+    :global(.tutorial-content p) {
+        color: rgb(255, 255, 255, 0.8);
     }
 
     :global(.snippet .ace_marker-layer .ace_bracket) { display: none }
@@ -509,7 +540,7 @@ import { each } from "svelte/internal";
 
         font-family: 'Lato';
         font-size: 18px;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.1px;
         word-spacing: 2px;
         line-height: 1.5;
 
@@ -521,6 +552,7 @@ import { each } from "svelte/internal";
         min-height: 50px;
         width: 100%;
         background-color: rgba(0,0,0,0.2);
+        box-shadow: 3px 3px 6px 0px rgba(0, 0, 0, 0.198);
         display: flex;
         flex-direction: row;
         justify-content: space-between;
@@ -529,6 +561,45 @@ import { each } from "svelte/internal";
         box-sizing: border-box;
         border-radius: 6px;
         overflow-x: hidden;
+    }
+
+    .tutorial-footer {
+        min-height: 50px;
+        width: 100%;
+        background-color: rgba(0,0,0,0.2);
+        box-shadow: 3px 3px 6px 0px rgba(0, 0, 0, 0.198);
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 10px 0 10px;
+        box-sizing: border-box;
+        border-radius: 6px;
+        overflow-x: hidden;
+    }
+
+    button.showme {
+        margin: 0;
+        padding: 0 8px 0 8px;
+        height: 30px;
+        width: 90px;
+        background-color: #aa3b3b;
+        box-shadow: 3px 3px 6px 0px rgba(0, 0, 0, 0.198);
+        text-align: center;
+        font-weight: 600;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        transition: all 0.15s;
+        cursor: pointer;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    button.showme:hover {
+        background-color: #e96363;
+    }
+    button.showme:active {
+        background-color: #5f2b2b;
     }
 
     .tutorial-header > select {

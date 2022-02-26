@@ -45,17 +45,17 @@ var SPWNHighlightRules = function() {
             token: "keyword.control.spwn",
             regex: /\b(?:if|else|while|return|extract|break|continue|match|type)\b/
         }, {
-            token: "keyword.operator.emerald",
+            token: "keyword.operator.spwn",
             regex: /\blet\b/
         }, {
-            token: "keyword.other.emerald",
+            token: "keyword.other.spwn",
             regex: /\b(?:impl|import)\b/
         }],
         "#for_in": [{
-            token: "keyword.control.emerald",
+            token: "keyword.control.spwn",
             regex: /\bfor\b/,
             push: [{
-                token: "keyword.control.emerald",
+                token: "keyword.control.spwn",
                 regex: /\bin\b/,
                 next: "pop"
             }, {
