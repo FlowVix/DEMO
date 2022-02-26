@@ -139,9 +139,10 @@ const triggerGraphSketch = (
                     const targets = world.groupIDs[object.kind.target];
                     if (targets) {
                         targets.objects.forEach(target => {
-                            const target_body_idx = obj_to_body_idx[target][0]
-                            add_to_graph(idx, child_idx, target_body_idx)
-
+                            if (obj_to_body_idx[target]) {
+                                const target_body_idx = obj_to_body_idx[target][0]
+                                add_to_graph(idx, child_idx, target_body_idx)
+                            }
                         });
                     }
                 }
@@ -149,9 +150,22 @@ const triggerGraphSketch = (
         })
         
         for (let i = 0; i < 600; i++) {
-            affectBodies(bodies, graph, reverse_graph, {x: 0, y: 0})
+            const qtree = create_qtree(bodies)
+            affectBodies(bodies, graph, reverse_graph, {x: 0, y: 0}, qtree)
         }
     }
+
+    const create_qtree = (bodies: Body[]): QuadTree => {
+        let qtree = new QuadTree(new Box(-5000, -5000, 100000, 10000), qtree_config);
+        bodies.forEach((body, i) => {
+            const points = body.child_num()
+            for (let y = 0; y < points; y++) {
+                qtree.insert(new Point(body.pos.x, body.pos.y + y * GROUP_OBJ_SPACING, i));
+            }
+        })
+        return qtree
+    }
+
 
     const qtree_config = {
         capacity: 4,            // Specify the maximum amount of point per node (default: 4)
@@ -162,11 +176,7 @@ const triggerGraphSketch = (
     };
     
     // touch triggers? collision? color triggers?? pulse?
-    const affectBodies = (bodies: Body[], graph: Graph, reverse_graph: ReverseGraph, tmouse) => {
-        let qtree = new QuadTree(new Box(-5000, -5000, 100000, 10000), qtree_config);
-        bodies.forEach((body, i) => {
-            qtree.insert(new Point(body.pos.x, body.pos.y, i));
-        })
+    const affectBodies = (bodies: Body[], graph: Graph, reverse_graph: ReverseGraph, tmouse, qtree: QuadTree) => {
         for (let i = 0; i < bodies.length; i++) {
             bodies[i].affect(bodies, qtree, graph, reverse_graph, tmouse)
         }
@@ -175,7 +185,7 @@ const triggerGraphSketch = (
     zoom = 1;
     cameraPos = {x: 0, y: 0};
     cameraMove = {x: 0, y: 0};
-    cameraZoom = 1;
+    cameraZoom = 2;
 
 
     let dragging = false;
@@ -200,8 +210,8 @@ const triggerGraphSketch = (
 
         const get_translated_mouse = () => {
             return {
-                x: ((p5.mouseX - p5.width/2) / cameraZoom - cameraPos.x) / 2, 
-                y: ((p5.mouseY - p5.height/2) / cameraZoom + cameraPos.y) / 2
+                x: ((p5.mouseX - p5.width/2) / cameraZoom - cameraPos.x), 
+                y: ((p5.mouseY - p5.height/2) / cameraZoom + cameraPos.y)
             }
         }
 
@@ -330,19 +340,44 @@ const triggerGraphSketch = (
             p5.translate(p5.width/2, p5.height/2)
             p5.scale(cameraZoom)
             p5.translate(cameraPos.x, -cameraPos.y)
-            p5.scale(2)
 
             // for (let i = 0; i < bodies.length; i++) {
             //     bodies[i].calc_input_side(bodies, reverse_graph)
             //     bodies[i].calc_output_side(bodies, graph)
             // }
+
+            const qtree = create_qtree(bodies)
+            affectBodies(bodies, graph, reverse_graph, tmouse, qtree)
+
+            // let screenWorldBounds = {
+            //     left: cameraPos.x - p5.width/2/cameraZoom,
+            //     right: cameraPos.x + p5.width/2/cameraZoom,
+            //     up: cameraPos.y + p5.height/2/cameraZoom,
+            //     down: cameraPos.y - p5.height/2/cameraZoom,
+            // }
+
+            let screenBox = new Box(
+                -cameraPos.x - p5.width / cameraZoom / 2 - GROUP_OBJ_SPACING,
+                cameraPos.y - p5.height / cameraZoom / 2 - GROUP_OBJ_SPACING,
+                p5.width / cameraZoom + GROUP_OBJ_SPACING * 2,
+                p5.height / cameraZoom + GROUP_OBJ_SPACING * 2,
+            )
             
-            affectBodies(bodies, graph, reverse_graph, tmouse)
+            p5.noFill()
+            p5.stroke(255, 0, 0)
+            p5.strokeWeight(1)
+            p5.rect(screenBox.x, screenBox.y, screenBox.w, screenBox.h)
 
             const d = new Date()
             const time = d.getTime()
 
-            bodies.forEach(body => {
+            let bodies_done = Array(bodies.length).fill(false)
+            const close_points = qtree.query(screenBox)
+
+            close_points.forEach(({data: i}) => {
+                if (bodies_done[i]) return
+                bodies_done[i] = true
+                const body = bodies[i]
                 // if spawn triggered
                 const y_offset = body.collapsible ? -8 : 0
                 const height_offset = ((body.collapsible && body.collapsed) ? 34 : 26) - y_offset
@@ -524,7 +559,10 @@ const triggerGraphSketch = (
                                 if (arrow_count > MAX_ARROWS) return
                             } else if (world.groupIDs[obj.target]) {
                                 world.groupIDs[obj.target].objects.forEach(obj2idx => {
-                                    if (obj_to_body_idx[obj2idx]) {
+                                    if (obj_to_body_idx[obj2idx]) { 
+                                        // i
+                                        // yea i need to install sveltemarkdown
+                                        // but npm i did nothing
                                         const [bodyidx, child_idx] = obj_to_body_idx[obj2idx]
                                         const body2 = bodies[bodyidx]
                                         if (child_idx < body2.child_num()) {

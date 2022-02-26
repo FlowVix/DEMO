@@ -1,11 +1,11 @@
 <script lang="ts">
     import P5 from "p5-svelte"
-    import {World} from "./world/world"
+    import { World } from "./world/world"
     import triggerGraphSketch from "./trigger_graph_sketch/sketch"
     import { worldSketch } from "./sketch/sketch"
     import { createObject } from "./world/objectHandler"
-    import SvelteMarkdown from 'svelte-markdown'
-    import {tutorials} from './tutorials'
+    import SvelteMarkdown from "svelte-markdown"
+    import { tutorials } from "./tutorials"
 
     export let run_spwn
     export let init_panics
@@ -70,7 +70,7 @@
 
     import def_examples from "./examples"
     import { setG5 } from "./gp5"
-import { each } from "svelte/internal";
+    import { each } from "svelte/internal"
     let examples = def_examples
 
     let current_example = Object.keys(def_examples)[0]
@@ -78,10 +78,9 @@ import { each } from "svelte/internal";
     let editor_console = ""
     let is_showing_error = false
 
-
     const buildLevel = (lvlStr) => {
         world.reset()
-        
+
         lvlStr
             .split(";")
             .filter((e) => e.length > 0)
@@ -163,18 +162,18 @@ import { each } from "svelte/internal";
         codeEditor.setAutoScrollEditorIntoView(true)
 
         for (const i of document.getElementsByClassName("poop")) {
-            (<any>window).ace.edit(i)
+            ;(<any>window).ace.edit(i)
         }
 
         // let otherPoop = (<any>window).ace.edit(document.getElementById("test"))
     }
 
-    $: codeEditor ? (() => {
-        codeEditor.setTheme(`ace/theme/${selectedTheme}`)
-        tutSnippets.forEach(s => s.setTheme(`ace/theme/${selectedTheme}`))
-    })() : ""
-
-
+    $: codeEditor
+        ? (() => {
+              codeEditor.setTheme(`ace/theme/${selectedTheme}`)
+              tutSnippets.forEach((s) => s.setTheme(`ace/theme/${selectedTheme}`))
+          })()
+        : ""
 
     let viewingDocs = false
     let dragging = false
@@ -204,30 +203,20 @@ import { each } from "svelte/internal";
 
     run_code()
 
-
     let maximized = false
-
-    let globalP5 = (p5) => {
-        p5.setup = () => {
-            setG5(p5)
-        }
-    }
-
 
     let tutorialMode = false
     let selectedTutorial = 0
 
-
-    let tutSnippets = [
-
-    ]
+    let tutSnippets = []
     let solutionShown = false
-    $: showmeStyle = tutorials[selectedTutorial].solution ? "opacity: 1; pointer-events: all;" : "opacity: 0.3; pointer-events: none;"
+    $: showmeStyle = tutorials[selectedTutorial].solution
+        ? "opacity: 1; pointer-events: all;"
+        : "opacity: 0.3; pointer-events: none;"
 
     // evil, evil code
     const selectTutorial = () => {
-
-        document.querySelectorAll('.snippet').forEach((g)=>{
+        document.querySelectorAll(".snippet").forEach((g) => {
             g.remove()
         })
         tutSnippets = []
@@ -236,10 +225,10 @@ import { each } from "svelte/internal";
         codeEditor.moveCursorTo(0, 0)
         solutionShown = false
         editor_console = ""
-        
-        setTimeout(()=>{
+
+        setTimeout(() => {
             for (const i of document.querySelectorAll(".tutorial-content .highlight-spwn")) {
-                let snip = document.createElement('div')
+                let snip = document.createElement("div")
                 snip.className = "snippet"
                 i.insertBefore(snip, i.children[0])
                 let gaga = i.children[1].innerHTML
@@ -251,9 +240,9 @@ import { each } from "svelte/internal";
                 snippet.setTheme(`ace/theme/${selectedTheme}`)
                 snippet.moveCursorTo(0, 0)
                 snippet.setShowPrintMargin(false)
-                snippet.session.setUseWorker(false);
-                snippet.setReadOnly(true);
-                snippet.renderer.setPadding(6);
+                snippet.session.setUseWorker(false)
+                snippet.setReadOnly(true)
+                snippet.renderer.setPadding(6)
                 snippet.renderer.setScrollMargin(5, 6)
                 snippet.renderer.setStyle("disabled", true)
                 snippet.blur()
@@ -263,14 +252,11 @@ import { each } from "svelte/internal";
                     maxLines: Infinity,
                     highlightActiveLine: false,
                     highlightGutterLine: false,
-                });
-                tutSnippets.push( snippet )
+                })
+                tutSnippets.push(snippet)
             }
         }, 1)
-        
     }
-
-
 </script>
 
 <svelte:head>
@@ -295,22 +281,42 @@ import { each } from "svelte/internal";
         <button
             class="header-button"
             on:click={() => {
-                viewingDocs = !viewingDocs
-            }}>{viewingDocs ? "Close Docs" : "Open Docs"}</button
+                tutorialMode = !tutorialMode
+                tutorialMode && setTimeout(selectTutorial, 10)
+            }}
         >
+            Tutorial
+        </button>
+
         <button
             class="header-button"
             on:click={() => {
+                viewingDocs = !viewingDocs
+            }}>{viewingDocs ? "Close Docs" : "Open Docs"}</button
+        >
+
+        <img
+            class="header-icons"
+            src={maximized ? "assets/images/minimize.svg" : "assets/images/maximize.svg"}
+            alt={maximized ? "Minimize editor" : "Maximize editor"}
+            style={`
+                cursor: pointer;
+                margin-bottom: 4px;
+            `}
+            height="26"
+            on:click={() => {
                 maximized = !maximized
                 setTimeout(() => {
+                    // nice!
                     codeEditor.resize()
                 }, 10)
-            }}>{maximized ? "Minimize Editor" : "Maximize Editor"}</button
-        >
-        <button class="header-button" on:click={()=>{tutorialMode=!tutorialMode; tutorialMode && setTimeout(selectTutorial, 10)}}>dog</button>
+            }}
+        />
+
         <a class="margin: 0; padding: 0;" target="_blank" href="https://github.com/Spu7Nix/SPWN-language">
             <img class="header-icons" src="assets/images/github.png" alt="Github Icon" height="26" /></a
         >
+
         <a style="margin: 0; padding: 0;" target="_blank" href="https://discord.gg/kUzdUpNgZk">
             <img class="header-icons" src="assets/images/discord.svg" alt="Discord Icon" height="26" /></a
         >
@@ -336,66 +342,95 @@ import { each } from "svelte/internal";
     </div>
 
     <div class="content">
-
-
         <!-- {#if tutorialMode} -->
-            <div class="tutorial" style={`
-                min-width: ${tutorialMode?500:0}px;
-                max-width: ${tutorialMode?500:0}px;
+        <div
+            class="tutorial"
+            style={`
+                min-width: ${tutorialMode ? 500 : 0}px;
+                max-width: ${tutorialMode ? 500 : 0}px;
                 overflow-x: hidden;
-                padding: 5px ${tutorialMode?5:0}px 10px ${tutorialMode?5:0}px;
-                border-right: ${tutorialMode?1:0}px solid rgb(58, 58, 58);
-            `}>
-                <div class="tutorial-header">
-                    <img src="assets/images/arrow.svg" alt="Previous" height="24" style="user-select: none;"/>
-                    <select bind:value={selectedTutorial} on:change={selectTutorial}>
-                        {#each tutorials as tutorial, id}
-                            <option value={id}>{id+1}. {tutorial.name}</option>
-                        {/each}
-                    </select>
-                    <img src="assets/images/arrow.svg" alt="Next" height="24" style="user-select: none; transform: rotate(180deg)" />
+                padding: 5px ${tutorialMode ? 5 : 0}px 10px ${tutorialMode ? 5 : 0}px;
+                border-right: ${tutorialMode ? 1 : 0}px solid rgb(58, 58, 58);
+            `}
+        >
+            <div class="tutorial-header">
+                <img
+                    src="assets/images/arrow.svg"
+                    alt="Previous"
+                    height="24"
+                    style={`cursor: pointer; user-select: none; opacity: ${selectedTutorial == 0 ? 0.3 : 1}`}
+                    on:click={() => {
+                        selectedTutorial = Math.max(0, selectedTutorial - 1)
+                        selectTutorial()
+                    }}
+                />
+                <select bind:value={selectedTutorial} on:change={selectTutorial}>
+                    {#each tutorials as tutorial, id}
+                        <option value={id}>{id + 1}. {tutorial.name}</option>
+                    {/each}
+                </select>
+                <img
+                    src="assets/images/arrow.svg"
+                    alt="Next"
+                    height="24"
+                    style={`cursor: pointer; user-select: none; transform: rotate(180deg); opacity: ${
+                        selectedTutorial == tutorials.length - 1 ? 0.3 : 1
+                    }`}
+                    on:click={() => {
+                        selectedTutorial = Math.min(tutorials.length - 1, selectedTutorial + 1)
+                        selectTutorial()
+                    }}
+                />
+            </div>
+            <div class="tutorial-content">
+                <div class="weird-size-fixer">
+                    <SvelteMarkdown source={tutorials[selectedTutorial].content} />
                 </div>
-                <div class="tutorial-content">
-                    <div class="weird-size-fixer">
-                        <SvelteMarkdown source={tutorials[selectedTutorial].content}/>
-                    </div>
-                </div>
-                <div class="tutorial-footer">
-                    {#if solutionShown}
-                        <button class="showme" style={showmeStyle} on:click={()=>{
+            </div>
+            <div class="tutorial-footer">
+                {#if solutionShown}
+                    <button
+                        class="showme"
+                        style={showmeStyle}
+                        on:click={() => {
                             codeEditor.setValue(tutorials[selectedTutorial].initialCode)
                             codeEditor.moveCursorTo(0, 0)
                             solutionShown = false
-                        }}>Reset</button>
-                    {:else}
-                        <button class="showme" style={showmeStyle} on:click={()=>{
+                        }}>Reset</button
+                    >
+                {:else}
+                    <button
+                        class="showme"
+                        style={showmeStyle}
+                        on:click={() => {
                             codeEditor.setValue(tutorials[selectedTutorial].solution)
                             codeEditor.moveCursorTo(0, 0)
                             solutionShown = true
-                        }}>Show me</button>
-                    {/if}
-                </div>
+                        }}>Show me</button
+                    >
+                {/if}
             </div>
+        </div>
         <!-- {/if} -->
-
-
 
         <div class="playground">
             <div class="editor">
-                <div class="editor-container">
-                    <div id="code-editor" />
-                </div>
-    
-                {#if !maximized}
-                    <div id="console">
-                        {@html ansiUp.ansi_to_html(editor_console)}
+                <div class="code-and-console">
+                    <div class="editor-container">
+                        <div id="code-editor" />
                     </div>
-    
+
+                    {#if !maximized}
+                        <div id="console">
+                            {@html ansiUp.ansi_to_html(editor_console)}
+                        </div>
+                    {/if}
+                </div>
+
+                {#if !maximized}
                     <div class="buttons">
                         <button id="run_button" class="big-button" on:click={run_code}> build </button>
-                        <button id="sim_button" class="big-button" on:click={simulate_triggers}>
-                            simulate
-                        </button>
+                        <button id="sim_button" class="big-button" on:click={simulate_triggers}> simulate </button>
                     </div>
                     <div class="optimize">
                         <input type="checkbox" bind:checked={optimize} />
@@ -403,12 +438,12 @@ import { each } from "svelte/internal";
                     </div>
                 {/if}
             </div>
-            {#if !maximized}
-                <div class="simulation">
-                    <div id="trigger-graph-sketch" />
-                    <div id="sketch" />
-                </div>
-            {/if}
+            <!-- {#if !maximized} -->
+            <div class="simulation" style={`display: ${maximized ? "none" : "flex"}`}>
+                <div id="trigger-graph-sketch" />
+                <div id="sketch" />
+            </div>
+            <!-- {/if} -->
         </div>
     </div>
 
@@ -434,23 +469,17 @@ import { each } from "svelte/internal";
         `}
         />
     </div>
-
-
-    
 </div>
 
 <svelte:window on:mouseup={() => (dragging = false)} on:mousemove={drag} />
 
-{#if !maximized}
-    <P5 sketch={triggerSketch} />
-    <P5 sketch={gdWorldSketch} />
-{/if}
-<P5 sketch={globalP5} />
+<!-- {#if !maximized} -->
+<P5 sketch={triggerSketch} />
+<P5 sketch={gdWorldSketch} />
 
+<!-- {/if} -->
 <style>
-
-    @import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
-
+    @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
 
     .everything {
         position: absolute;
@@ -493,7 +522,9 @@ import { each } from "svelte/internal";
         color: rgb(255, 255, 255, 0.8);
     }
 
-    :global(.snippet .ace_marker-layer .ace_bracket) { display: none }
+    :global(.snippet .ace_marker-layer .ace_bracket) {
+        display: none;
+    }
 
     .content {
         width: 100%;
@@ -509,14 +540,14 @@ import { each } from "svelte/internal";
         background-color: rgb(27, 27, 36);
         box-shadow: 3px 3px 10px 0px #0005;
         z-index: 10;
-        
+
         display: flex;
         flex-direction: column;
         gap: 5px;
         box-sizing: border-box;
         color: #ffffffed;
 
-        font-family: 'Lato';
+        font-family: "Lato";
         font-size: 18px;
         letter-spacing: 0.1px;
         word-spacing: 2px;
@@ -525,11 +556,10 @@ import { each } from "svelte/internal";
         transition: all 0.5s ease-in-out;
     }
 
-
     .tutorial-header {
         min-height: 50px;
         width: 100%;
-        background-color: rgba(0,0,0,0.2);
+        background-color: rgba(0, 0, 0, 0.2);
         box-shadow: 3px 3px 6px 0px rgba(0, 0, 0, 0.198);
         display: flex;
         flex-direction: row;
@@ -544,7 +574,7 @@ import { each } from "svelte/internal";
     .tutorial-footer {
         min-height: 50px;
         width: 100%;
-        background-color: rgba(0,0,0,0.2);
+        background-color: rgba(0, 0, 0, 0.2);
         box-shadow: 3px 3px 6px 0px rgba(0, 0, 0, 0.198);
         display: flex;
         flex-direction: row;
@@ -592,49 +622,9 @@ import { each } from "svelte/internal";
         overflow-y: scroll;
         overflow-x: hidden;
     }
-
-    /* probably highlight js or smth */
-    /* 
-function highlightSyntax(text) {
-    var res = [];
-
-    var Tokenizer = ace.require('ace/tokenizer').Tokenizer;
-    var Rules = ace.require('ace/mode/sql_highlight_rules').SqlHighlightRules;
-    var Text = ace.require('ace/layer/text').Text;
-
-    var tok = new Tokenizer(new Rules().getRules());
-    var lines = text.split('\n');
-
-    lines.forEach(function(line) {
-      var renderedTokens = [];
-      var tokens = tok.getLineTokens(line);
-
-      if (tokens && tokens.tokens.length) {
-        new Text(document.createElement('div')).$renderSimpleLine(renderedTokens, tokens.tokens);
-      }
-
-      res.push('<div class="ace_line">' + renderedTokens.join('') + '</div>');
-    });
-
-    return '<div class="ace_editor ace-tomorrow"><div class="ace_layer" style="position: static;">' + res.join('') + '</div></div>';
-}
-
-highlighText(text: string) {
-    const value = this.aceEditor.session.getValue();
-    const startRow = value.substr(0, value.indexOf(text)).split(/\r\n|\r|\n/).length - 1;
-    const startCol = this.aceEditor.session.getLine(startRow).indexOf(text);
-    const endRowOffset = text.split(/\r\n|\r|\n/).length;
-    const endRow = startRow + endRowOffset - 1;
-    const endCollOffset = text.split(/\r\n|\r|\n/)[endRowOffset - 1].length;
-    const endCol = startCol + (endCollOffset > 1 ? endCollOffset + 1 : endCollOffset);
-    const range = new ace.Range(startRow, startCol, endRow, endCol);
-
-    this.aceEditor.session.selection.setRange(range);
-    this.aceEditor.scrollToLine(startRow, true, true, () => {});
-}
-https://newbedev.com/how-can-i-highlight-code-with-ace-editor
-    */
-/* 😳 */
+    /*  might be my fault look */
+    /* oh no the dreaded bug is happening */
+    /*  */
     .docs-window {
         position: absolute;
         width: 50vw;
@@ -675,9 +665,9 @@ https://newbedev.com/how-can-i-highlight-code-with-ace-editor
         flex-direction: column;
         box-sizing: border-box;
         gap: 1rem;
+        resize: horizontal;
     }
 
-    
     .editor-container {
         position: relative;
         width: 100%;
@@ -694,21 +684,53 @@ https://newbedev.com/how-can-i-highlight-code-with-ace-editor
         tab-size: 4;
     }
 
-    #code-editor {
+    .code-and-console {
         width: 100%;
         height: 100%;
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        gap: 1rem;
+        box-sizing: border-box;
+    }
+
+    #code-editor {
+        height: 100%;
+        width: 100%;
         box-sizing: border-box;
         border-radius: 6px;
         margin: 0;
         padding: 8px;
         border: 2px solid #3b3b3b;
         box-shadow: 3px 3px 10px 0px #0005;
-        /* background-color: #0003; */
         resize: none;
-        /* color:rgba(255, 255, 255, 0.886); */
         font-family: "Source Code Pro", monospace;
         font-size: 16px;
         font-weight: 600;
+    }
+
+    #console {
+        height: 100%;
+        line-height: 20px;
+        color: white;
+        background: black;
+        border: 2px solid #3b3b3b;
+        overflow: auto;
+        overflow-wrap: break-word;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 0;
+        box-sizing: border-box;
+
+        padding: 10px;
+        font-size: 16px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        white-space: -moz-pre-wrap;
+        white-space: -pre-wrap;
+        white-space: -o-pre-wrap;
+        word-wrap: break-word;
+
+        box-shadow: 3px 3px 10px 0px #0005;
     }
 
     .header-right {
@@ -840,7 +862,7 @@ https://newbedev.com/how-can-i-highlight-code-with-ace-editor
 
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: start;
         gap: 1rem;
 
         background-color: #ffffff09;
@@ -890,28 +912,6 @@ https://newbedev.com/how-can-i-highlight-code-with-ace-editor
         background: rgba(255, 255, 255, 0.886);
     }
 
-    #console {
-        height: 50%;
-        line-height: 20px;
-        color: white;
-        background: black;
-        border: 2px solid #3b3b3b;
-        overflow: auto;
-        overflow-wrap: break-word;
-        border-radius: 6px;
-        font-weight: 600;
-
-        padding: 10px;
-        font-size: 16px;
-        overflow-x: auto;
-        white-space: pre-wrap;
-        white-space: -moz-pre-wrap;
-        white-space: -pre-wrap;
-        white-space: -o-pre-wrap;
-        word-wrap: break-word;
-
-        box-shadow: 3px 3px 10px 0px #0005;
-    }
     /*  you can now counter multiply without everyithing going to shit :DDD */
     .big-button {
         width: 100%;
@@ -940,12 +940,11 @@ https://newbedev.com/how-can-i-highlight-code-with-ace-editor
         background: #551c1c;
     }
 
-
     #run_button:hover {
         background: #2a1313;
     }
     #run_button:active::after {
-        content: 'ing...';
+        content: "ing...";
     }
 
     #sim_button {

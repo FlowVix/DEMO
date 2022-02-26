@@ -175,7 +175,7 @@ dependencies = [
 [[package]]
 name = "compiler"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "ariadne",
  "base64",
@@ -252,7 +252,7 @@ checksum = "6d9d8664cf849d7d0f3114a3a387d2f5e4303176d746d5a951aaddc66dfe9240"
 [[package]]
 name = "docgen"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "compiler",
  "errors",
@@ -264,7 +264,7 @@ dependencies = [
 [[package]]
 name = "editorlive"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -289,7 +289,7 @@ dependencies = [
 [[package]]
 name = "errors"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "ariadne",
  "internment",
@@ -671,7 +671,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "levelstring"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "aes",
  "base64",
@@ -929,7 +929,7 @@ dependencies = [
 [[package]]
 name = "optimizer"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "compiler",
  "fnv",
@@ -996,7 +996,7 @@ dependencies = [
 [[package]]
 name = "parser"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "ariadne",
  "base64",
@@ -1028,7 +1028,7 @@ dependencies = [
 [[package]]
 name = "pckp"
 version = "0.1.0"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "fs_extra",
  "git2",
@@ -1311,7 +1311,7 @@ dependencies = [
 [[package]]
 name = "shared"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "internment",
  "slotmap",
@@ -1357,7 +1357,7 @@ dependencies = [
 [[package]]
 name = "spwn"
 version = "0.0.8"
-source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=d2ef4ca#d2ef4ca524fcf36faa30b4c71d46343a0f2474fa"
+source = "git+https://github.com/Spu7Nix/SPWN-language.git?rev=f2fbf46#f2fbf4603e9d343bd8651d55f141a1af0cb914b9"
 dependencies = [
  "ariadne",
  "clap",
