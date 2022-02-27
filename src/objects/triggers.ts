@@ -1,5 +1,5 @@
 import GDObject from "./object";
-import type {World} from "../world/world";
+import type {World, ChannelData} from "../world/world";
 import {draw_trigger} from "./util";
 
 class Trigger extends GDObject {
@@ -392,32 +392,22 @@ class ColorTrigger extends Trigger {
     kind = new OutputTrigger()
 
     colorID: number = 0;
-
-    red: number = 0;
-    green: number = 255;
-    blue: number = 255;
-
-    opacity: number = 1;
-
     fadeTime: number = 0;
 
-    blending: boolean = false;
+    data: ChannelData;
 
     draw(p5: any, world: World) {
         const d = new Date()
         const time = d.getTime()
         const progress = Math.min((time - this.lastTrigger) / (this.fadeTime * 1000), 1)
-        draw_trigger(p5, world, this, [this.red, this.green, this.blue], "Color", `${this.colorID}c`, progress, [155 + this.red / 2.55, 155 + this.green / 2.55, 155 + this.blue / 2.55])
+        const dataColor = this.data.getColor(world)
+        draw_trigger(p5, world, this, [dataColor.r, dataColor.g, dataColor.b], "Color", `${this.colorID}c`, progress, [155 + dataColor.r / 2.55, 155 + dataColor.g / 2.55, 155 + dataColor.b / 2.55])
     }
     trigger(world: World): void {
-        world.addColorFade(
+        world.startFade(
             this.colorID,
-            this.red,
-            this.green,
-            this.blue,
-            this.opacity,
             this.fadeTime,
-            this.blending,
+            this.data,
             this.index,
         )
     }

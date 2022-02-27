@@ -3,25 +3,130 @@ import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger
 import {CollisionObject, Display} from "../objects/special"
  
 type ObjIndex = number;
+type rgbab = {r: number, g: number, b: number, a: number, blending: boolean}
+type rgba = {r: number, g: number, b: number, a: number}
 
 
-class ChannelData {
-    color: {r: number, g: number, b: number} = {r: 255, g: 255, b: 255};
-    opacity: number = 1;
-    blending: boolean = false;
-
-    constructor(
-        r: number = 255,
-        g: number = 255,
-        b: number = 255,
-    ) {
-        this.color.r = r;
-        this.color.g = g;
-        this.color.b = b;
-    }
-
+enum PlayerColor {
+    None,
+    P1,
+    P2,
 }
 
+
+interface ChannelData {
+    opacity: number;
+    blending: boolean;
+    playerColor: PlayerColor;
+    getColor: (world: World) => rgbab;
+}
+
+class RGBData implements ChannelData {
+    
+    opacity: number = 1;
+    blending: boolean = false;
+    playerColor: PlayerColor = PlayerColor.None;
+
+    red: number;
+    green: number;
+    blue: number;
+    getColor(world: World): rgbab {
+        
+        return this.playerColor == PlayerColor.None ? {
+            r: this.red,
+            g: this.green,
+            b: this.blue,
+            a: this.opacity,
+            blending: this.blending,
+        } : {r: 0, g: 0, b: 0, a: 1, blending: false}
+        
+    }
+
+    constructor(red: number, green: number, blue: number) {
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+    }
+}
+class CopyData implements ChannelData {
+
+    opacity: number = 1;
+    blending: boolean = false;
+    playerColor: PlayerColor = PlayerColor.None;
+
+    channel: number;
+
+    hue: number;
+    saturation: number;
+    brightness: number;
+
+    sChecked: boolean;
+    bChecked: boolean;
+
+    copyOpacity: boolean;
+    getColor(world: World): rgbab {
+        let visitedChannels = []
+        //ah oke
+    }
+}
+
+interface ChannelState {
+    getColor: (world: World) => rgbab,
+}
+class Stable implements ChannelState {
+    data: ChannelData;
+    getColor(world: World): rgbab {
+        return this.data.getColor(world)
+    }
+    constructor (data: ChannelData) {
+        this.data = data;
+    }
+}
+class Fading implements ChannelState {
+
+    currentTime: number;
+
+    constructor(
+        public from: rgba,
+        public to: ChannelData,
+        public duration: number,
+        public startTime: number,
+        public triggerObj: ObjIndex,
+    ) {this.currentTime = startTime}
+
+    getColor(world: World): rgbab {
+        let lerp = Math.min(1, (this.currentTime - this.startTime) / (this.duration * 1000));
+        if (this.duration === 0) {
+            lerp = 1;
+        }
+        const toCol = this.to.getColor(world,)
+        return {
+            r: this.from.r + (toCol.r - this.from.r) * lerp,
+            g: this.from.g + (toCol.g - this.from.g) * lerp,
+            b: this.from.b + (toCol.b - this.from.b) * lerp,
+            a: this.from.a + (toCol.a - this.from.a) * lerp,
+            blending: toCol.blending,
+        }
+    }
+}
+class Stopped implements ChannelState {
+    constructor(
+        public from: rgba,
+        public to: ChannelData,
+        public lerp: number,
+    ) {}
+
+    getColor(world: World): rgbab {
+        const toCol = this.to.getColor(world)
+        return {
+            r: this.from.r + (toCol.r - this.from.r) * this.lerp,
+            g: this.from.g + (toCol.g - this.from.g) * this.lerp,
+            b: this.from.b + (toCol.b - this.from.b) * this.lerp,
+            a: this.from.a + (toCol.a - this.from.a) * this.lerp,
+            blending: toCol.blending,
+        }
+    }
+}
 
 
 
@@ -230,7 +335,7 @@ class World {
     objects: Object[] = [];
 
     groupIDs: Record<number, GroupIDData> = {};
-    colorIDs: Record<number, ChannelData> = {};
+    colorIDs: Record<number, ChannelState> = {};
     itemIDs: Record<number, ItemIDData> = {};
     blockIDs: Record<number, BlockIDData> = {};
 
@@ -279,16 +384,16 @@ class World {
                 if (obj.dynamic) this.dynamicCollisionBlocks.push(i)
             }
         })
-        this.colorIDs[1] = new ChannelData()
+        this.colorIDs[1] = new Stable(new RGBData(0, 0, 0))
         // this.colorIDs[1000] = new ChannelData(72, 119, 217)
         // this.colorIDs[1001] = new ChannelData(54, 89, 163)
-        this.colorIDs[1000] = new ChannelData(54, 66, 92)
-        this.colorIDs[1001] = new ChannelData(20, 31, 56)
+        this.colorIDs[1000] = new Stable(new RGBData(54, 66, 92))
+        this.colorIDs[1001] = new Stable(new RGBData(20, 31, 56))
         
     }
 
-    getColor(colorID: number): ChannelData {
-        return colorID in this.colorIDs ? this.colorIDs[colorID] : new ChannelData();
+    getColor(colorID: number): rgbab {
+        return colorID in this.colorIDs ? this.colorIDs[colorID].getColor(this) : {r: 0, g: 0, b: 0, a: 0, blending: false};
     }
 
     addGroupID(
@@ -591,35 +696,26 @@ class World {
         
     }
 
-    addColorFade(
+    startFade(
         colorID: number,
-        red: number,
-        green: number,
-        blue: number,
-        opacity: number,
         duration: number,
-        blending: boolean,
+        data: ChannelData,
         trigger_obj: ObjIndex,
     ) {
         if (!(colorID in this.colorIDs))
             return
-
-        let current: ChannelData = this.colorIDs[colorID];
-        this.colorIDs[colorID].blending = blending
-
-        this.colorFades[colorID] = new ColorFade(
-            red,
-            green,
-            blue,
-            opacity,
+        
+        let {r, g, b, a} = this.colorIDs[colorID].getColor(this)
+        let from: rgba = {r, g, b, a}
+        
+        this.colorIDs[colorID] = new Fading(
+            from,
+            data,
             duration,
-            this.time,
-            current.color.r,
-            current.color.g,
-            current.color.b,
-            current.opacity,
+            (new Date()).getTime(),
             trigger_obj,
         )
+        
     }
 
     /*
@@ -685,6 +781,9 @@ a.start_group.stop()
 
 export {
     World,
-    ChannelData
+    type ChannelData,
+    RGBData,
+    CopyData,
+    PlayerColor,
 }
 

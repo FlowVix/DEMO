@@ -1,7 +1,7 @@
 
 
 import Constants from "../constants";
-import {type World, ChannelData} from "./world";
+import type { World, ChannelData} from "./world";
 
 
 
@@ -199,10 +199,10 @@ const createObject = (
                 } if (obj instanceof Regular) {
                     if (parseInt(i) == Constants.OBJ_PROPS.COLOR) {
                         obj.mainID = parseInt(props[i])
-                        world.colorIDs[parseInt(props[i])] = new ChannelData()
+                        //world.colorIDs[parseInt(props[i])] = new ChannelData()
                     } else if (parseInt(i) == Constants.OBJ_PROPS.COLOR_2) {
                         obj.detailID = parseInt(props[i])
-                        world.colorIDs[parseInt(props[i])] = new ChannelData()
+                        //world.colorIDs[parseInt(props[i])] = new ChannelData()
                     }
                 } else if (obj instanceof CollisionObject) {
                     if (parseInt(i) == Constants.OBJ_PROPS.BLOCK_A) {
@@ -280,20 +280,20 @@ const createObject = (
 									case Constants.OBJ_PROPS.DURATION:
 										obj.fadeTime = parseFloat(props[i])
                                         break;
-                                    case Constants.OBJ_PROPS.TRIGGER_RED:
-										obj.red = parseInt(props[i])
-                                        break;
-                                    case Constants.OBJ_PROPS.TRIGGER_GREEN:
-										obj.green = parseInt(props[i])
-                                        break;
-                                    case Constants.OBJ_PROPS.TRIGGER_BLUE:
-										obj.blue = parseInt(props[i])
-                                        break;
+                                    // case Constants.OBJ_PROPS.TRIGGER_RED:
+									// 	obj.data.r = parseInt(props[i])
+                                    //     break;
+                                    // case Constants.OBJ_PROPS.TRIGGER_GREEN:
+									// 	obj.data.g = parseInt(props[i])
+                                    //     break;
+                                    // case Constants.OBJ_PROPS.TRIGGER_BLUE:
+									// 	obj.data.b = parseInt(props[i])
+                                    //     break;
                                     case Constants.OBJ_PROPS.OPACITY:
-										obj.opacity = parseFloat(props[i])
+										obj.data.opacity = parseFloat(props[i])
                                         break;
                                     case Constants.OBJ_PROPS.BLENDING:
-										obj.opacity = props[i]
+										obj.data.blending = props[i]
                                         break;
                                 }
                             } else if (obj instanceof RotateTrigger) {

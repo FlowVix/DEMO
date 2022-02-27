@@ -18,8 +18,8 @@ const CAMERA_SPEED = 10;
 
 let spritesheets;
 
-
-
+// brb
+// oke
 const worldSketch = (
     world: World,
 ): [(any) => any] => {
@@ -213,9 +213,9 @@ const worldSketch = (
             
             p5.push()
             p5.background(
-                world.getColor(1000).color.r,
-                world.getColor(1000).color.g,
-                world.getColor(1000).color.b,
+                world.getColor(1000).r,
+                world.getColor(1000).g,
+                world.getColor(1000).b,
             )
 
             p5.translate(p5.width/2, p5.height/2)
@@ -473,18 +473,18 @@ const worldSketch = (
                 })
             }
 
-            to_remove = []
-            for (const id in world.colorFades) {
-                let fade = world.colorFades[id].getColor(time)
-                world.colorIDs[id].color.r = fade.r
-                world.colorIDs[id].color.g = fade.g
-                world.colorIDs[id].color.b = fade.b
-                world.colorIDs[id].opacity = fade.opacity
-                if (time >= world.colorFades[id].startTime + world.colorFades[id].duration * 1000) {
-                    to_remove.push(id)
-                }
-            }
-            to_remove.forEach((i) => delete world.colorFades[i])
+            // to_remove = []
+            // for (const id in world.colorFades) {
+            //     let fade = world.colorFades[id].getColor(time)
+            //     world.colorIDs[id].r = fade.r
+            //     world.colorIDs[id].g = fade.g
+            //     world.colorIDs[id].b = fade.b
+            //     world.colorIDs[id].opacity = fade.opacity
+            //     if (time >= world.colorFades[id].startTime + world.colorFades[id].duration * 1000) {
+            //         to_remove.push(id)
+            //     }
+            // }
+            // to_remove.forEach((i) => delete world.colorFades[i])
 
 
 

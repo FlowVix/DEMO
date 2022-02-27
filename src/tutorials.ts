@@ -174,9 +174,6 @@ There is techically [a trigger version of this](https://spu7nix.net/spwn/#/std-d
 In the editor to the right, there is some code that moves an object 30 times using a compile-time for loop. 
 If you build this code and look in the graph viewer in the top right, you will see that this generates a long
 winding chain of triggers. Try changing this to a trigger-based loop, and see the difference!
-<br>
-*(Notice that the trigger for-loop will attach a lot of triggers at the end to reset the loop counter. 
-You can remove these by adding a \`reset = false\` argument to the macro call)*
 `,
         initialCode: `
 extract obj_props
@@ -208,8 +205,34 @@ $.add(obj{
 // move the object 30 times
 for_loop(0..30, (i) {
     10g.move(10, 0, 0.3, easing = EASE_IN_OUT)
-}, reset = false)
+})
 `,
+    },
+    //=========================================================================
+    {
+        name: "Counters",
+        content: `
+# Counters
+
+Counters are numbers that can be modified by triggers.
+
+`,
+        initialCode: `
+let score = 0
+
+on(touch(), !{
+    score += 1 
+}) 
+`,
+        solution: `
+score = counter(0)
+
+score.display(45, 45)
+
+on(touch(), !{
+    score += 1
+})
+        `,
     },
 
 
