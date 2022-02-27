@@ -240,6 +240,7 @@ const triggerGraphSketch = (
     cameraPos = {x: 0, y: 0};
     cameraMove = {x: 0, y: 0};
     cameraZoom = 2;
+    let zoomExp = 10;
 
 
     let dragging = false;
@@ -355,9 +356,10 @@ const triggerGraphSketch = (
             is_selecting = false
         }
         p5.mouseWheel = (event) => {
-            if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height))
-                cameraZoom -= event.delta * 0.001;
-            cameraZoom = Math.max(Math.min(cameraZoom, 10), 0.1);
+            if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height)) {
+                zoomExp += event.delta > 0 ? -1 : 1;
+                cameraZoom = 2 ** (zoomExp/10)
+            }
         }
     
         p5.draw = () => {

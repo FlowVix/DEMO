@@ -195,17 +195,21 @@
         } else if (draggingEditorSeparator) {
             let shift = (e.screenY - prevMousePos.y) / document.getElementById("code-and-console").offsetHeight
             editorSeparator = clamp(prevEditorSeparator + shift, 0.1, 0.9)
+            if (editorSeparator > 0.68 && editorSeparator < 0.72) editorSeparator = 0.7
             codeEditor.resize()
         } else if (draggingSimSeparator) {
             let shift =
                 (e.screenY - prevMousePos.y) /
                 (document.getElementsByClassName("simulation")[0] as HTMLElement).offsetHeight
-            simSeparator = clamp(prevSimSeparator + shift, 0.1, 0.9)
+            simSeparator = clamp(prevSimSeparator + shift, 0, 1)
+            if (simSeparator > 0.48 && simSeparator < 0.52) simSeparator = 0.5
         } else if (draggingPlaygroundSeparator) {
             let shift =
                 (e.screenX - prevMousePos.x) /
                 (document.getElementsByClassName("playground")[0] as HTMLElement).offsetWidth
-            playgroundSeparator = clamp(prevPlaygroundSeparator + shift, 0.3, 0.7)
+            playgroundSeparator = clamp(prevPlaygroundSeparator + shift, 0.2, 0.8)
+            if (playgroundSeparator > 0.48 && playgroundSeparator < 0.52) playgroundSeparator = 0.5
+            codeEditor.resize()
         }
     } // i think follow triggers lag by 1 frame
 
@@ -277,6 +281,8 @@
             }
         }, 1)
     }
+
+
 </script>
 
 <svelte:head>
@@ -456,9 +462,10 @@
                             alt="resize"
                             height="16"
                             draggable="false"
+                            class="resizer"
                             style={`
                             margin: auto;
-                            opacity: 0.4;
+                            opacity: 0.2;
                             cursor: row-resize;
                         `}
                             on:mousedown={(e) => {
@@ -475,8 +482,8 @@
 
                 {#if !maximized}
                     <div class="buttons">
-                        <button id="run_button" class="big-button" on:click={run_code}> build </button>
-                        <button id="sim_button" class="big-button" on:click={simulate_triggers}> simulate </button>
+                        <button id="run_button" class="big-button" on:click={run_code}>build</button>
+                        <button id="sim_button" class="big-button" on:click={simulate_triggers}>simulate</button>
                     </div>
                     <div class="optimize">
                         <input type="checkbox" bind:checked={optimize} />
@@ -494,7 +501,7 @@
                     draggable="false"
                     style={`
                     margin: auto;
-                    opacity: 0.4;
+                    opacity: 0.2;
                     cursor: col-resize;
                     transform: rotate(90deg);
                 `}
@@ -521,7 +528,7 @@
                     draggable="false"
                     style={`
                     margin: auto;
-                    opacity: 0.4;
+                    opacity: 0.2;
                     cursor: row-resize;
                 `}
                     on:mousedown={(e) => {
@@ -626,19 +633,19 @@
     }
 
     :global(.tutorial-content code) {
-        background-color: rgb(0, 0, 0, 0.5);
+        background-color: rgb(0, 0, 0, 0.3);
         padding-left: 3px;
         padding-right: 3px;
-        border-radius: 3px;
+        border-radius: 6px;
         /*  its just for inline stuff `like this` */
     }
 
     :global(.tutorial-content tr:nth-child(even)) {
-        background-color: rgb(0, 0, 0, 0.4);
+        background-color: rgb(0, 0, 0, 0.2);
     }
 
     :global(.tutorial-content th) {
-        background-color: rgb(0, 0, 0, 0.2);
+        background-color: rgb(0, 0, 0, 0.4);
         border: none;
     }
 
@@ -755,7 +762,7 @@
         width: 100%;
         height: 100%;
         box-sizing: border-box;
-        padding: 7px 12px 12px 12px;
+        padding: 7px 16px 12px 8px;
         overflow-y: auto;
         overflow-x: hidden;
     }
@@ -929,7 +936,7 @@
     }
 
     .header-button:hover {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: rgba(255, 255, 255, 0.1);
         /* font-weight: 600; */
     }
     .header-button:active {
@@ -1062,9 +1069,10 @@
         font-family: "Source Code Pro", monospace;
         color: #ffffff;
         font-size: 30px;
-        white-space: nowrap;
-        overflow: clip;
         letter-spacing: 0em;
+        overflow-wrap: anywhere;
+        overflow: hidden;
+        text-overflow: clip;
         font-weight: 400;
         padding: 3px 20px;
         margin: 0 0 2px 0;
@@ -1072,10 +1080,10 @@
         border-radius: 0px 14px 0px 14px;
         transition: all 0.1s ease-in-out 0s;
         box-shadow: 3px 3px 10px 0px #0005;
+        box-sizing: border-box;
     }
 
     .big-button:hover {
-        content: "gaga";
         border-radius: 14px 0px 14px 0px;
     }
 
@@ -1099,11 +1107,11 @@
 
     .buttons {
         width: 100%;
-        box-sizing: border-box;
+        min-width: 0px;
         display: flex;
         flex-direction: row;
         gap: 1rem;
-        float: left;
+        box-sizing: border-box;
     }
 
     #sketch {

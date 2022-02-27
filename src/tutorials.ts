@@ -76,6 +76,7 @@ Likewise, you can move a group ID using this macro:
 10g.move(x, y, duration)
 \`\`\`
 (you can find macros for all triggers in the [standard library documentation](https://spu7nix.net/spwn/#/std-docs/std-docs))
+
 ---
 In the editor to the right, there is some code that adds an object with group ID 10. Try to
 move the object around by adding a move trigger! You can also make multiple macro calls to chain 
@@ -137,7 +138,8 @@ for i in 1..10 {
 \`\`\`
 While loops run over and over until a condition is met:
 \`\`\`highlight-spwn
-// \`condition\` can be any expression that returns a boolean (true/false)
+// \`condition\` can be any expression that returns
+// a boolean (true/false)
 while condition {
     // do something
 }
@@ -160,12 +162,14 @@ while_loop(() => condition, () {
 
 A SPWN if statement looks like this:
 \`\`\`highlight-spwn
-// \`condition\` can be any expression that returns a boolean (true/false)
+// \`condition\` can be any expression that returns
+// a boolean (true/false)
 if condition {
     // do something
 }
 \`\`\`
 There is techically [a trigger version of this](https://spu7nix.net/spwn/#/std-docs/item?id=if_is), but it's not really useful in the vast majority of situations.
+
 ---
 In the editor to the right, there is some code that moves an object 30 times using a compile-time for loop. 
 If you build this code and look in the graph viewer in the top right, you will see that this generates a long

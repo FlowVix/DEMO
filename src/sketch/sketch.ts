@@ -25,6 +25,7 @@ const worldSketch = (
 ): [(any) => any] => {
 
     let zoom = 1;
+    let zoomExp = 0;
     let cameraPos = {x: 0, y: 0};
     let cameraMove = {x: 0, y: 0};
 
@@ -177,9 +178,10 @@ const worldSketch = (
         }
 
         p5.mouseWheel = (event) => {
-            if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height))
-                zoom -= event.delta * 0.001;
-                zoom = Math.max(Math.min(zoom, 10), 0.1);
+            if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height)) {
+                zoomExp += event.delta > 0 ? -1 : 1;
+                zoom = 2 ** (zoomExp/10)
+            }
         }
 
         p5.draw = () => {
