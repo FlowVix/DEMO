@@ -12,6 +12,8 @@
     export let check_syntax
     init_panics()
 
+    const clamp = (x, min, max) => Math.min(max, Math.max(min, x))
+
     import AnsiUp from "ansi_up"
     let ansiUp = new AnsiUp()
 
@@ -175,31 +177,49 @@
           })()
         : ""
 
+    let prevMousePos = { x: 0, y: 0 }
+
     let viewingDocs = false
-    let dragging = false
+    let draggingDocs = false
 
     let docsPos = { x: 40, y: 40 }
-
     let prevDocsPos = { x: 0, y: 0 }
+
     prevDocsPos.x = docsPos.x
     prevDocsPos.y = docsPos.y
-    let prevMousePos = { x: 0, y: 0 }
-    const startDrag = (e) => {
-        prevMousePos.x = e.screenX
-        prevMousePos.y = e.screenY
-        prevDocsPos.x = docsPos.x
-        prevDocsPos.y = docsPos.y
-        dragging = true
-    }
-    // eyo im going for a walk
-    // if you need something to do check out the "test" example
-    // o oke hav fun
+
     const drag = (e) => {
-        if (dragging) {
+        if (draggingDocs) {
             docsPos.x = prevDocsPos.x + (e.screenX - prevMousePos.x)
             docsPos.y = prevDocsPos.y + (e.screenY - prevMousePos.y)
+        } else if (draggingEditorSeparator) {
+            let shift = (e.screenY - prevMousePos.y) / document.getElementById("code-and-console").offsetHeight
+            editorSeparator = clamp(prevEditorSeparator + shift, 0.1, 0.9)
+            codeEditor.resize()
+        } else if (draggingSimSeparator) {
+            let shift =
+                (e.screenY - prevMousePos.y) /
+                (document.getElementsByClassName("simulation")[0] as HTMLElement).offsetHeight
+            simSeparator = clamp(prevSimSeparator + shift, 0.1, 0.9)
+        } else if (draggingPlaygroundSeparator) {
+            let shift =
+                (e.screenX - prevMousePos.x) /
+                (document.getElementsByClassName("playground")[0] as HTMLElement).offsetWidth
+            playgroundSeparator = clamp(prevPlaygroundSeparator + shift, 0.3, 0.7)
         }
-    }
+    } // i think follow triggers lag by 1 frame
+
+    let draggingEditorSeparator = false
+    let editorSeparator = 0.7
+    let prevEditorSeparator = 0
+
+    let draggingSimSeparator = false
+    let simSeparator = 0.5
+    let prevSimSeparator = 0
+
+    let draggingPlaygroundSeparator = false
+    let playgroundSeparator = 0.5
+    let prevPlaygroundSeparator = 0
 
     run_code()
 
@@ -285,14 +305,14 @@
                 tutorialMode && setTimeout(selectTutorial, 10)
             }}
         >
-            Tutorial
+            {tutorialMode ? "Close Tutorial" : "Tutorial"}
         </button>
 
         <button
             class="header-button"
             on:click={() => {
                 viewingDocs = !viewingDocs
-            }}>{viewingDocs ? "Close Docs" : "Open Docs"}</button
+            }}>{viewingDocs ? "Close Documentation" : "Documentation"}</button
         >
 
         <img
@@ -346,8 +366,8 @@
         <div
             class="tutorial"
             style={`
-                min-width: ${tutorialMode ? 500 : 0}px;
-                max-width: ${tutorialMode ? 500 : 0}px;
+                min-width: ${tutorialMode ? "max(500px, 40%)" : "0px"};
+                max-width: ${tutorialMode ? "max(500px, 40%)" : "0px"};
                 overflow-x: hidden;
                 padding: 5px ${tutorialMode ? 5 : 0}px 10px ${tutorialMode ? 5 : 0}px;
                 border-right: ${tutorialMode ? 1 : 0}px solid rgb(58, 58, 58);
@@ -413,14 +433,40 @@
         </div>
         <!-- {/if} -->
 
-        <div class="playground">
+        <div
+            class="playground"
+            style={`
+            grid-template-columns: ${maximized ? "1fr" : `${playgroundSeparator}fr auto ${1 - playgroundSeparator}fr`};
+        `}
+        >
             <div class="editor">
-                <div class="code-and-console">
+                <div
+                    id="code-and-console"
+                    style={`
+                    grid-template-rows: ${maximized ? "1fr" : `${editorSeparator}fr auto ${1 - editorSeparator}fr`};
+                `}
+                >
                     <div class="editor-container">
                         <div id="code-editor" />
                     </div>
 
                     {#if !maximized}
+                        <img
+                            src="assets/images/resize.svg"
+                            alt="resize"
+                            height="16"
+                            draggable="false"
+                            style={`
+                            margin: auto;
+                            opacity: 0.4;
+                            cursor: row-resize;
+                        `}
+                            on:mousedown={(e) => {
+                                prevMousePos.y = e.screenY
+                                prevEditorSeparator = editorSeparator
+                                draggingEditorSeparator = true
+                            }}
+                        />
                         <div id="console">
                             {@html ansiUp.ansi_to_html(editor_console)}
                         </div>
@@ -438,9 +484,52 @@
                     </div>
                 {/if}
             </div>
+
+            {#if !maximized}
+                <!-- what you doin -->
+                <img
+                    src="assets/images/resize.svg"
+                    alt="resize"
+                    height="16"
+                    draggable="false"
+                    style={`
+                    margin: auto;
+                    opacity: 0.4;
+                    cursor: col-resize;
+                    transform: rotate(90deg);
+                `}
+                    on:mousedown={(e) => {
+                        prevMousePos.x = e.screenX
+                        prevPlaygroundSeparator = playgroundSeparator
+                        draggingPlaygroundSeparator = true
+                    }}
+                />
+            {/if}
             <!-- {#if !maximized} -->
-            <div class="simulation" style={`display: ${maximized ? "none" : "flex"}`}>
+            <div
+                class="simulation"
+                style={`
+                display: ${maximized ? "none" : "grid"};
+                grid-template-rows: ${simSeparator}fr auto ${1 - simSeparator}fr;
+            `}
+            >
                 <div id="trigger-graph-sketch" />
+                <img
+                    src="assets/images/resize.svg"
+                    alt="resize"
+                    height="16"
+                    draggable="false"
+                    style={`
+                    margin: auto;
+                    opacity: 0.4;
+                    cursor: row-resize;
+                `}
+                    on:mousedown={(e) => {
+                        prevMousePos.y = e.screenY
+                        prevSimSeparator = simSeparator
+                        draggingSimSeparator = true
+                    }}
+                />
                 <div id="sketch" />
             </div>
             <!-- {/if} -->
@@ -449,7 +538,13 @@
 
     <div
         class="docs-window"
-        on:mousedown={startDrag}
+        on:mousedown={(e) => {
+            prevMousePos.x = e.screenX
+            prevMousePos.y = e.screenY
+            prevDocsPos.x = docsPos.x
+            prevDocsPos.y = docsPos.y
+            draggingDocs = true
+        }}
         style={`
         left: ${docsPos.x}px;
         top: ${docsPos.y}px;
@@ -462,16 +557,24 @@
             title="sex"
             class="docs"
             src="https://spu7nix.net/spwn/#"
-            on:mouseup={() => (dragging = false)}
+            on:mouseup={() => (draggingDocs = false)}
             style={`
-            pointer-events: ${dragging || !viewingDocs ? "none" : "all"};
+            pointer-events: ${draggingDocs || !viewingDocs ? "none" : "all"};
             opacity: 0.98;
         `}
         />
     </div>
 </div>
 
-<svelte:window on:mouseup={() => (dragging = false)} on:mousemove={drag} />
+<svelte:window
+    on:mouseup={() => {
+        draggingDocs = false
+        draggingEditorSeparator = false
+        draggingSimSeparator = false
+        draggingPlaygroundSeparator = false
+    }}
+    on:mousemove={drag}
+/>
 
 <!-- {#if !maximized} -->
 <P5 sketch={triggerSketch} />
@@ -520,6 +623,40 @@
 
     :global(.tutorial-content p) {
         color: rgb(255, 255, 255, 0.8);
+    }
+
+    :global(.tutorial-content code) {
+        background-color: rgb(0, 0, 0, 0.5);
+        padding-left: 3px;
+        padding-right: 3px;
+        border-radius: 3px;
+        /*  its just for inline stuff `like this` */
+    }
+
+    :global(.tutorial-content tr:nth-child(even)) {
+        background-color: rgb(0, 0, 0, 0.4);
+    }
+
+    :global(.tutorial-content th) {
+        background-color: rgb(0, 0, 0, 0.2);
+        border: none;
+    }
+
+    :global(.tutorial-content tr) {
+        border: none;
+    }
+    :global(.tutorial-content td) {
+        white-space: nowrap;
+        padding: 5px 10px;
+        border: none;
+    }
+    /* just wanted to say that this playground is balling */
+    /*  it is truly balling */
+    /*  when are we gonna do the scrollbars btw */
+    :global(.tutorial-content table) {
+        border: none;
+        display: block;
+        overflow: auto;
     }
 
     :global(.snippet .ace_marker-layer .ace_bracket) {
@@ -619,7 +756,7 @@
         height: 100%;
         box-sizing: border-box;
         padding: 7px 12px 12px 12px;
-        overflow-y: scroll;
+        overflow-y: auto;
         overflow-x: hidden;
     }
     /*  might be my fault look */
@@ -661,11 +798,7 @@
     .simulation {
         height: 100%;
         width: 100%;
-        display: flex;
-        flex-direction: column;
         box-sizing: border-box;
-        gap: 1rem;
-        resize: horizontal;
     }
 
     .editor-container {
@@ -676,6 +809,7 @@
         font-size: 16px;
         font-weight: 600;
         margin: 0;
+        box-sizing: border-box;
     }
 
     * {
@@ -684,18 +818,26 @@
         tab-size: 4;
     }
 
-    .code-and-console {
+    img {
+        user-drag: none;
+        user-select: none;
+        -moz-user-select: none;
+        -webkit-user-drag: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+
+    #code-and-console {
         width: 100%;
         height: 100%;
         display: grid;
-        grid-template-rows: 1fr 1fr;
-        gap: 1rem;
+
         box-sizing: border-box;
     }
 
     #code-editor {
-        height: 100%;
         width: 100%;
+        height: 100%;
         box-sizing: border-box;
         border-radius: 6px;
         margin: 0;
@@ -709,8 +851,8 @@
     }
 
     #console {
-        height: 100%;
         line-height: 20px;
+        height: 100%;
         color: white;
         background: black;
         border: 2px solid #3b3b3b;
@@ -833,7 +975,9 @@
         justify-content: left;
         align-items: center;
         gap: 12px;
-        overflow: clip;
+        overflow-x: auto;
+        overflow-y: clip;
+        white-space: nowrap;
 
         margin: 0;
 
@@ -847,11 +991,9 @@
         width: 100%;
         height: 100%;
         background-color: rgb(20, 20, 26);
-        display: flex;
-        flex-direction: row;
+        display: grid;
         box-sizing: border-box;
         padding: 1rem;
-        gap: 1rem;
     }
 
     .editor {
@@ -889,26 +1031,27 @@
         padding: 0;
     }
 
-    ::-webkit-scrollbar {
+    :global(::-webkit-scrollbar) {
         width: 10px;
+        height: 10px;
     }
     /* :global(.ace_scrollbar-v) {
         display: none;
     } */
 
-    ::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.15);
-        margin: 4px;
+    :global(::-webkit-scrollbar-track) {
+        background: rgba(255, 255, 255, 0.1);
+        margin: 4px 0px;
         border-radius: 10px;
     }
 
-    ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.486);
+    :global(::-webkit-scrollbar-thumb) {
+        background: rgba(255, 255, 255, 0.199);
         border-radius: 10px;
         transition: 0.2s all;
     }
 
-    ::-webkit-scrollbar-thumb:hover {
+    :global(::-webkit-scrollbar-thumb:hover) {
         background: rgba(255, 255, 255, 0.886);
     }
 

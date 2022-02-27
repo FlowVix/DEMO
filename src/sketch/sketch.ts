@@ -327,6 +327,7 @@ const worldSketch = (
             // p5.text(screenWorldBounds.left + " " + screenWorldBounds.up + " " + screenWorldBounds.right + " " + screenWorldBounds.down, 30, 60)
 
 
+
             let to_remove = Array(world.scheduled_spawns.length).fill(false)
             world.scheduled_spawns.forEach((spawn, i) => {
                 // console.log("c:", time)
@@ -340,6 +341,14 @@ const worldSketch = (
             
             // silly spunix the ids will change!!! !
             // to_remove.forEach(i => world.scheduled_spawns.splice(i, 1))
+
+
+            world.followCommands.forEach(cmd => {
+                cmd.lastVec.x = world.objects[world.groupIDs[cmd.followID].objects[0]].pos.x
+                cmd.lastVec.y = world.objects[world.groupIDs[cmd.followID].objects[0]].pos.y
+            })
+
+            
             
             let displacements = {}
             to_remove = []
@@ -355,28 +364,6 @@ const worldSketch = (
                 }
             })
             world.moveCommands = world.moveCommands.filter((_, i) => !to_remove.includes(i))
-            
-            for (const i in displacements) {
-                for (const objIdx of world.groupIDs[i].objects) {
-                    world.objects[objIdx].pos.x += displacements[i].x
-                    world.objects[objIdx].pos.y += displacements[i].y
-                }
-            }
-
-            displacements = {}
-            to_remove = []
-            world.followCommands.forEach((cmd, i) => {
-                if (!(cmd.groupID in displacements)) {
-                    displacements[cmd.groupID] = {x: 0, y: 0}
-                }
-                let displacement = cmd.getDisplacement( world.objects[world.groupIDs[cmd.followID].objects[0]].pos )
-                displacements[cmd.groupID].x += displacement.x;
-                displacements[cmd.groupID].y += displacement.y;
-                if (time >= cmd.startTime + cmd.duration * 1000) {
-                    to_remove.push(i)
-                }
-            })
-            world.followCommands = world.followCommands.filter((_, i) => !to_remove.includes(i))
             
             for (const i in displacements) {
                 for (const objIdx of world.groupIDs[i].objects) {
@@ -420,8 +407,8 @@ const worldSketch = (
                         }
                     }
                 }
-            } // hey uuuh i need to sleep now
-            // gonna end the live share and push, ok?
+            }
+            
             
             to_remove = []
             for (const i in world.alphaCommands) {
@@ -447,7 +434,7 @@ const worldSketch = (
                             {x: s1, y: -s1},
                         ])
                         p1.setAngle(a1)
-                        console.log(p1.angle, world.objects[b1].rotation)
+                        //console.log(p1.angle, world.objects[b1].rotation)
                         world.blockIDs[listener.blockB].objects.forEach(b2 => {
                             if (world.objects[b2].disables > 0) { return }
                             if (!(<CollisionObject>world.objects[b1]).dynamic && !(<CollisionObject>world.objects[b2]).dynamic) { return }
@@ -462,6 +449,7 @@ const worldSketch = (
                                 {x: -s2, y: -s2},
                                 {x: s2, y: -s2},
                             ])
+                            // are you gonna make a divider between the editor and the sim awesome
                             p2.setAngle(a2)
                             if (system.checkCollision(p1, p2)) {
                                 listener.collidingAmount += 1
@@ -495,6 +483,26 @@ const worldSketch = (
                 }
             }
             to_remove.forEach((i) => delete world.colorFades[i])
+
+
+
+            to_remove = []
+            world.followCommands.forEach((cmd, i) => {
+                if (!(cmd.groupID in displacements)) {
+                    displacements[cmd.groupID] = {x: 0, y: 0}
+                }
+                let newX = world.objects[world.groupIDs[cmd.followID].objects[0]].pos.x
+                let newY = world.objects[world.groupIDs[cmd.followID].objects[0]].pos.y
+                let displacement = cmd.getDisplacement( {x: newX, y: newY} )
+                for (const objIdx of world.groupIDs[cmd.groupID].objects) {
+                    world.objects[objIdx].pos.x += displacement.x
+                    world.objects[objIdx].pos.y += displacement.y
+                }
+                if (time >= cmd.startTime + cmd.duration * 1000) {
+                    to_remove.push(i)
+                }
+            })
+            world.followCommands = world.followCommands.filter((_, i) => !to_remove.includes(i))
 
             
         };

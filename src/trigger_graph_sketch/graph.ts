@@ -1,8 +1,8 @@
 import {QuadTree, Circle, Box} from 'js-quadtree';
-import type { BodyIdx, Graph, ReverseGraph } from './sketch';
+import { BodyIdx, Graph, qtree_limits, ReverseGraph } from './sketch';
 
 const IDEAL_DIST = 60;
-const RELATION_POWER = 3000;
+const RELATION_POWER = 10000;
 const SPRING_COEF = 0.05;
 const MAX_VEL = 300;
 
@@ -19,15 +19,18 @@ class Body {
     index: BodyIdx;
     collapsed: boolean;
     collapsible: boolean;
+    extra_node: number = null;
 
     // input_side: number;
     // output_side: number;
 
     connection_point(source_x): { x: number, y: number } {
+        if (this.objs.length == 0) return this.pos
         return { x: this.pos.x + 13 * (source_x < this.pos.x ? -1 : 1), y: this.pos.y - 13 +  (GROUP_OBJ_SPACING * this.child_num()) * 0.5 }
     }
 
     output_point(child_idx: number, source_x): { x: number, y: number } {
+        if (this.objs.length == 0) return this.pos
         if (child_idx >= this.child_num()) {
             return { x: this.pos.x, y: this.pos.y + (GROUP_OBJ_SPACING * (this.child_num() - 1)) + 23 }
         } 
@@ -35,6 +38,7 @@ class Body {
     }
 
     child_num(): number {
+        if (this.objs.length == 0) return 1
         if (this.collapsed) {
             return Math.min(this.objs.length, COLLAPSE_LEN)
         }
@@ -61,6 +65,7 @@ class Body {
         // this.output_side = 1;
         this.collapsed = true;
         this.collapsible = this.objs.length > COLLAPSE_LEN;
+        this.extra_node = null;
     }
 
     get_output_points(bodies: Body[], graph: Graph): { x: number, y: number }[] {
@@ -99,6 +104,10 @@ class Body {
         return points
     }
 
+    clone(): Body {
+        return new Body({...this.pos}, this.objs, this.index, this.pinned)
+    }
+
     // calc_input_side(bodies: Body[], reverse_graph: ReverseGraph) {
     //     let sum = 0
     //     if (reverse_graph[this.index])
@@ -133,17 +142,17 @@ class Body {
 //     type Graph =        Record<BodyIdx, Record<BodyChildIdx, Set<BodyIdx>>>;
 //     type ReverseGraph = Record<BodyIdx, Set<[BodyIdx, BodyChildIdx]>>;
 
-    affect(bodies: Body[], qtree: QuadTree, graph: Graph, reverse_graph: ReverseGraph, mousepos) {
+    affect(bodies: Body[], qtree: QuadTree, graph: Graph, reverse_graph: ReverseGraph, mousepos, temperature) {
         if (this.pinned) return
 
-        let force = { x: 0.2, y: -this.pos.y * 0.002 };
+        let force = { x: this.pos.x < 300 ? 0.2 : this.pos.x > 600 ? -0.5 : (450 - this.pos.x) * 0.001, y: -this.pos.y * 0.002 };
 
         if (this.selected) {
             force.x += (mousepos.x - this.pos.x) * 0.2;
             force.y += (mousepos.y - this.pos.y) * 0.2;
         }
 
-
+// hello, sorry ive been away for a bit, whats been happenin
         const end_y = (this.pos.y + GROUP_OBJ_SPACING * this.child_num())
 
         // const connected_to = (other: BodyIdx) => {
@@ -156,38 +165,40 @@ class Body {
         const close_points = qtree.query(new Box(this.pos.x - 300, this.pos.y - 300, 600, this.child_num() * GROUP_OBJ_SPACING + 600))
         let bodies_done = Array(bodies.length).fill(false)
 
-        close_points.forEach((point, i) => {
-            if (point.data === this.index) return
-            if (bodies_done[point.data]) return
-            bodies_done[point.data] = true
+        //if (this.objs.length > 0)
+            close_points.forEach((point, i) => {
+                if (point.data === this.index) return
+                if (bodies_done[point.data]) return
+                bodies_done[point.data] = true
 
-            const body2 = bodies[point.data]
-            const body2_end_y = (body2.pos.y + GROUP_OBJ_SPACING * body2.child_num())
+                const body2 = bodies[point.data]
+                //if (bodies[point.data].objs.length == 0) return
+                const body2_end_y = (body2.pos.y + GROUP_OBJ_SPACING * body2.child_num())
 
-            let dist;
-            let to;
-            if (body2_end_y < this.pos.y) {
-                dist = Math.hypot(this.pos.x - body2.pos.x, this.pos.y - body2_end_y);
-                to = { x: this.pos.x - body2.pos.x, y: this.pos.y - body2_end_y }
-            } else if (body2.pos.y > end_y) {
-                dist = Math.hypot(this.pos.x - body2.pos.x, end_y - body2.pos.y);
-                to = { x: this.pos.x - body2.pos.x, y: end_y - body2.pos.y }
-            } else {
-                dist = Math.abs(this.pos.x - body2.pos.x)
-                to = { x: this.pos.x - body2.pos.x, y: 0}
-            }
+                let dist;
+                let to;
+                if (body2_end_y < this.pos.y) {
+                    dist = Math.hypot(this.pos.x - body2.pos.x, this.pos.y - body2_end_y);
+                    to = { x: this.pos.x - body2.pos.x, y: this.pos.y - body2_end_y }
+                } else if (body2.pos.y > end_y) {
+                    dist = Math.hypot(this.pos.x - body2.pos.x, end_y - body2.pos.y);
+                    to = { x: this.pos.x - body2.pos.x, y: end_y - body2.pos.y }
+                } else {
+                    dist = Math.abs(this.pos.x - body2.pos.x)
+                    to = { x: this.pos.x - body2.pos.x, y: 0}
+                }
 
 
-            if (dist > 0.01) {
-                to.x /= dist;
-                to.y /= dist;
-                
-                const factor = RELATION_POWER/(dist**2);
-                force.x += to.x * factor
-                force.y += to.y * factor
-                
-            }
-        })
+                if (dist > 0.01) {
+                    to.x /= dist;
+                    to.y /= dist;
+                    
+                    const factor = RELATION_POWER/(dist**2);
+                    force.x += to.x * factor
+                    force.y += to.y * factor
+                    
+                }
+            })
 
         // attract connected bodies
         bodies_done = Array(bodies.length).fill(false)         
@@ -203,7 +214,7 @@ class Body {
                     
                     const to = {
                         x: child_pos.x - body_pos.x,
-                        y: child_pos.y - body_pos.y
+                        y: child_pos.y - body_pos.y,
                     }
                     connected_bodies.push(to)
                 }
@@ -216,7 +227,7 @@ class Body {
                     const child_pos = bodies[body_idx].output_point(child_idx, this.pos.x)
                     const to = {
                         x: this.connection_point(bodies[body_idx].pos.x).x - child_pos.x,
-                        y: this.connection_point(bodies[body_idx].pos.x).y - child_pos.y
+                        y: this.connection_point(bodies[body_idx].pos.x).y - child_pos.y,
                     }
                     connected_bodies.push(to)
                 }
@@ -227,8 +238,10 @@ class Body {
             
             let dist = Math.hypot(to.x, to.y);
 
+            let s = SPRING_COEF
+
             if (dist > 0.01) {
-                const factor = SPRING_COEF * (IDEAL_DIST - dist);
+                const factor = s * (IDEAL_DIST - dist);
                 force.x += (to.x / dist) * factor
                 force.y += (to.y / dist) * factor
             }
@@ -244,11 +257,16 @@ class Body {
         this.vel.x *= 0.7;
         this.vel.y *= 0.7;
 
-        this.vel.x = Math.min(Math.max(this.vel.x, -MAX_VEL), MAX_VEL);
-        this.vel.y = Math.min(Math.max(this.vel.y, -MAX_VEL), MAX_VEL);
+        if (!this.selected) {
+            this.vel.x = Math.min(Math.max(this.vel.x, -temperature), temperature);
+            this.vel.y = Math.min(Math.max(this.vel.y, -temperature), temperature);
+        }
 
         this.pos.x += this.vel.x;
         this.pos.y += this.vel.y;
+
+        this.pos.x = Math.min(Math.max(this.pos.x, qtree_limits.x), qtree_limits.x + qtree_limits.w);
+        this.pos.y = Math.min(Math.max(this.pos.y, qtree_limits.y), qtree_limits.y + qtree_limits.h);
     }
 
     draw(p5: any) {

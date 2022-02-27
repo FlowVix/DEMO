@@ -115,28 +115,21 @@ class FollowCommand {
     constructor(
         public groupID: number,
         public followID: number,
-        {x: lastX, y: lastY},
         public xMod: number,
         public yMod: number,
         public duration: number,
         public startTime: number,
         public trigger_obj: ObjIndex
-    ) {
-        this.lastVec.x = lastX
-        this.lastVec.y = lastY
-    }
+    ) { }
 
     getDisplacement(
         {x: followX, y: followY}
     ): {x: number, y: number} {
 
-        console.log(followX, followY)
         let displacement = {
             x: (followX - this.lastVec.x)*this.xMod,
             y: (followY - this.lastVec.y)*this.yMod,
         }
-        this.lastVec.x = followX
-        this.lastVec.y = followY
         return displacement
     }
 
@@ -587,7 +580,6 @@ class World {
             new FollowCommand(
                 groupID,
                 followID,
-                this.objects[this.groupIDs[followID].objects[0]].pos,
                 xMod,
                 yMod,
                 duration,
