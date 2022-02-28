@@ -1,7 +1,7 @@
 
 
 import Constants from "../constants";
-import type { World, ChannelData} from "./world";
+import { type World, RGBData, CopyData} from "./world";
 
 
 
@@ -58,8 +58,8 @@ const parseProps = (
                     h: value[0],
                     s: value[1],
                     v: value[2],
-                    s_c: value[3],
-                    v_c: value[4],
+                    s_c: value[3] == 1,
+                    v_c: value[4] == 1,
                 }
                 break;
             case Constants.OBJ_PROPS.COLOR_2_HVS:
@@ -68,8 +68,18 @@ const parseProps = (
                     h: value[0],
                     s: value[1],
                     v: value[2],
-                    s_c: value[3],
-                    v_c: value[4],
+                    s_c: value[3] == 1,
+                    v_c: value[4] == 1,
+                }
+                break;
+            case Constants.OBJ_PROPS.COPIED_COLOR_HVS:
+                value = value.split("a")
+                value = {
+                    h: value[0],
+                    s: value[1],
+                    v: value[2],
+                    s_c: value[3] == 1,
+                    v_c: value[4] == 1,
                 }
                 break;
             default:
@@ -273,28 +283,65 @@ const createObject = (
                                         break;
                                 }
                             } else if (obj instanceof ColorTrigger) {
+                                let triggerProps = {}
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET_COLOR:
-										obj.colorID = parseInt(props[i])
+										triggerProps["colorID"] = parseInt(props[i])
                                         break;
 									case Constants.OBJ_PROPS.DURATION:
-										obj.fadeTime = parseFloat(props[i])
+										triggerProps["fadeTime"] = parseFloat(props[i])
                                         break;
-                                    // case Constants.OBJ_PROPS.TRIGGER_RED:
-									// 	obj.data.r = parseInt(props[i])
-                                    //     break;
-                                    // case Constants.OBJ_PROPS.TRIGGER_GREEN:
-									// 	obj.data.g = parseInt(props[i])
-                                    //     break;
-                                    // case Constants.OBJ_PROPS.TRIGGER_BLUE:
-									// 	obj.data.b = parseInt(props[i])
-                                    //     break;
+                                    case Constants.OBJ_PROPS.TRIGGER_RED:
+										triggerProps["red"] = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.TRIGGER_GREEN:
+										triggerProps["green"] = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.TRIGGER_BLUE:
+										triggerProps["blue"] = parseInt(props[i])
+                                        break;
                                     case Constants.OBJ_PROPS.OPACITY:
-										obj.data.opacity = parseFloat(props[i])
+										triggerProps["opacity"] = parseFloat(props[i])
                                         break;
                                     case Constants.OBJ_PROPS.BLENDING:
-										obj.data.blending = props[i]
+										triggerProps["blending"] = props[i]
                                         break;
+                                    case Constants.OBJ_PROPS.COPIED_COLOR_ID:
+										triggerProps["copyID"] = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.COPIED_COLOR_HVS:
+										triggerProps["copyHVS"] = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.COPY_OPACITY:
+										triggerProps["copyOpacity"] = props[i]
+                                        break;
+                                }
+                                if (!("copyID" in triggerProps)) {
+                                    let data = new RGBData(
+                                        triggerProps["red"],
+                                        triggerProps["green"],
+                                        triggerProps["blue"],
+                                        triggerProps["opacity"],
+                                        triggerProps["blending"],
+                                    )
+                                    obj.colorID = triggerProps["colorID"]
+                                    obj.data = data
+                                    obj.fadeTime = triggerProps["fadeTime"]
+                                } else {
+                                    let data = new CopyData(
+                                        triggerProps["copyID"],
+                                        triggerProps["copyHVS"].h,
+                                        triggerProps["copyHVS"].s,
+                                        triggerProps["copyHVS"].v,
+                                        triggerProps["copyHVS"].s_c,
+                                        triggerProps["copyHVS"].v_c,
+                                        triggerProps["copyOpacity"],
+                                        triggerProps["opacity"],
+                                        triggerProps["blending"],
+                                    )
+                                    obj.colorID = triggerProps["colorID"]
+                                    obj.fadeTime = triggerProps["fadeTime"]
+                                    obj.data = data
                                 }
                             } else if (obj instanceof RotateTrigger) {
                                 switch (parseInt(i)) {

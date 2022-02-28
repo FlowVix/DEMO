@@ -23,13 +23,16 @@ interface ChannelData {
 
 class RGBData implements ChannelData {
     
-    opacity: number = 1;
-    blending: boolean = false;
     playerColor: PlayerColor = PlayerColor.None;
 
-    red: number;
-    green: number;
-    blue: number;
+    constructor(
+        public red: number,
+        public green: number,
+        public blue: number,
+        public opacity: number,
+        public blending: boolean,
+    ) {}
+
     getColor(world: World): rgbab {
         
         return this.playerColor == PlayerColor.None ? {
@@ -41,32 +44,33 @@ class RGBData implements ChannelData {
         } : {r: 0, g: 0, b: 0, a: 1, blending: false}
         
     }
-
-    constructor(red: number, green: number, blue: number) {
-        this.red = red;
-        this.green = green;
-        this.blue = blue;
-    }
 }
 class CopyData implements ChannelData {
 
-    opacity: number = 1;
-    blending: boolean = false;
     playerColor: PlayerColor = PlayerColor.None;
 
-    channel: number;
 
-    hue: number;
-    saturation: number;
-    brightness: number;
+    constructor(
+        public channel: number,
+        public hue: number,
+        public saturation: number,
+        public brightness: number,
+        public sChecked: boolean,
+        public bChecked: boolean,
+        public copyOpacity: boolean,
+        public opacity: number,
+        public blending: boolean,
+    ) {}
 
-    sChecked: boolean;
-    bChecked: boolean;
-
-    copyOpacity: boolean;
     getColor(world: World): rgbab {
-        let visitedChannels = []
-        //ah oke
+        const col = world.colorIDs[this.channel].getColor(world)
+        return {
+            r: col.r,
+            g: col.g,
+            b: col.b,
+            a: this.opacity * (this.copyOpacity ? col.a : 1),
+            blending: this.blending,
+        }
     }
 }
 
@@ -74,12 +78,11 @@ interface ChannelState {
     getColor: (world: World) => rgbab,
 }
 class Stable implements ChannelState {
-    data: ChannelData;
+    constructor(
+        public data: ChannelData,
+    ) {}
     getColor(world: World): rgbab {
         return this.data.getColor(world)
-    }
-    constructor (data: ChannelData) {
-        this.data = data;
     }
 }
 class Fading implements ChannelState {
@@ -384,11 +387,11 @@ class World {
                 if (obj.dynamic) this.dynamicCollisionBlocks.push(i)
             }
         })
-        this.colorIDs[1] = new Stable(new RGBData(0, 0, 0))
+        this.colorIDs[1] = new Stable(new RGBData(0, 0, 0, 1, false))
         // this.colorIDs[1000] = new ChannelData(72, 119, 217)
         // this.colorIDs[1001] = new ChannelData(54, 89, 163)
-        this.colorIDs[1000] = new Stable(new RGBData(54, 66, 92))
-        this.colorIDs[1001] = new Stable(new RGBData(20, 31, 56))
+        this.colorIDs[1000] = new Stable(new RGBData(54, 66, 92, 1, false))
+        this.colorIDs[1001] = new Stable(new RGBData(20, 31, 56, 1, false))
         
     }
 
