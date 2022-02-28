@@ -49,7 +49,7 @@ export default {
 		sourcemap: true,
 		format: "iife",
 		name: "app",
-		file: "public/build/app.js",
+		file: "public/build/bundle.js",
 		inlineDynamicImports: true,
 		// allowSyntheticDefaultImports: true,
 	},
@@ -63,7 +63,7 @@ export default {
 		}),
 		// we'll extract any component CSS out into
 		// a separate file - better for performance
-		css({ output: "app.css" }),
+		css({ output: "bundle.css" }),
 
 		// If you have external dependencies installed from
 		// npm, you'll most likely need these plugins. In
