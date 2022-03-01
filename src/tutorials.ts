@@ -210,6 +210,47 @@ for_loop(0..30, (i) {
     },
     //=========================================================================
     {
+        name: "Events",
+        // 💩💩💩💩💩💩😽😽🙉🙉🙈🦁🦁🐯🐯🦒😹😹😾🐱🦬🦬🦬🐖🐖🐖🐖
+        // ill look into it
+        content: `
+# Events
+
+Sometimes you want some code to run in response to something happening in the game, for example when the player presses a button or two objects collide.
+In those cases, you can use events.
+
+`,
+        initialCode: `
+extract obj_props
+
+// adding an object with group 10
+$.add(obj{
+    OBJ_ID: 1,
+    X: 15,
+    Y: 15,
+    GROUPS: 10g,
+})
+
+10g.move(10, 0, 0.3, easing = EASE_IN_OUT)
+`,
+        solution: `
+extract obj_props
+
+// adding an object with group 10
+$.add(obj{
+    OBJ_ID: 1,
+    X: 15,
+    Y: 15,
+    GROUPS: 10g,
+})
+
+on(touch(), !{
+    10g.move(10, 0, 0.3, easing = EASE_IN_OUT)
+})
+        `,
+    },
+    //=========================================================================
+    {
         name: "Counters",
         content: `
 # Counters

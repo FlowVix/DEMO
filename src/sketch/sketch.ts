@@ -1,6 +1,6 @@
 
 import P5 from 'p5-svelte';
-import type {World} from '../world/world';
+import {type World, Fading, Stable} from '../world/world';
 import type GDObject from '../objects/object'
 import { CollisionTrigger, InstantCountTrigger, SpawnTrigger, TouchMode } from '../objects/triggers';
 import { Regular } from '../objects/regular';
@@ -42,7 +42,7 @@ const worldSketch = (
             else pressingInput1 = activate
 
             world.touchListeners.forEach((tl) => {
-                if (tl.dualMode && touch2) return
+                if (!tl.dualMode && touch2) return
                 if ((!tl.holdMode) && (!activate)) return
                 switch (tl.touchMode) {
                     case TouchMode.Normal:
@@ -148,14 +148,17 @@ const worldSketch = (
         let dragging = false;
         let prevCameraPos = {x: 0, y: 0};
         let prevMousePos = {x: 0, y: 0};
+        const button_h_def = 75
+        const button_w = 200
+        const button_margin = 10
         p5.mousePressed = () => {
 
-            if (mouseInside(15, 15+140, 15, 15+50)) {
+            if (mouseInside(p5.width - button_margin - button_w, p5.width - button_margin, p5.height - button_margin - button_h_def, p5.height - button_margin)) {
                 activateListeners(true, false)
                 return
             }
 
-            if (mouseInside(15, 15+140, 15+60, 15+50+60)) {
+            if (mouseInside(button_margin, button_margin + button_w, p5.height - button_margin - button_h_def, p5.height - button_margin)) {
                 activateListeners(true, true)
                 return
             }
@@ -183,6 +186,8 @@ const worldSketch = (
                 zoom = 2 ** (zoomExp/10)
             }
         }
+
+        
 
         p5.draw = () => {
 
@@ -305,21 +310,35 @@ const worldSketch = (
             p5.rect(-6, -6, p5.width+12, p5.height+12, 18)
             p5.stroke(17, 17, 22)
             p5.rect(-38, -38, p5.width+44, p5.height+44, 18)
-
             
             if (world.touchListeners.length > 0) {
+                const button_h = button_h_def - (pressingInput1 ? 10 : 0)
                 p5.stroke(0)
                 p5.strokeWeight(3)
                 p5.fill(0, pressingInput1 ? 220 : 150)
-                p5.rect(15, 15, 140, 50, 6)
-                p5.fill(0, pressingInput2 ? 220 : 150)
-                p5.rect(15, 75, 140, 50, 6)
+                p5.rect(p5.width - button_margin - button_w, p5.height - button_margin - button_h, button_w, button_h, 6)
+
                 p5.noStroke()
                 p5.fill(255)
+                const text = "Touch"
                 p5.textSize(20)
-                p5.textAlign(p5.CENTER)
-                p5.text("Touch Input 1", 15 + 140/2, 22 + 50/2)
-                p5.text("Touch Input 2", 15 + 140/2, 22 + 50/2 + 60)
+                p5.textAlign(p5.CENTER, p5.CENTER)
+                p5.text(text, p5.width - button_margin - button_w / 2, p5.height - button_margin - button_h / 2)
+            }
+
+            if (world.touchListeners.some(listener => listener.dualMode)) {
+                const button_h = button_h_def - (pressingInput2 ? 10 : 0)
+                p5.stroke(0)
+                p5.strokeWeight(3)
+                p5.fill(0, pressingInput2 ? 220 : 150)
+                p5.rect(button_margin, p5.height - button_margin - button_h, button_w, button_h, 6)
+
+                p5.noStroke()
+                p5.fill(255)
+                const text = "Touch Dual"
+                p5.textSize(20)
+                p5.textAlign(p5.CENTER, p5.CENTER)
+                p5.text(text, button_margin + button_w / 2, p5.height - button_margin - button_h / 2)
             }
 
             
@@ -472,6 +491,18 @@ const worldSketch = (
                     listener.prevAmount = listener.collidingAmount
                 })
             }
+
+            for (const id in world.colorIDs) {
+                if (world.colorIDs[id] instanceof Fading && !(<Fading> world.colorIDs[id]).stopped) {
+                    (<Fading> world.colorIDs[id]).currentTime = time
+                    if (time >= (<Fading> world.colorIDs[id]).startTime + (<Fading> world.colorIDs[id]).duration * 1000) {
+                        world.colorIDs[id] = new Stable(
+                            (<Fading> world.colorIDs[id]).to
+                        )
+                    }
+                }
+            }
+            //console.log(world.colorIDs)
 
             // to_remove = []
             // for (const id in world.colorFades) {

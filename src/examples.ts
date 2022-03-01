@@ -73,21 +73,44 @@ for i in 0..trail {
 
 `,
     "controls": 
-`extract obj_props
+`// build w/o optimization
+extract obj_props
+player = ?g
+arrow = ?g
 
-$.add(obj{
-    OBJ_ID: 1,
-    X: 15,
-    Y: 15,
-    GROUPS: 10g,
+$.add(obj{ OBJ_ID: 1, X: 45, Y: 45, GROUPS: player })
+$.add(obj{ OBJ_ID: 1603, X: 75, Y: 45, GROUPS: arrow })
+
+dirs = [[1, 0], [0, -1], [-1, 0], [0, 1]]
+let move_funcs = [!{
+    -> player.move(dirs[i][0] * 600, dirs[i][1] * 600, 10)
+    -> arrow.move(dirs[i][0] * 600, dirs[i][1] * 600, 10)
+} for i in 0..4 ]
+
+touching_nondual = counter(false)
+dir = counter(0)
+
+on(touch(), !{
+    touching_nondual = true
+    move_funcs[dir.to_const(0..4)]!
 })
 
-move = !{
-    10g.move(300, 0, 10)
-}
+on(touch_end(), !{
+    touching_nondual = false
+    for m in move_funcs {
+        m.start_group.stop()
+    }
+})
 
-on(touch(), move)
-on(touch_end(), !{ move.start_group.stop() })`,
+on(touch(dual_side = true), !{
+    if !@bool(touching_nondual) {
+        dir += 1
+        if dir == 4 {
+            dir -= 4
+        }
+        arrow.rotate(player, 90)
+    }
+})`,
     "rotation-quirk": 
 `extract obj_props
 

@@ -1,7 +1,8 @@
 import type Object from "../objects/object"
 import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger, TouchMode, MoveTrigger, AlphaTrigger, TouchTrigger, RotateTrigger, CountTrigger, CollisionTrigger, ColorTrigger} from "../objects/triggers"
 import {CollisionObject, Display} from "../objects/special"
- 
+import {rgbToHsv, hsvToRgb, clamp, modulo} from "../util"
+
 type ObjIndex = number;
 type rgbab = {r: number, g: number, b: number, a: number, blending: boolean}
 type rgba = {r: number, g: number, b: number, a: number}
@@ -64,10 +65,19 @@ class CopyData implements ChannelData {
 
     getColor(world: World): rgbab {
         const col = world.colorIDs[this.channel].getColor(world)
+        let [h, s, v] = rgbToHsv(col.r, col.g, col.b)
+        h *= 360;
+        h += this.hue;
+        h = modulo(h, 360)
+        s = this.sChecked ? s + this.saturation : s * this.saturation;
+        v = this.bChecked ? v + this.brightness : v * this.brightness;
+        s = clamp(s, 0, 1)
+        v = clamp(v, 0, 1)
+        let [r, g, b] = hsvToRgb(h/360, s, v)
         return {
-            r: col.r,
-            g: col.g,
-            b: col.b,
+            r: r,
+            g: g,
+            b: b,
             a: this.opacity * (this.copyOpacity ? col.a : 1),
             blending: this.blending,
         }
@@ -88,6 +98,7 @@ class Stable implements ChannelState {
 class Fading implements ChannelState {
 
     currentTime: number;
+    stopped: boolean = false;
 
     constructor(
         public from: rgba,
@@ -112,25 +123,6 @@ class Fading implements ChannelState {
         }
     }
 }
-class Stopped implements ChannelState {
-    constructor(
-        public from: rgba,
-        public to: ChannelData,
-        public lerp: number,
-    ) {}
-
-    getColor(world: World): rgbab {
-        const toCol = this.to.getColor(world)
-        return {
-            r: this.from.r + (toCol.r - this.from.r) * this.lerp,
-            g: this.from.g + (toCol.g - this.from.g) * this.lerp,
-            b: this.from.b + (toCol.b - this.from.b) * this.lerp,
-            a: this.from.a + (toCol.a - this.from.a) * this.lerp,
-            blending: toCol.blending,
-        }
-    }
-}
-
 
 
 
@@ -356,8 +348,6 @@ class World {
     collisionBlocks: ObjIndex[] = [];
     dynamicCollisionBlocks: ObjIndex[] = [];
 
-    colorFades: Record<number, ColorFade> = {};
-
     time: number = 0;
 
     constructor() {
@@ -387,7 +377,7 @@ class World {
                 if (obj.dynamic) this.dynamicCollisionBlocks.push(i)
             }
         })
-        this.colorIDs[1] = new Stable(new RGBData(0, 0, 0, 1, false))
+        this.colorIDs[1] = new Stable(new RGBData(255, 255, 255, 1, false))
         // this.colorIDs[1000] = new ChannelData(72, 119, 217)
         // this.colorIDs[1001] = new ChannelData(54, 89, 163)
         this.colorIDs[1000] = new Stable(new RGBData(54, 66, 92, 1, false))
@@ -396,7 +386,7 @@ class World {
     }
 
     getColor(colorID: number): rgbab {
-        return colorID in this.colorIDs ? this.colorIDs[colorID].getColor(this) : {r: 0, g: 0, b: 0, a: 0, blending: false};
+        return colorID in this.colorIDs ? this.colorIDs[colorID].getColor(this) : {r: 255, g: 255, b: 255, a: 1, blending: false};
     }
 
     addGroupID(
@@ -771,7 +761,10 @@ a.start_group.stop()
                 for (const i of to_remove) delete this.collisionListeners[i]
             } else if (obj instanceof ColorTrigger) {
                 const t = obj.colorID
-                delete this.colorFades[t]
+                if (this.colorIDs[t] instanceof Fading) {
+                    (<Fading>this.colorIDs[t]).stopped = true
+                }
+                // delete this.colorFades[t]
             }
         });
     }
@@ -787,6 +780,8 @@ export {
     type ChannelData,
     RGBData,
     CopyData,
+    Stable,
+    Fading,
     PlayerColor,
 }
 

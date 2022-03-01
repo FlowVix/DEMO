@@ -145,7 +145,7 @@ class Body {
     affect(bodies: Body[], qtree: QuadTree, graph: Graph, reverse_graph: ReverseGraph, mousepos, temperature) {
         if (this.pinned) return
 
-        let force = { x: this.pos.x < 300 ? 0.2 : this.pos.x > 600 ? -0.5 : (450 - this.pos.x) * 0.001, y: -this.pos.y * 0.002 };
+        let force = { x: 0.3, y: -this.pos.y * 0.002 };
 
         if (this.selected) {
             force.x += (mousepos.x - this.pos.x) * 0.2;

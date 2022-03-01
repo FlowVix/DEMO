@@ -67,11 +67,11 @@ export default {
 
 		// If you have external dependencies installed from
 		// npm, you'll most likely need these plugins. In
-		// some cases you'll need additional configuration -
+		// sbrowser: true,
+		//ome cases you'll need additional configuration -
 		// consult the documentation for details:
 		// https://github.com/rollup/plugins/tree/master/packages/commonjs
 		resolve({
-			browser: true,
 			dedupe: ["svelte"],
 		}),
 		commonjs(),
@@ -102,10 +102,11 @@ export default {
 			serverPath: "/build/",
 		}),
 
-		// svelteStaticHtml({
-		// 	component: "src/App.svelte",
-		// 	output: "public/build/index.html",
-		// }),
+		// production &&
+		// 	svelteStaticHtml({
+		// 		component: "src/App.svelte",
+		// 		output: "public/build/index.html",
+		// 	}),
 	],
 	watch: {
 		clearScreen: false,

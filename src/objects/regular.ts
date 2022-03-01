@@ -47,8 +47,8 @@ class Regular extends GDObject {
         } else if (spritesheets) {
             //let g = p5.createGraphics(p5.width, p5.height)
 
-            let main: ChannelData = world.getColor(this.mainID)
-            let detail: ChannelData = world.getColor(this.detailID)
+            let main = world.getColor(this.mainID)
+            let detail = world.getColor(this.detailID)
             
             let triggerAlpha = 1; // yea but youre multiplying EVERY group in the worldlol
             
@@ -60,7 +60,7 @@ class Regular extends GDObject {
 
             let ctx = this.mainGraphics.drawingContext
             this.mainGraphics.clear()
-            ctx.globalAlpha = main.opacity * triggerAlpha
+            ctx.globalAlpha = main.a * triggerAlpha
 
             ctx.globalCompositeOperation = 'copy';
             ctx.fillStyle = 'rgb(0, 0, 0, 1)';
@@ -81,7 +81,7 @@ class Regular extends GDObject {
             )
 
             ctx.globalCompositeOperation = 'multiply';
-            ctx.fillStyle = `rgb(${main.color.r}, ${main.color.g}, ${main.color.b}, 1)`;
+            ctx.fillStyle = `rgb(${main.r}, ${main.g}, ${main.b}, 1)`;
             ctx.fillRect(-ctxSize/2, -ctxSize/2, ctxSize, ctxSize);
 
 
@@ -103,7 +103,7 @@ class Regular extends GDObject {
 
             ctx = this.detailGraphics.drawingContext
             this.detailGraphics.clear()
-            ctx.globalAlpha = detail.opacity * triggerAlpha
+            ctx.globalAlpha = detail.a * triggerAlpha
 
             ctx.globalCompositeOperation = 'copy';
             ctx.fillStyle = `rgb(0, 0, 0, 1)`;
@@ -124,7 +124,7 @@ class Regular extends GDObject {
             )
 
             ctx.globalCompositeOperation = 'multiply';
-            ctx.fillStyle = `rgb(${detail.color.r}, ${detail.color.g}, ${detail.color.b}, 1)`;
+            ctx.fillStyle = `rgb(${detail.r}, ${detail.g}, ${detail.b}, 1)`;
             ctx.fillRect(-ctxSize/2, -ctxSize/2, ctxSize, ctxSize);
 
 

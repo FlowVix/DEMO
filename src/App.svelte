@@ -6,13 +6,12 @@
 	import { createObject } from "./world/objectHandler";
 	import SvelteMarkdown from "svelte-markdown";
 	import { tutorials } from "./tutorials";
+	import { clamp } from "./util";
 
 	export let run_spwn;
 	export let init_panics;
 	export let check_syntax;
 	init_panics();
-
-	const clamp = (x, min, max) => Math.min(max, Math.max(min, x));
 
 	import AnsiUp from "ansi_up";
 	let ansiUp = new AnsiUp();
@@ -80,7 +79,7 @@
 	let editor_console = "";
 	let is_showing_error = false;
 
-	const buildLevel = (lvlStr) => {
+	const buildLevel = async (lvlStr) => {
 		world.reset();
 
 		lvlStr
@@ -92,11 +91,13 @@
 				);
 			});
 		world.init();
-		updateBodies(world);
 	};
+	let current_ls = "";
+	let last_build = "";
 
 	const run_code = async () => {
 		let code = examples[current_example];
+		last_build = code;
 		let [txt, lvlStr, status] = run_spwn(code, optimize);
 		if (status == "error") {
 			editor_console = txt;
@@ -104,7 +105,10 @@
 			return;
 		}
 
-		buildLevel(lvlStr);
+		current_ls = lvlStr;
+
+		await buildLevel(lvlStr);
+		updateBodies(world);
 
 		editor_console = txt;
 		is_showing_error = false;
@@ -124,27 +128,15 @@
 		}
 	};
 
-	const simulate_triggers = () => {
-		// reset items
-		Object.keys(world.itemIDs).forEach((id) => {
-			world.itemIDs[id].value = 0;
-		});
-		Object.keys(world.groupIDs).forEach((id) => {
-			world.groupIDs[id].on = true;
-			world.groupIDs[id].opacity = 1;
-		});
-		world.objects.forEach((_, i) => {
-			world.objects[i].disables = 0;
-		});
-		world.moveCommands = [];
-		world.alphaCommands = {};
-		world.touchListeners = [];
-
-		world.objects.forEach((obj) => {
-			if (obj instanceof Trigger && !obj.spawnTriggered) {
-				obj.trigger(world);
-			}
-		});
+	const simulate_triggers = async () => {
+		await buildLevel(current_ls);
+		setTimeout(() => {
+			world.objects.forEach((obj) => {
+				if (obj instanceof Trigger && !obj.spawnTriggered) {
+					obj.trigger(world);
+				}
+			});
+		}, 100);
 	};
 
 	let codeEditor;
@@ -329,7 +321,7 @@
 				height="36"
 			/></a
 		>
-		<span class="logo-text">POOP Playground</span>
+		<span class="logo-text">SPWN Playground</span>
 		<button
 			class="header-button"
 			on:click={() => {
@@ -558,13 +550,34 @@
 					<div class="buttons">
 						<button
 							id="run_button"
-							class="big-button"
-							on:click={run_code}>build</button
+							class={last_build == examples[current_example]
+								? "big-button"
+								: "big-button glow"}
+							style={last_build == examples[current_example]
+								? "opacity: 0.5;"
+								: ""}
+							on:click={run_code}
+							>{last_build == examples[current_example]
+								? "rebuild"
+								: "build"}</button
 						>
 						<button
 							id="sim_button"
-							class="big-button"
-							on:click={simulate_triggers}>simulate</button
+							class={current_ls == "" ||
+							last_build != examples[current_example]
+								? "big-button"
+								: "big-button glow"}
+							style={current_ls == ""
+								? "opacity:0.5;cursor:not-allowed;"
+								: last_build != examples[current_example]
+								? "opacity:0.5;"
+								: ""}
+							on:click={() => {
+								if (current_ls != "") simulate_triggers();
+							}}
+							>{last_build == examples[current_example]
+								? "simulate"
+								: "simulate (old)"}</button
 						>
 					</div>
 					<div class="optimize">
@@ -1171,12 +1184,31 @@
 		transition: all 0.1s ease-in-out 0s;
 		box-shadow: 3px 3px 10px 0px #0005;
 		box-sizing: border-box;
+		/* animation: glowing 700ms infinite; */
+	}
+
+	.glow {
+		animation: glowing 3000ms infinite;
+	}
+
+	@keyframes glowing {
+		0% {
+			border: solid rgba(255, 255, 255, 0.4) 2px;
+		}
+		50% {
+			border: solid rgb(58, 209, 71, 0.7) 2px;
+			box-shadow: 0px 0px 7px rgb(58, 255, 71, 0.2);
+		}
+		100% {
+			border: solid rgba(255, 255, 255, 0.4) 2px;
+		}
 	}
 
 	.big-button:hover {
 		border-radius: 14px 0px 14px 0px;
+		cursor: pointer;
 	}
-
+	/* // wait it totallyu is */
 	#run_button {
 		background: #551c1c;
 	}

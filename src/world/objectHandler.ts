@@ -1,7 +1,7 @@
 
 
 import Constants from "../constants";
-import { type World, RGBData, CopyData} from "./world";
+import { type World, RGBData, CopyData, Stable} from "./world";
 
 
 
@@ -55,9 +55,9 @@ const parseProps = (
             case Constants.OBJ_PROPS.HVS:
                 value = value.split("a")
                 value = {
-                    h: value[0],
-                    s: value[1],
-                    v: value[2],
+                    h: parseFloat(value[0]),
+                    s: parseFloat(value[1]),
+                    v: parseFloat(value[2]),
                     s_c: value[3] == 1,
                     v_c: value[4] == 1,
                 }
@@ -65,9 +65,9 @@ const parseProps = (
             case Constants.OBJ_PROPS.COLOR_2_HVS:
                 value = value.split("a")
                 value = {
-                    h: value[0],
-                    s: value[1],
-                    v: value[2],
+                    h: parseFloat(value[0]),
+                    s: parseFloat(value[1]),
+                    v: parseFloat(value[2]),
                     s_c: value[3] == 1,
                     v_c: value[4] == 1,
                 }
@@ -75,9 +75,9 @@ const parseProps = (
             case Constants.OBJ_PROPS.COPIED_COLOR_HVS:
                 value = value.split("a")
                 value = {
-                    h: value[0],
-                    s: value[1],
-                    v: value[2],
+                    h: parseFloat(value[0]),
+                    s: parseFloat(value[1]),
+                    v: parseFloat(value[2]),
                     s_c: value[3] == 1,
                     v_c: value[4] == 1,
                 }
@@ -173,6 +173,9 @@ const createObject = (
 
     delete props[Constants.OBJ_PROPS.OBJ_ID]
 
+    
+    let triggerProps = {}
+
     for (const i in props) {
         switch (parseInt(i)) {
             case Constants.OBJ_PROPS.X:
@@ -209,10 +212,10 @@ const createObject = (
                 } if (obj instanceof Regular) {
                     if (parseInt(i) == Constants.OBJ_PROPS.COLOR) {
                         obj.mainID = parseInt(props[i])
-                        //world.colorIDs[parseInt(props[i])] = new ChannelData()
+                        world.colorIDs[parseInt(props[i])] = new Stable(new RGBData(255, 255, 255, 1, false))
                     } else if (parseInt(i) == Constants.OBJ_PROPS.COLOR_2) {
                         obj.detailID = parseInt(props[i])
-                        //world.colorIDs[parseInt(props[i])] = new ChannelData()
+                        world.colorIDs[parseInt(props[i])] = new Stable(new RGBData(255, 255, 255, 1, false))
                     }
                 } else if (obj instanceof CollisionObject) {
                     if (parseInt(i) == Constants.OBJ_PROPS.BLOCK_A) {
@@ -283,7 +286,6 @@ const createObject = (
                                         break;
                                 }
                             } else if (obj instanceof ColorTrigger) {
-                                let triggerProps = {}
                                 switch (parseInt(i)) {
                                     case Constants.OBJ_PROPS.TARGET_COLOR:
 										triggerProps["colorID"] = parseInt(props[i])
@@ -315,33 +317,6 @@ const createObject = (
                                     case Constants.OBJ_PROPS.COPY_OPACITY:
 										triggerProps["copyOpacity"] = props[i]
                                         break;
-                                }
-                                if (!("copyID" in triggerProps)) {
-                                    let data = new RGBData(
-                                        triggerProps["red"],
-                                        triggerProps["green"],
-                                        triggerProps["blue"],
-                                        triggerProps["opacity"],
-                                        triggerProps["blending"],
-                                    )
-                                    obj.colorID = triggerProps["colorID"]
-                                    obj.data = data
-                                    obj.fadeTime = triggerProps["fadeTime"]
-                                } else {
-                                    let data = new CopyData(
-                                        triggerProps["copyID"],
-                                        triggerProps["copyHVS"].h,
-                                        triggerProps["copyHVS"].s,
-                                        triggerProps["copyHVS"].v,
-                                        triggerProps["copyHVS"].s_c,
-                                        triggerProps["copyHVS"].v_c,
-                                        triggerProps["copyOpacity"],
-                                        triggerProps["opacity"],
-                                        triggerProps["blending"],
-                                    )
-                                    obj.colorID = triggerProps["colorID"]
-                                    obj.fadeTime = triggerProps["fadeTime"]
-                                    obj.data = data
                                 }
                             } else if (obj instanceof RotateTrigger) {
                                 switch (parseInt(i)) {
@@ -501,6 +476,37 @@ const createObject = (
                     }
                     
                 }
+        }
+    }
+
+    if (obj instanceof ColorTrigger) {
+        if (!("copyID" in triggerProps)) {
+            let data = new RGBData(
+                triggerProps["red"] ?? 255,
+                triggerProps["green"] ?? 0,
+                triggerProps["blue"] ?? 0,
+                triggerProps["opacity"] ?? 1,
+                triggerProps["blending"] ?? false,
+            )
+            obj.colorID = triggerProps["colorID"] ?? 0
+            obj.data = data
+            obj.fadeTime = triggerProps["fadeTime"] ?? 0.5
+        } else {
+            console.log(triggerProps["copyHVS"])
+            let data = new CopyData(
+                triggerProps["copyID"] ?? 0,
+                triggerProps["copyHVS"]?.h ?? 0,
+                triggerProps["copyHVS"]?.s ?? 1,
+                triggerProps["copyHVS"]?.v ?? 1,
+                triggerProps["copyHVS"]?.s_c ?? false,
+                triggerProps["copyHVS"]?.v_c ?? false,
+                triggerProps["copyOpacity"] ?? false,
+                triggerProps["opacity"] ?? 1, 
+                triggerProps["blending"] ?? false,
+            )
+            obj.colorID = triggerProps["colorID"]
+            obj.fadeTime = triggerProps["fadeTime"]
+            obj.data = data
         }
     }
 

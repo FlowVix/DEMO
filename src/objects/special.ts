@@ -65,14 +65,14 @@ export class TextObject extends GDObject {
             p5.textFont(PUSAB_FONT)
         }
 
-        let c: ChannelData = world.getColor(this.color_id)
+        let c = world.getColor(this.color_id)
         let triggerAlpha = 1
         this.groups.forEach(g => {
             triggerAlpha *= world.groupIDs[g].opacity
         })
         // TODO: color shit
         p5.textAlign(p5.CENTER, p5.CENTER)
-        p5.fill(c.color.r, c.color.g, c.color.b, c.opacity * triggerAlpha * 255)
+        p5.fill(c.r, c.g, c.b, c.a * triggerAlpha * 255)
         p5.strokeWeight(2)
         p5.stroke(0)
         p5.textSize(16)

@@ -166,7 +166,7 @@ const triggerGraphSketch = (
                 obj_to_body_idx[idx] = [body_idx, i]
             })
             bodies.push(new Body({x: obj_x, y: Math.random() * 100 - 50}, idxs, body_idx))
-            obj_x += 10
+            obj_x += 30
         }) // this file is acting weird for me
 
         // bodies used to ensure that not too many bodies
