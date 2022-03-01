@@ -12,6 +12,33 @@
 	export let init_panics;
 	export let check_syntax;
 	init_panics();
+	enum GuiLayout {
+		PortraitTabs,
+		LandscapeTabs,
+		Full,
+	}
+
+	let dwidth;
+	let dheight;
+	let layout: GuiLayout;
+	$: {
+		const ar = dwidth / dheight;
+		if (ar < 1.3) {
+			layout = GuiLayout.PortraitTabs;
+		} else if (dheight < 600) {
+			layout = GuiLayout.LandscapeTabs;
+		} else {
+			layout = GuiLayout.Full;
+		}
+		console.log(layout);
+	}
+
+	// document.addEventListener("touchstart", (e) => {
+	// 	e.preventDefault();
+	// });
+	// document.addEventListener("touchmove", (e) => {
+	// 	e.preventDefault();
+	// });
 
 	import AnsiUp from "ansi_up";
 	let ansiUp = new AnsiUp();
@@ -311,7 +338,7 @@
 <link href="atom-one-dark.css" rel="stylesheet" />
 <!--  gonna head out for a bit -->
 
-<div class="everything">
+<div class="everything" bind:clientWidth={dwidth} bind:clientHeight={dheight}>
 	<div class="header">
 		<a target="_blank" href="https://spu7nix.net/spwn">
 			<img
@@ -503,9 +530,22 @@
 							1 - playgroundSeparator
 					  }fr`
 			};
+            ${layout != GuiLayout.Full ? "display:block;" : ""}
         `}
 		>
-			<div class="editor">
+			<div
+				class="editor"
+				style={`
+                ${
+					layout == GuiLayout.LandscapeTabs
+						? `
+                    display: grid;
+                    grid-template-columns: 60% 40%;
+                    gap: 10px;`
+						: ""
+				}
+            `}
+			>
 				<div
 					id="code-and-console"
 					style={`
@@ -514,7 +554,10 @@
 							? "1fr"
 							: `${editorSeparator}fr auto ${
 									1 - editorSeparator
-							  }fr`
+							  }fr;
+                    ${layout != GuiLayout.Full ? "display:block;" : ""}
+                    ${layout == GuiLayout.PortraitTabs ? "height:160%;" : ""}
+                    `
 					};
                 `}
 				>
@@ -522,7 +565,7 @@
 						<div id="code-editor" />
 					</div>
 
-					{#if !maximized}
+					{#if !maximized && layout == GuiLayout.Full}
 						<img
 							src="assets/images/resize.svg"
 							alt="resize"
@@ -547,7 +590,17 @@
 				</div>
 
 				{#if !maximized}
-					<div class="buttons">
+					<div
+						class="buttons"
+						style={layout != GuiLayout.Full
+							? "flex-direction: column;gap: 3px;height:100%;"
+							: ""}
+					>
+						{#if layout != GuiLayout.Full}
+							<div id="console">
+								{@html ansiUp.ansi_to_html(editor_console)}
+							</div>
+						{/if}
 						<button
 							id="run_button"
 							class={last_build == examples[current_example]
@@ -561,33 +614,37 @@
 								? "rebuild"
 								: "build"}</button
 						>
-						<button
-							id="sim_button"
-							class={current_ls == "" ||
-							last_build != examples[current_example]
-								? "big-button"
-								: "big-button glow"}
-							style={current_ls == ""
-								? "opacity:0.5;cursor:not-allowed;"
-								: last_build != examples[current_example]
-								? "opacity:0.5;"
-								: ""}
-							on:click={() => {
-								if (current_ls != "") simulate_triggers();
-							}}
-							>{last_build == examples[current_example]
-								? "simulate"
-								: "simulate (old)"}</button
-						>
+						{#if layout == GuiLayout.Full}
+							<button
+								id="sim_button"
+								class={current_ls == "" ||
+								last_build != examples[current_example]
+									? "big-button"
+									: "big-button glow"}
+								style={current_ls == ""
+									? "opacity:0.5;cursor:not-allowed;"
+									: last_build != examples[current_example]
+									? "opacity:0.5;"
+									: ""}
+								on:click={() => {
+									if (current_ls != "") simulate_triggers();
+								}}
+								>{last_build == examples[current_example]
+									? "simulate"
+									: "simulate (old)"}</button
+							>
+						{/if}
 					</div>
-					<div class="optimize">
-						<input type="checkbox" bind:checked={optimize} />
-						Optimize Triggers
-					</div>
+					{#if layout == GuiLayout.Full}
+						<div class="optimize">
+							<input type="checkbox" bind:checked={optimize} />
+							Optimize Triggers
+						</div>
+					{/if}
 				{/if}
 			</div>
 
-			{#if !maximized}
+			{#if !maximized && layout == GuiLayout.Full}
 				<!-- what you doin -->
 				<img
 					src="assets/images/resize.svg"
@@ -611,12 +668,13 @@
 			<!-- {#if !maximized} -->
 			<div
 				class="simulation"
-				style={`
+				style={layout == GuiLayout.Full
+					? `
                 display: ${maximized ? "none" : "grid"};
                 grid-template-rows: ${simSeparator}fr auto ${
-					1 - simSeparator
-				}fr;
-            `}
+							1 - simSeparator
+					  }fr;`
+					: `width: 0px;`}
 			>
 				<div id="trigger-graph-sketch" />
 				<img
@@ -638,7 +696,6 @@
 				/>
 				<div id="sketch" />
 			</div>
-			<!-- {/if} -->
 		</div>
 	</div>
 
@@ -958,7 +1015,7 @@
 
 	#console {
 		line-height: 20px;
-		height: 100%;
+		height: max(100%, 100px);
 		color: white;
 		background: black;
 		border: 2px solid #3b3b3b;
@@ -1127,7 +1184,8 @@
 		box-shadow: 3px 3px 10px 0px #0005;
 	}
 
-	.editor > .optimize {
+	/* .editor >  */
+	.optimize {
 		display: flex;
 		flex-direction: row;
 		justify-content: center;
@@ -1171,7 +1229,7 @@
 		height: 60px;
 		font-family: "Source Code Pro", monospace;
 		color: #ffffff;
-		font-size: 30px;
+		font-size: 150%;
 		letter-spacing: 0em;
 		overflow-wrap: anywhere;
 		overflow: hidden;
