@@ -44,38 +44,21 @@
 	let ansiUp = new AnsiUp();
 
 	const themes = [
-		["Ambiance", "ambiance"],
-		["Chaos", "chaos"],
-		["Chrome", "chrome"],
 		["Clouds Midnight", "clouds_midnight"],
 		["Clouds", "clouds"],
 		["Cobalt", "cobalt"],
-		["Crimson Editor", "crimson_editor"],
 		["Dawn", "dawn"],
-		["Dracula", "dracula"],
-		["Dreamweaver", "dreamweaver"],
-		["Eclipse", "eclipse"],
-		["Github", "github"],
-		["Gob", "gob"],
-		["Gruvbox", "gruvbox"],
 		["Idle Fingers", "idle_fingers"],
-		["iPlastic", "iplastic"],
 		["Katzenmilch", "katzenmilch"],
 		["Kr Theme", "kr_theme"],
 		["Kuroir", "kuroir"],
-		["Material Ocean", "MaterialOceanHighContrast"],
+		["Material Ocean", "material_ocean"],
 		["Merbivore Soft", "merbivore_soft"],
 		["Merbivore", "merbivore"],
-		["Mono Industrial", "mono_industrial"],
 		["Monokai", "monokai"],
-		["Nord Dark", "nord_dark"],
-		["One Dark", "one_dark"],
 		["Pastel On Dark", "pastel_on_dark"],
 		["Solarized Dark", "solarized_dark"],
 		["Solarized Light", "solarized_light"],
-		["Sql Server", "sqlserver"],
-		["Terminal", "terminal"],
-		["Textmate", "textmate"],
 		["Tomorrow Night Blue", "tomorrow_night_blue"],
 		["Tomorrow Night Bright", "tomorrow_night_bright"],
 		["Tomorrow Night Eighties", "tomorrow_night_eighties"],
@@ -86,7 +69,7 @@
 		["XCode", "xcode"],
 	];
 
-	let selectedTheme = "MaterialOceanHighContrast";
+	let selectedTheme = "material_ocean";
 
 	let world = new World();
 	let optimize = true;

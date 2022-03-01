@@ -1,4 +1,4 @@
-ace.define("ace/ext/hardwrap",[], function(require, exports, module) {
+ace.define("ace/ext/hardwrap",["require","exports","module","ace/range","ace/editor","ace/config"], function(require, exports, module) {
 "use strict";
 
 var Range = require("../range").Range;
@@ -117,7 +117,7 @@ exports.hardWrap = hardWrap;
 
 });
 
-ace.define("ace/keyboard/vim",[], function(require, exports, module) {
+ace.define("ace/keyboard/vim",["require","exports","module","ace/range","ace/lib/event_emitter","ace/lib/dom","ace/lib/oop","ace/lib/keys","ace/lib/event","ace/search","ace/lib/useragent","ace/search_highlight","ace/commands/multi_select_commands","ace/mode/text","ace/ext/hardwrap","ace/multi_select"], function(require, exports, module) {
   'use strict';
 
   function log() {
@@ -6273,7 +6273,8 @@ dom.importCssString(".normal-mode .ace_cursor{\
   exports.handler.defaultKeymap = defaultKeymap;
   exports.handler.actions = actions;
   exports.Vim = Vim;
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/keyboard/vim"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;

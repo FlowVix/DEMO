@@ -1,4 +1,4 @@
-ace.define("ace/snippets",[], function(require, exports, module) {
+ace.define("ace/snippets",["require","exports","module","ace/lib/dom","ace/lib/oop","ace/lib/event_emitter","ace/lib/lang","ace/range","ace/range_list","ace/keyboard/hash_handler","ace/tokenizer","ace/clipboard","ace/editor"], function(require, exports, module) {
 "use strict";
 var dom = require("./lib/dom");
 var oop = require("./lib/oop");
@@ -1006,7 +1006,7 @@ var Editor = require("./editor").Editor;
 
 });
 
-ace.define("ace/ext/emmet",[], function(require, exports, module) {
+ace.define("ace/ext/emmet",["require","exports","module","ace/keyboard/hash_handler","ace/editor","ace/snippets","ace/range","ace/config","resources","resources","tabStops","resources","utils","actions"], function(require, exports, module) {
 "use strict";
 var HashHandler = require("../keyboard/hash_handler").HashHandler;
 var Editor = require("../editor").Editor;
@@ -1321,7 +1321,8 @@ exports.setCore = function(e) {
     else
        emmet = e;
 };
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/ext/emmet"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;

@@ -1,4 +1,4 @@
-ace.define("ace/ext/code_lens",[], function(require, exports, module) {
+ace.define("ace/ext/code_lens",["require","exports","module","ace/line_widgets","ace/lib/event","ace/lib/lang","ace/lib/dom","ace/editor","ace/config"], function(require, exports, module) {
 "use strict";
 var LineWidgets = require("../line_widgets").LineWidgets;
 var event = require("../lib/event");
@@ -228,7 +228,8 @@ dom.importCssString("\
 }\
 ", "codelense.css", false);
 
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/ext/code_lens"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;

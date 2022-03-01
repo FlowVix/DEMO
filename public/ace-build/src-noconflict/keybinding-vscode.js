@@ -1,4 +1,4 @@
-ace.define("ace/keyboard/vscode",[], function(require, exports, module) {
+ace.define("ace/keyboard/vscode",["require","exports","module","ace/keyboard/hash_handler","ace/config"], function(require, exports, module) {
 "use strict";
 
 var HashHandler = require("../keyboard/hash_handler").HashHandler;
@@ -252,7 +252,8 @@ exports.handler.addCommands([{
     exports.handler.bindKey(binding.bindKey, command || binding.name);
 });
 
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/keyboard/vscode"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;

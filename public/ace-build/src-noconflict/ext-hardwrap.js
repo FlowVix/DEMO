@@ -1,4 +1,4 @@
-ace.define("ace/ext/hardwrap",[], function(require, exports, module) {
+ace.define("ace/ext/hardwrap",["require","exports","module","ace/range","ace/editor","ace/config"], function(require, exports, module) {
 "use strict";
 
 var Range = require("../range").Range;
@@ -115,7 +115,8 @@ require("../config").defineOptions(Editor.prototype, "editor", {
 
 exports.hardWrap = hardWrap;
 
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/ext/hardwrap"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;

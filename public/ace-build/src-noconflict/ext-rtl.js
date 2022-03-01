@@ -1,4 +1,4 @@
-ace.define("ace/ext/rtl",[], function(require, exports, module) {
+ace.define("ace/ext/rtl",["require","exports","module","ace/editor","ace/config"], function(require, exports, module) {
 "use strict";
 
 var commands = [{
@@ -112,7 +112,8 @@ function clearTextLayer(renderer) {
     }
 }
 
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/ext/rtl"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;

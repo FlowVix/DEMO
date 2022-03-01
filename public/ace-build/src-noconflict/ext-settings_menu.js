@@ -1,4 +1,4 @@
-ace.define("ace/ext/menu_tools/overlay_page",[], function(require, exports, module) {
+ace.define("ace/ext/menu_tools/overlay_page",["require","exports","module","ace/lib/dom"], function(require, exports, module) {
 'use strict';
 var dom = require("../../lib/dom");
 var cssText = "#ace_settingsmenu, #kbshortcutmenu {\
@@ -119,7 +119,7 @@ module.exports.overlayPage = function overlayPage(editor, contentElement, callba
 
 });
 
-ace.define("ace/ext/modelist",[], function(require, exports, module) {
+ace.define("ace/ext/modelist",["require","exports","module"], function(require, exports, module) {
 "use strict";
 
 var modes = [];
@@ -365,7 +365,7 @@ module.exports = {
 
 });
 
-ace.define("ace/ext/themelist",[], function(require, exports, module) {
+ace.define("ace/ext/themelist",["require","exports","module"], function(require, exports, module) {
 "use strict";
 
 var themeData = [
@@ -426,7 +426,7 @@ exports.themes = themeData.map(function(data) {
 
 });
 
-ace.define("ace/ext/options",[], function(require, exports, module) {
+ace.define("ace/ext/options",["require","exports","module","ace/ext/menu_tools/overlay_page","ace/lib/dom","ace/lib/oop","ace/config","ace/lib/event_emitter","ace/ext/modelist","ace/ext/themelist"], function(require, exports, module) {
 "use strict";
 
 require("./menu_tools/overlay_page");
@@ -795,7 +795,7 @@ exports.OptionPanel = OptionPanel;
 
 });
 
-ace.define("ace/ext/settings_menu",[], function(require, exports, module) {
+ace.define("ace/ext/settings_menu",["require","exports","module","ace/ext/options","ace/ext/menu_tools/overlay_page","ace/editor"], function(require, exports, module) {
 "use strict";
 var OptionPanel = require("./options").OptionPanel;
 var overlayPage = require('./menu_tools/overlay_page').overlayPage;
@@ -814,7 +814,8 @@ module.exports.init = function() {
         showSettingsMenu(this);
     };
 };
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/ext/settings_menu"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;
