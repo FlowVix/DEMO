@@ -1,4 +1,4 @@
-ace.define("ace/mode/spwn_highlight_rules",[], function(require, exports, module) {
+ace.define("ace/mode/spwn_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module) {
 "use strict";
 
 var oop = require("../lib/oop");
@@ -44,7 +44,7 @@ var SPWNHighlightRules = function() {
         "#keywords": [{
             token: "keyword.control.spwn",
             regex: /\b(?:if|else|while|return|extract|break|continue|match)\b/
-        },{
+        }, {
             token: "keyword.control.spwn",
             regex: /^\s*type\b/
         }, {
@@ -108,9 +108,6 @@ var SPWNHighlightRules = function() {
             regex: /\b0b[01](?:_?[01]+)*/
         }, {
             token: "constant.numeric.spwn",
-            regex: /\b[0-9][0-9_]*(?:\.[0-9_]+)?/
-        }, {
-            token: "constant.numeric.spwn",
             regex: /\b0x[a-fA-F0-9](?:_?[a-fA-F0-9]+)*/
         }, {
             token: "constant.numeric.spwn",
@@ -125,7 +122,7 @@ var SPWNHighlightRules = function() {
         }],
         "#ids": [{
             token: "constant.numeric.spwn",
-            regex: /(?:[0-9]+|\?)[gbci]/
+            regex: /\b[0-9]+[gbci]\b|\?[gbci]\b/
         }],
         "#operators": [{
             token: "keyword.operator.spwn",
@@ -161,7 +158,7 @@ var SPWNHighlightRules = function() {
             regex: /\b[a-zA-Z_]\w*\b\s*(?=\(|![^{=])/
         }],
         "#punctuation": [{
-            token: "punctuation.operator",
+            token: "punctuation.operator.spwn",
             regex: /[;,:]|->|=>|(?<!\.)\.(?!\.)/
         }],
         "#brackets": [{
@@ -218,8 +215,7 @@ var SPWNHighlightRules = function() {
                 include: "#func_args"
             }, {
                 include: "#root"
-            }],
-            comment: "situations like `(a) =>` vs `(a)`"
+            }]
         }, {
             token: "punctuation.other.bracket.round.begin.spwn",
             regex: /(?<!\w\s*)\(/,
@@ -239,8 +235,7 @@ var SPWNHighlightRules = function() {
                 }]
             }, {
                 include: "#root"
-            }],
-            comment: "other situations like (a, b)"
+            }]
         }, {
             token: "punctuation.other.bracket.round.begin.spwn",
             regex: /\(/,
@@ -258,8 +253,7 @@ var SPWNHighlightRules = function() {
                 comment: "A named argument"
             }, {
                 include: "#root"
-            }],
-            comment: "Some sort of function call"
+            }]
         }],
         "#func_args": [{
             token: "variable.language.spwn",
@@ -267,17 +261,19 @@ var SPWNHighlightRules = function() {
         }, {
             token: [
                 "variable.parameter.spwn",
-                "text",
+                "string.quoted.double.spwn",
                 "punctuation.other.spwn",
                 "keyword.operator.spwn"
             ],
             regex: /\b([a-zA-Z_]\w*)(?:(\s*)(?:(:(?!:))|(=(?![=>])))|\b)/,
             push: [{
-                token: "text",
+                token: "string.quoted.double.spwn",
                 regex: /(?=[,)])/,
                 next: "pop"
             }, {
                 include: "#root"
+            }, {
+                defaultToken: "string.quoted.double.spwn"
             }]
         }, {
             include: "#root"
@@ -326,7 +322,7 @@ oop.inherits(SPWNHighlightRules, TextHighlightRules);
 exports.SPWNHighlightRules = SPWNHighlightRules;
 });
 
-ace.define("ace/mode/folding/cstyle",[], function(require, exports, module) {
+ace.define("ace/mode/folding/cstyle",["require","exports","module","ace/lib/oop","ace/range","ace/mode/folding/fold_mode"], function(require, exports, module) {
 "use strict";
 
 var oop = require("../../lib/oop");
@@ -466,7 +462,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 
 });
 
-ace.define("ace/mode/spwn",[], function(require, exports, module) {
+ace.define("ace/mode/spwn",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/spwn_highlight_rules","ace/mode/folding/cstyle"], function(require, exports, module) {
 "use strict";
 
 var oop = require("../lib/oop");
@@ -489,7 +485,8 @@ oop.inherits(Mode, TextMode);
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/mode/spwn"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;

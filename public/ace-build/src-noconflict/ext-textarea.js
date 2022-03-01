@@ -1,4 +1,4 @@
-ace.define("ace/ext/textarea",[], function(require, exports, module) {
+ace.define("ace/ext/textarea",["require","exports","module","ace/lib/event","ace/lib/useragent","ace/lib/net","ace/ace"], function(require, exports, module) {
 "use strict";
 
 var event = require("../lib/event");
@@ -420,7 +420,8 @@ exports.defaultOptions = {
     showInvisibles:     "false"
 };
 
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/ext/textarea"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;

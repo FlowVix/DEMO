@@ -1,4 +1,4 @@
-ace.define("ace/ext/menu_tools/get_editor_keyboard_shortcuts",[], function(require, exports, module) {
+ace.define("ace/ext/menu_tools/get_editor_keyboard_shortcuts",["require","exports","module","ace/lib/keys"], function(require, exports, module) {
 "use strict";
 var keys = require("../../lib/keys");
 module.exports.getEditorKeybordShortcuts = function(editor) {
@@ -29,7 +29,7 @@ module.exports.getEditorKeybordShortcuts = function(editor) {
 
 });
 
-ace.define("ace/autocomplete/popup",[], function(require, exports, module) {
+ace.define("ace/autocomplete/popup",["require","exports","module","ace/virtual_renderer","ace/editor","ace/range","ace/lib/event","ace/lib/lang","ace/lib/dom"], function(require, exports, module) {
 "use strict";
 
 var Renderer = require("../virtual_renderer").VirtualRenderer;
@@ -370,7 +370,7 @@ exports.AcePopup = AcePopup;
 exports.$singleLineEditor = $singleLineEditor;
 });
 
-ace.define("ace/autocomplete/util",[], function(require, exports, module) {
+ace.define("ace/autocomplete/util",["require","exports","module"], function(require, exports, module) {
 "use strict";
 
 exports.parForEach = function(array, fn, callback) {
@@ -430,7 +430,7 @@ exports.getCompletionPrefix = function (editor) {
 
 });
 
-ace.define("ace/snippets",[], function(require, exports, module) {
+ace.define("ace/snippets",["require","exports","module","ace/lib/dom","ace/lib/oop","ace/lib/event_emitter","ace/lib/lang","ace/range","ace/range_list","ace/keyboard/hash_handler","ace/tokenizer","ace/clipboard","ace/editor"], function(require, exports, module) {
 "use strict";
 var dom = require("./lib/dom");
 var oop = require("./lib/oop");
@@ -1438,7 +1438,7 @@ var Editor = require("./editor").Editor;
 
 });
 
-ace.define("ace/autocomplete",[], function(require, exports, module) {
+ace.define("ace/autocomplete",["require","exports","module","ace/keyboard/hash_handler","ace/autocomplete/popup","ace/autocomplete/util","ace/lib/lang","ace/lib/dom","ace/snippets","ace/config"], function(require, exports, module) {
 "use strict";
 
 var HashHandler = require("./keyboard/hash_handler").HashHandler;
@@ -1971,7 +1971,7 @@ exports.FilteredList = FilteredList;
 
 });
 
-ace.define("ace/ext/menu_tools/overlay_page",[], function(require, exports, module) {
+ace.define("ace/ext/menu_tools/overlay_page",["require","exports","module","ace/lib/dom"], function(require, exports, module) {
 'use strict';
 var dom = require("../../lib/dom");
 var cssText = "#ace_settingsmenu, #kbshortcutmenu {\
@@ -2092,7 +2092,7 @@ module.exports.overlayPage = function overlayPage(editor, contentElement, callba
 
 });
 
-ace.define("ace/ext/modelist",[], function(require, exports, module) {
+ace.define("ace/ext/modelist",["require","exports","module"], function(require, exports, module) {
 "use strict";
 
 var modes = [];
@@ -2338,7 +2338,7 @@ module.exports = {
 
 });
 
-ace.define("ace/ext/prompt",[], function(require, exports, module) {
+ace.define("ace/ext/prompt",["require","exports","module","ace/range","ace/lib/dom","ace/ext/menu_tools/get_editor_keyboard_shortcuts","ace/autocomplete","ace/autocomplete/popup","ace/autocomplete/popup","ace/undomanager","ace/tokenizer","ace/ext/menu_tools/overlay_page","ace/ext/modelist"], function(require, exports, module) {
 "use strict";
 
 var Range = require("../range").Range;
@@ -2800,7 +2800,8 @@ dom.importCssString(".ace_prompt_container {\
 
 exports.prompt = prompt;
 
-});                (function() {
+});
+                (function() {
                     ace.require(["ace/ext/prompt"], function(m) {
                         if (typeof module == "object" && typeof exports == "object" && module) {
                             module.exports = m;
