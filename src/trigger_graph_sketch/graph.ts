@@ -254,13 +254,13 @@ class Body {
         this.vel.x += force.x;
         this.vel.y += force.y;
 
-        this.vel.x *= 0.7;
-        this.vel.y *= 0.7;
 
         if (!this.selected) {
             this.vel.x = Math.min(Math.max(this.vel.x, -temperature), temperature);
             this.vel.y = Math.min(Math.max(this.vel.y, -temperature), temperature);
         }
+        this.vel.x *= 0.7;
+        this.vel.y *= 0.7;
 
         this.pos.x += this.vel.x;
         this.pos.y += this.vel.y;

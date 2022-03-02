@@ -73,8 +73,7 @@ for i in 0..trail {
 
 `,
     "controls": 
-`// build w/o optimization
-extract obj_props
+`extract obj_props
 player = ?g
 arrow = ?g
 
@@ -564,6 +563,83 @@ insert_bf_script("><+-[].", offset)
 reader = @bfreader::new(offset, 20)
 while_loop(()=>true, (){
     reader.interpret()
+})`,
+    "calculator": `extract obj_props
+
+buttons = [[?g for _ in 0..4] for _ in 0..4]
+button_text = [
+    "789/",
+    "456*",
+    "123-",
+    "R0=+",
+]
+button_order = [[1, 3], [0, 2], [1, 2], [2, 2], [0, 1], [1, 1], [2, 1], [0, 0], 
+                [1, 0], [2, 0], [0, 3], [2, 3], [3, 3], [3, 2], [3, 1], [3, 0]]
+selector = ?g
+$.add("[  ]".to_obj().with(GROUPS, selector).with(X, 45 + 90).with(Y, -3 * 45 + 180))
+for x in 0..4 {
+    for y in 0..4 {
+        $.add(button_text[y][x].to_obj().
+            with(X, x * 45 + 90).
+            with(Y, -y * 45 + 180).
+            with(GROUPS, buttons[y][x])
+        )
+    }
+}
+
+selected = counter(0)
+normal_touch = counter(false)
+on(touch(dual_side = true), !{
+    wait()
+    if !@bool(normal_touch) {
+        selected += 1
+        if selected == 16 {
+            selected -= 16
+        }
+        [x, y] = button_order[selected.to_const(0..16)]
+        selector.move_to(buttons[y][x])
+    }
+})
+primary = counter(0)
+primary.display(135, 230)
+secondary = counter(0)
+op = counter(0)
+ops = [?g, ?g, ?g, ?g]
+for i in 0..4 {
+    $.add("+-*/"[i].to_obj().with(X, 90).with(Y, 215).with(GROUPS, ops[i]))
+    ops[i].toggle_off()
+}
+
+
+on(touch(), !{
+    match selected {
+        <10: (){ primary = primary * 10 + selected }(),
+        ==10: (){ primary = 0 }(),
+        ==11: () {
+            match op {
+                ==0: (){ primary += secondary }(),
+                ==1: (){ primary = secondary - primary }(),
+                ==2: (){ primary *= secondary }(),
+                ==3: (){ primary = secondary / primary }(),
+            }
+            for i in 0..4 {
+                ops[i].toggle_off()
+            }
+        }(),
+        >11: (){
+            op = selected - 12
+            ops[op.to_const(0..4)].toggle_on()
+            secondary = primary
+            primary = 0
+        }()
+    }
+    if primary < 0 {
+        primary.reset_negative()
+    }
+
+    normal_touch = true
+    wait(0.1)
+    normal_touch = false
 })`
 
 }

@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 [dependencies]
 wasm-bindgen = "*"
 console_error_panic_hook = "0.1.6" # o
-spwn = { git = "https://github.com/Spu7Nix/SPWN-language.git", rev = "c0ad5a1" }
+spwn = { git = "https://github.com/Spu7Nix/SPWN-language.git", rev = "e1aa385" }
 # spwn = { path = "D:/spwn/spwn" } 
 js-sys = "0.3.55"
 internment = "0.5.4"

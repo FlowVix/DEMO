@@ -46,10 +46,34 @@ const clamp = (x, min, max) => Math.min(max, Math.max(min, x));
 
 const modulo = (n, m) => ((n % m) + m) % m
 
+const gdHvsConvert = (col, hue, sat, br, s_c, v_c) => {
+    let [h, s, v] = rgbToHsv(col.r, col.g, col.b)
+    h *= 360;
+    h += hue;
+    h = modulo(h, 360)
+    s = s_c ? s + sat : s * sat;
+    v = v_c ? v + br : v * br;
+    s = clamp(s, 0, 1)
+    v = clamp(v, 0, 1)
+    let [r, g, b] = hsvToRgb(h/360, s, v)
+    return {
+        r: r,
+        g: g,
+        b: b,
+        a: col.a,
+        blending: col.blending,
+    }
+}
+
+const map = (value, istart, istop, ostart, ostop) => ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
+
+
 
 export {
     rgbToHsv,
     hsvToRgb,
     clamp,
+    gdHvsConvert,
+    map,
     modulo
 }

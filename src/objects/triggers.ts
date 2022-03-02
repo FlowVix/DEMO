@@ -327,7 +327,7 @@ class TouchTrigger extends Trigger {
     dualMode: boolean = false;
     
     draw(p5: any, world: World) {
-        draw_trigger(p5, world, this, [26, 47, 59], "Touch", `${this.kind.target}`)
+        draw_trigger(p5, world, this, [26, 47, 59], "Touch", `${this.dualMode ? "dual " : ""}${this.holdMode ? "hold\n" : ""}${this.touchMode == TouchMode.Normal ? "" : this.touchMode == TouchMode.On ? "begin" : "end"}`)
     }
     trigger(world: World): void {
         world.addTouchListener(this.kind.target, this.touchMode, this.holdMode, this.dualMode, this.index)
@@ -338,7 +338,7 @@ class StopTrigger extends Trigger {
     kind = new OutputTrigger()
     target: number = 0;
     draw(p5: any, world: World) {
-        draw_trigger(p5, world, this, [200, 100, 100], "Stop", `${this.target}`)
+        draw_trigger(p5, world, this, [200, 100, 100], "Stop", `${this.target}g`)
     }
     trigger(world: World): void {
         world.stop(this.target)
@@ -413,6 +413,53 @@ class ColorTrigger extends Trigger {
     }
 }
 
+class PulseChannelTarget {
+    constructor(
+        public id: number,
+    ) {}
+}
+
+class PulseGroupTarget {
+    constructor(
+        public id: number,
+        public mainOnly: boolean,
+        public detailOnly: boolean,
+    ) {}
+}
+
+class PulseTrigger extends Trigger {
+
+    kind = new OutputTrigger()
+
+    fadeIn: number = 0;
+    hold: number = 0;
+    fadeOut: number = 0;
+
+    exclusive: boolean = false;
+
+    pulseData: ChannelData;
+    target: PulseChannelTarget | PulseGroupTarget;
+
+    draw(p5: any, world: World) {
+        const d = new Date()
+        const time = d.getTime()
+        const progress = Math.min((time - this.lastTrigger) / ((this.fadeIn + this.hold + this.fadeOut) * 1000), 1)
+        const dataColor = this.pulseData.getColor(world)
+        draw_trigger(p5, world, this, [dataColor.r, dataColor.g, dataColor.b], "Pulse", this.target instanceof PulseChannelTarget ? `${this.target.id}c` : `${this.target.id}g`, progress, [155 + dataColor.r / 2.55, 155 + dataColor.g / 2.55, 155 + dataColor.b / 2.55])
+    }
+    trigger(world: World): void {
+        world.addPulseCommand(
+            this.target,
+            this.fadeIn,
+            this.hold,
+            this.fadeOut,
+            this.exclusive,
+            this.pulseData,
+            this.index
+        )
+    }
+}
+
 class OnDeathTrigger extends Trigger {
     kind = new FunctionTrigger()
 
@@ -442,7 +489,10 @@ export {
     OnDeathTrigger,
     CollisionTrigger,
     ColorTrigger,
+    PulseTrigger,
     
     TouchMode,
+    PulseChannelTarget,
+    PulseGroupTarget,
     Cmp,
 };

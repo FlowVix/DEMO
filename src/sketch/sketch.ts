@@ -142,6 +142,11 @@ const worldSketch = (
                         activateListeners(false, true)
                     }
                     break;
+
+                
+                case 81:
+                    console.log(world)
+                    break;
             }
         }
         // the buttons do be on top of eachother
@@ -180,6 +185,16 @@ const worldSketch = (
             }
         }
 
+        p5.touchStarted = () => {
+            p5.mousePressed()
+            if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height)) return false
+        }
+
+        p5.touchEnded = () => {
+            p5.mouseReleased()
+            if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height)) return false
+        }
+
         p5.mouseWheel = (event) => {
             if (!(p5.mouseX < 0 || p5.mouseX > p5.width || p5.mouseY < 0 || p5.mouseY > p5.height)) {
                 zoomExp += event.delta > 0 ? -1 : 1;
@@ -190,7 +205,7 @@ const worldSketch = (
         
 
         p5.draw = () => {
-
+            world.spawned_this_frame = new Set()
             
             //console.log(p5div)
 
@@ -536,6 +551,28 @@ const worldSketch = (
                 }
             })
             world.followCommands = world.followCommands.filter((_, i) => !to_remove.includes(i))
+
+            
+            for (const i in world.pulseCommands.channel) {
+                to_remove = []
+                world.pulseCommands.channel[i].forEach((cmd, i) => {
+                    if (time >= cmd.startTime + (cmd.fadeIn + cmd.hold + cmd.fadeOut) * 1000) {
+                        to_remove.push(i)
+                    }
+                })
+                world.pulseCommands.channel[i] = world.pulseCommands.channel[i].filter((_, i) => !to_remove.includes(i))
+            }
+            for (const i in world.pulseCommands.group) {
+                to_remove = []
+                world.pulseCommands.group[i].forEach((cmd, i) => {
+                    if (time >= cmd.startTime + (cmd.fadeIn + cmd.hold + cmd.fadeOut) * 1000) {
+                        to_remove.push(i)
+                    }
+                })
+                world.pulseCommands.group[i] = world.pulseCommands.group[i].filter((_, i) => !to_remove.includes(i))
+            }
+            
+            // console.log(world.pulseCommands.channel)
 
             
         };

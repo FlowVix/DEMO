@@ -1,7 +1,7 @@
 import type Object from "../objects/object"
-import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger, TouchMode, MoveTrigger, AlphaTrigger, TouchTrigger, RotateTrigger, CountTrigger, CollisionTrigger, ColorTrigger} from "../objects/triggers"
+import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger, TouchMode, MoveTrigger, AlphaTrigger, TouchTrigger, RotateTrigger, CountTrigger, CollisionTrigger, ColorTrigger, PulseChannelTarget, PulseGroupTarget} from "../objects/triggers"
 import {CollisionObject, Display} from "../objects/special"
-import {rgbToHsv, hsvToRgb, clamp, modulo} from "../util"
+import {gdHvsConvert, map} from "../util"
 
 type ObjIndex = number;
 type rgbab = {r: number, g: number, b: number, a: number, blending: boolean}
@@ -19,7 +19,7 @@ interface ChannelData {
     opacity: number;
     blending: boolean;
     playerColor: PlayerColor;
-    getColor: (world: World) => rgbab;
+    getColor: (world: World, override?: {id: number, color: rgbab}) => rgbab;
 }
 
 class RGBData implements ChannelData {
@@ -34,7 +34,7 @@ class RGBData implements ChannelData {
         public blending: boolean,
     ) {}
 
-    getColor(world: World): rgbab {
+    getColor(world: World, override?: {id: number, color: rgbab}): rgbab {
         
         return this.playerColor == PlayerColor.None ? {
             r: this.red,
@@ -63,21 +63,26 @@ class CopyData implements ChannelData {
         public blending: boolean,
     ) {}
 
-    getColor(world: World): rgbab {
-        const col = world.colorIDs[this.channel].getColor(world)
-        let [h, s, v] = rgbToHsv(col.r, col.g, col.b)
-        h *= 360;
-        h += this.hue;
-        h = modulo(h, 360)
-        s = this.sChecked ? s + this.saturation : s * this.saturation;
-        v = this.bChecked ? v + this.brightness : v * this.brightness;
-        s = clamp(s, 0, 1)
-        v = clamp(v, 0, 1)
-        let [r, g, b] = hsvToRgb(h/360, s, v)
+    getColor(world: World, override?: {id: number, color: rgbab}): rgbab {
+        let col: rgbab;
+
+        if (override && (override.id == this.channel || this.channel == 0))
+            col = override.color
+        else
+            col = world.getColor(this.channel)
+        
+        let convertedCol = gdHvsConvert(
+            col,
+            this.hue,
+            this.saturation,
+            this.brightness,
+            this.sChecked,
+            this.bChecked
+        )
         return {
-            r: r,
-            g: g,
-            b: b,
+            r: convertedCol.r,
+            g: convertedCol.g,
+            b: convertedCol.b,
             a: this.opacity * (this.copyOpacity ? col.a : 1),
             blending: this.blending,
         }
@@ -292,34 +297,37 @@ class CollisionListener {
         public onExit: boolean,
         public trigger_obj: ObjIndex,
     ) {}
-} 
+}
 
-class ColorFade {
+class PulseCommand {
 
     constructor(
-        public red: number,
-        public green: number,
-        public blue: number,
-        public opacity: number,
-        public duration: number,
+        public fadeIn: number,
+        public hold: number,
+        public fadeOut: number,
+
+        public pulseData: ChannelData,
+
+        public mainOnly: boolean,
+        public detailOnly: boolean,
+
         public startTime: number,
-        public startRed: number,
-        public startGreen: number,
-        public startBlue: number,
-        public startOpacity: number,
-        public triggerObj: ObjIndex,
+        public trigger_obj: ObjIndex
     ) {}
 
-    getColor(time: number) {
-        let lerp = Math.min(1, (time - this.startTime) / (this.duration * 1000));
-        if (this.duration === 0) {
-            lerp = 1;
+    getColorLerp(world: World, override: {id: number, color: rgbab}) {
+        let lerp = 1;
+        if (world.time < this.startTime + this.fadeIn * 1000) {
+            lerp = (world.time - this.startTime) / (this.fadeIn * 1000)
+        } else if (world.time > this.startTime + this.fadeIn * 1000 + this.hold * 1000) {
+            lerp = (this.startTime + this.fadeIn * 1000 + this.hold * 1000 + this.fadeOut * 1000 - world.time) / (this.fadeOut * 1000)
         }
+        let col = this.pulseData.getColor(world, override)
         return {
-            r: this.startRed + (this.red - this.startRed) * lerp,
-            g: this.startGreen + (this.green - this.startGreen) * lerp,
-            b: this.startBlue + (this.blue - this.startBlue) * lerp,
-            opacity: this.startOpacity + (this.opacity - this.startOpacity) * lerp,
+            r: col.r,
+            g: col.g,
+            b: col.b,
+            lerp,
         }
     }
 
@@ -340,6 +348,13 @@ class World {
     rotateCommands: RotateCommand[] = [];
     followCommands: FollowCommand[] = [];
     alphaCommands: Record<number, AlphaCommand> = {};
+    pulseCommands: {
+        channel: Record<number, PulseCommand[]>,
+        group: Record<number, PulseCommand[]>,
+    } = {
+        channel: {},
+        group: {}
+    };
 
     touchListeners: TouchListener[] = [];
     countListeners: CountListener[] = [];
@@ -349,6 +364,8 @@ class World {
     dynamicCollisionBlocks: ObjIndex[] = [];
 
     time: number = 0;
+
+    spawned_this_frame: Set<number> = new Set();
 
     constructor() {
         this.reset()
@@ -364,10 +381,15 @@ class World {
         this.rotateCommands = []
         this.alphaCommands = {}
         this.followCommands = []
+        this.pulseCommands = {
+            channel: {},
+            group: {}
+        };
         this.countListeners = []
         this.collisionListeners = []
         this.touchListeners = [] // count triggers now work  // epic
         this.time = 0; // had to make a new count macro because the std one doesnt have an option to disable multi activate
+        this.spawned_this_frame = new Set();
     }
 
     init() {
@@ -378,15 +400,28 @@ class World {
             }
         })
         this.colorIDs[1] = new Stable(new RGBData(255, 255, 255, 1, false))
-        // this.colorIDs[1000] = new ChannelData(72, 119, 217)
-        // this.colorIDs[1001] = new ChannelData(54, 89, 163)
+
         this.colorIDs[1000] = new Stable(new RGBData(54, 66, 92, 1, false))
         this.colorIDs[1001] = new Stable(new RGBData(20, 31, 56, 1, false))
         
     }
 
     getColor(colorID: number): rgbab {
-        return colorID in this.colorIDs ? this.colorIDs[colorID].getColor(this) : {r: 255, g: 255, b: 255, a: 1, blending: false};
+
+        if (!(colorID in this.colorIDs))
+            return {r: 255, g: 255, b: 255, a: 1, blending: false}
+
+        let base = this.colorIDs[colorID].getColor(this)
+        if (colorID in this.pulseCommands.channel) {
+            for (const cmd of this.pulseCommands.channel[colorID]) {
+                let {r, g, b, lerp} = cmd.getColorLerp(this, {id: colorID, color: base})
+                base.r = base.r + (r - base.r) * lerp
+                base.g = base.g + (g - base.g) * lerp
+                base.b = base.b + (b - base.b) * lerp
+            }
+        }
+
+        return base;
     }
 
     addGroupID(
@@ -462,6 +497,8 @@ class World {
     ) {
         if (!(groupID in this.groupIDs))
             return
+        if (this.spawned_this_frame.has(groupID)) return
+        this.spawned_this_frame.add(groupID)
 
         this.spawnObjects(this.groupIDs[groupID].objects)
         // const d = new Date()
@@ -695,10 +732,8 @@ class World {
         data: ChannelData,
         trigger_obj: ObjIndex,
     ) {
-        if (!(colorID in this.colorIDs))
-            return
         
-        let {r, g, b, a} = this.colorIDs[colorID].getColor(this)
+        let {r, g, b, a} = colorID in this.colorIDs ? this.colorIDs[colorID].getColor(this) : {r: 255, b: 255, g: 255, a: 1}
         let from: rgba = {r, g, b, a}
         
         this.colorIDs[colorID] = new Fading(
@@ -708,6 +743,65 @@ class World {
             (new Date()).getTime(),
             trigger_obj,
         )
+        
+    }
+
+    addPulseCommand(
+        target: PulseChannelTarget | PulseGroupTarget,
+        fadeIn: number,
+        hold: number,
+        fadeOut: number,
+        exclusive: boolean,
+        pulseData: ChannelData,
+        trigger_obj: ObjIndex,
+    ) {
+
+        if (target instanceof PulseChannelTarget && !(target.id in this.colorIDs))
+            return
+        if (target instanceof PulseGroupTarget && !(target.id in this.groupIDs))
+            return
+        
+        if (exclusive) {
+            if (target instanceof PulseChannelTarget && (target.id in this.pulseCommands.channel))
+                this.pulseCommands.channel[target.id] = []
+            if (target instanceof PulseGroupTarget && (target.id in this.pulseCommands.group))
+                this.pulseCommands.group[target.id] = []
+        }
+
+        if (target instanceof PulseChannelTarget) {
+
+            if (!(target.id in this.pulseCommands.channel)) {
+                this.pulseCommands.channel[target.id] = []
+            }
+
+            this.pulseCommands.channel[target.id].push(new PulseCommand(
+                fadeIn,
+                hold,
+                fadeOut,
+                pulseData,
+                false,
+                false,
+                (new Date()).getTime(),
+                trigger_obj,
+            ))
+        } else {
+
+            if (!(target.id in this.pulseCommands.group)) {
+                this.pulseCommands.group[target.id] = []
+            }
+
+            this.pulseCommands.group[target.id].push(new PulseCommand(
+                fadeIn,
+                hold,
+                fadeOut,
+                pulseData,
+                target.mainOnly,
+                target.detailOnly,
+                (new Date()).getTime(),
+                trigger_obj,
+            ))
+        }
+
         
     }
 

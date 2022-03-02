@@ -50,12 +50,29 @@ class Regular extends GDObject {
             let main = world.getColor(this.mainID)
             let detail = world.getColor(this.detailID)
             
-            let triggerAlpha = 1; // yea but youre multiplying EVERY group in the worldlol
-            
+            let triggerAlpha = 1;
 
             this.groups.forEach(g => {
                 triggerAlpha *= world.groupIDs[g].opacity
+                if (g in world.pulseCommands.group) {
+                    for (const cmd of world.pulseCommands.group[g]) {
+                        if ((cmd.mainOnly && !cmd.detailOnly) || (!cmd.detailOnly && !cmd.mainOnly)) {
+                            let {r, g, b, lerp} = cmd.getColorLerp(world, {id: 0, color: main})
+                            main.r = main.r + (r - main.r) * lerp
+                            main.g = main.g + (g - main.g) * lerp
+                            main.b = main.b + (b - main.b) * lerp
+                        }
+                        if ((!cmd.mainOnly && cmd.detailOnly) || (!cmd.detailOnly && !cmd.mainOnly)) {
+                            let {r, g, b, lerp} = cmd.getColorLerp(world, {id: 0, color: detail})
+                            detail.r = detail.r + (r - detail.r) * lerp
+                            detail.g = detail.g + (g - detail.g) * lerp
+                            detail.b = detail.b + (b - detail.b) * lerp
+                        }
+                    }
+                }
             })
+
+
             
 
             let ctx = this.mainGraphics.drawingContext

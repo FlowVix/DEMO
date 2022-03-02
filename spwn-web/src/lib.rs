@@ -38,7 +38,7 @@ pub fn check_syntax(code: &str) -> JsValue {
     let source = SpwnSource::String(LocalIntern::new(code.to_string()));
     let cache = SpwnCache::default();
     match parse_spwn(code.to_string(), source, BUILTIN_NAMES) {
-        Ok(_) => JsValue::from_str(""),
+        Ok(_) => JsValue::from_str(""), 
         Err(e) => {
             let mut out = Vec::<u8>::new();
             create_report(ErrorReport::from(e))

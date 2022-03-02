@@ -216,9 +216,62 @@ for_loop(0..30, (i) {
         content: `
 # Events
 
-Sometimes you want some code to run in response to something happening in the game, for example when the player presses a button or two objects collide.
-In those cases, you can use events.
+Sometimes you want your code to run in response to something happening in the game, for example when the player presses a button or two objects collide.
+In those cases, and many others, you can use events.
 
+# Trigger Functions
+
+To understand how to use events, we first need to understand how trigger functions work. Trigger functions are a lot like macros, except that they are
+activated by triggers. It take any arguments, and it can not return any values.
+<br>
+A general trigger function looks like this:
+\`\`\`highlight-spwn
+my_func = !{
+    // do something
+}
+\`\`\`
+And to call it, you would do something like this:
+\`\`\`highlight-spwn
+my_func!
+\`\`\`
+Under the hood, a trigger function is really just the group ID with the triggers inside it. Sometimes it's useful to get this group from the trigger function, which can be done like this:
+\`\`\`highlight-spwn
+my_func = !{
+    // do something
+}
+group = my_func.start_group
+\`\`\`
+This can for example be used to *stop* the triggers inside, like this:
+\`\`\`highlight-spwn
+my_func = !{
+    10g.move(100, 0, duration = 4)
+}
+my_func!
+wait(2)
+// stop the movement half-way through
+my_func.start_group.stop()
+\`\`\`
+
+# The \`on\` Macro
+
+To connect an event to a trigger function, you can use the \`on\` macro. The macro takes two arguments: an event, and a trigger function.
+\`\`\`highlight-spwn
+on(event, trigger_function)
+\`\`\`
+There are many events in [the standard library](https://spu7nix.net/spwn/#/std-docs/std-docs), and one of them is \`touch()\`. 
+This event is triggered when the user touches the screen/clicks a button.
+
+\`\`\`highlight-spwn
+on(touch(), !{
+    // whatever you put in here will run
+    // when the user touches the screen
+})
+\`\`\`
+Another event is \`touch_end()\`, which triggers when the user stops touching the screen. You can also pass a \`dual_mode = true\` argument in both of these to make
+them only apply to the left side of the screen.
+---
+In the editor there is some code to move a block. Can you modify the code to move the block when the user touches the screen?
+For an extra challenge, can you make the block start moving when you touch the screen, and stop moving when you stop touching the screen?
 `,
         initialCode: `
 extract obj_props
@@ -247,6 +300,19 @@ $.add(obj{
 on(touch(), !{
     10g.move(10, 0, 0.3, easing = EASE_IN_OUT)
 })
+
+// solution to extra challenge:
+/*
+move = !{
+    // move for a long time
+    10g.move(300, 0, 10)
+}
+
+on(touch(), move)
+on(touch_end(), !{
+    move.start_group.stop()
+})
+*/
         `,
     },
     //=========================================================================
@@ -255,7 +321,7 @@ on(touch(), !{
         content: `
 # Counters
 
-Counters are numbers that can be modified by triggers.
+(wip)
 
 `,
         initialCode: `

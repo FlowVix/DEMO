@@ -18,6 +18,10 @@ import {
     RotateTrigger,
     FollowTrigger,
     CollisionTrigger,
+    PulseTrigger,
+
+    PulseChannelTarget,
+    PulseGroupTarget,
 
     TouchMode,
     Cmp,
@@ -166,6 +170,9 @@ const createObject = (
         case Constants.OBJ_IDS.Triggers.COLOR:
             obj = new ColorTrigger(0, 0, idx)
             break;
+        case Constants.OBJ_IDS.Triggers.PULSE:
+            obj = new PulseTrigger(0, 0, idx)
+            break;
 		default:
 			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]))
             break;
@@ -309,13 +316,58 @@ const createObject = (
 										triggerProps["blending"] = props[i]
                                         break;
                                     case Constants.OBJ_PROPS.COPIED_COLOR_ID:
-										triggerProps["copyID"] = props[i]
+										triggerProps["copyID"] = parseInt(props[i])
                                         break;
                                     case Constants.OBJ_PROPS.COPIED_COLOR_HVS:
 										triggerProps["copyHVS"] = props[i]
                                         break;
                                     case Constants.OBJ_PROPS.COPY_OPACITY:
-										triggerProps["copyOpacity"] = props[i]
+										triggerProps["copyOpacity"] = parseFloat(props[i])
+                                        break;
+                                }
+                            } else if (obj instanceof PulseTrigger) {
+                                switch (parseInt(i)) {
+                                    case Constants.OBJ_PROPS.TARGET:
+										triggerProps["target"] = parseInt(props[i])
+                                        break;
+									case Constants.OBJ_PROPS.FADE_IN:
+										triggerProps["fadeIn"] = parseFloat(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.HOLD:
+										triggerProps["hold"] = parseFloat(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.FADE_OUT:
+										triggerProps["fadeOut"] = parseFloat(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.EXCLUSIVE:
+										triggerProps["exclusive"] = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.TRIGGER_RED:
+										triggerProps["red"] = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.TRIGGER_GREEN:
+										triggerProps["green"] = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.TRIGGER_BLUE:
+										triggerProps["blue"] = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.PULSE_HSV:
+										triggerProps["pulseHSV"] = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.COPIED_COLOR_ID:
+										triggerProps["copyID"] = parseInt(props[i])
+                                        break;
+                                    case Constants.OBJ_PROPS.COPIED_COLOR_HVS:
+										triggerProps["copyHVS"] = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.MAIN_ONLY:
+										triggerProps["mainOnly"] = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.DETAIL_ONLY:
+										triggerProps["detailOnly"] = props[i]
+                                        break;
+                                    case Constants.OBJ_PROPS.TARGET_TYPE:
+										triggerProps["targetType"] = parseInt(props[i])
                                         break;
                                 }
                             } else if (obj instanceof RotateTrigger) {
@@ -483,8 +535,8 @@ const createObject = (
         if (!("copyID" in triggerProps)) {
             let data = new RGBData(
                 triggerProps["red"] ?? 255,
-                triggerProps["green"] ?? 0,
-                triggerProps["blue"] ?? 0,
+                triggerProps["green"] ?? 255,
+                triggerProps["blue"] ?? 255,
                 triggerProps["opacity"] ?? 1,
                 triggerProps["blending"] ?? false,
             )
@@ -492,7 +544,6 @@ const createObject = (
             obj.data = data
             obj.fadeTime = triggerProps["fadeTime"] ?? 0.5
         } else {
-            console.log(triggerProps["copyHVS"])
             let data = new CopyData(
                 triggerProps["copyID"] ?? 0,
                 triggerProps["copyHVS"]?.h ?? 0,
@@ -504,11 +555,53 @@ const createObject = (
                 triggerProps["opacity"] ?? 1, 
                 triggerProps["blending"] ?? false,
             )
-            obj.colorID = triggerProps["colorID"]
-            obj.fadeTime = triggerProps["fadeTime"]
+            obj.colorID = triggerProps["colorID"] ?? 0
             obj.data = data
+            obj.fadeTime = triggerProps["fadeTime"] ?? 0.5
         }
+    } else if (obj instanceof PulseTrigger) {
+        if (!("pulseHSV" in triggerProps && triggerProps["pulseHSV"])) {
+            let data = new RGBData(
+                triggerProps["red"] ?? 255,
+                triggerProps["green"] ?? 255,
+                triggerProps["blue"] ?? 255,
+                1,
+                false,
+            )
+            obj.pulseData = data
+        } else {
+            let data = new CopyData(
+                triggerProps["copyID"] ?? 0,
+                triggerProps["copyHVS"]?.h ?? 0,
+                triggerProps["copyHVS"]?.s ?? 1,
+                triggerProps["copyHVS"]?.v ?? 1,
+                triggerProps["copyHVS"]?.s_c ?? false,
+                triggerProps["copyHVS"]?.v_c ?? false,
+                false,
+                1, 
+                false,
+            )
+            obj.pulseData = data
+        }
+        obj.fadeIn = triggerProps["fadeIn"] ?? 0
+        obj.hold = triggerProps["hold"] ?? 0
+        obj.fadeOut = triggerProps["fadeOut"] ?? 0
+        obj.exclusive = triggerProps["exclusive"] ?? false
+        if ("targetType" in triggerProps && triggerProps["targetType"] == 1) {
+            obj.target = new PulseGroupTarget(
+                triggerProps["target"],
+                triggerProps["mainOnly"] ?? false,
+                triggerProps["detailOnly"] ?? false,
+            )
+        } else {
+            obj.target = new PulseChannelTarget(
+                triggerProps["target"]
+            )
+        }
+
     }
+
+    //console.log(obj)
 
     return obj
 

@@ -18,11 +18,18 @@
 		Full,
 	}
 
+	enum Tab {
+		Code,
+		Sim,
+	}
+
 	let dwidth;
 	let dheight;
 	let layout: GuiLayout;
+	let tab = Tab.Code;
+	let tutorialMode = false;
 	$: {
-		const ar = dwidth / dheight;
+		const ar = (dwidth - (tutorialMode ? 500 : 0)) / dheight;
 		if (ar < 1.3) {
 			layout = GuiLayout.PortraitTabs;
 		} else if (dheight < 600) {
@@ -30,7 +37,7 @@
 		} else {
 			layout = GuiLayout.Full;
 		}
-		console.log(layout);
+		console.log(ar);
 	}
 
 	// document.addEventListener("touchstart", (e) => {
@@ -233,6 +240,7 @@
 				playgroundSeparator = 0.5;
 			codeEditor.resize();
 		}
+		//console.log(playgroundSeparator, simSeparator, editorSeparator);
 	}; // i think follow triggers lag by 1 frame
 
 	let draggingEditorSeparator = false;
@@ -250,8 +258,6 @@
 	run_code();
 
 	let maximized = false;
-
-	let tutorialMode = false;
 	let selectedTutorial = 0;
 
 	let tutSnippets = [];
@@ -335,6 +341,7 @@
 		<button
 			class="header-button"
 			on:click={() => {
+				tutorialMode && (tab = Tab.Code);
 				tutorialMode = !tutorialMode;
 				tutorialMode && setTimeout(selectTutorial, 10);
 			}}
@@ -399,6 +406,7 @@
 			<select
 				bind:value={current_example}
 				on:change={() => {
+					tab = Tab.Code;
 					codeEditor.setValue(examples[current_example]);
 				}}
 			>
@@ -420,8 +428,12 @@
 		<div
 			class="tutorial"
 			style={`
-                min-width: ${tutorialMode ? "max(500px, 40%)" : "0px"};
-                max-width: ${tutorialMode ? "max(500px, 40%)" : "0px"};
+                min-width: ${
+					tutorialMode ? "min(max(500px, 40%), 100%)" : "0px"
+				};
+                max-width: ${
+					tutorialMode ? "min(max(500px, 40%), 100%)" : "0px"
+				};
                 overflow-x: hidden;
                 padding: 5px ${tutorialMode ? 5 : 0}px 10px ${
 				tutorialMode ? 5 : 0
@@ -438,6 +450,7 @@
 						selectedTutorial == 0 ? 0.3 : 1
 					}`}
 					on:click={() => {
+						tab = Tab.Code;
 						selectedTutorial = Math.max(0, selectedTutorial - 1);
 						selectTutorial();
 					}}
@@ -458,6 +471,7 @@
 						selectedTutorial == tutorials.length - 1 ? 0.3 : 1
 					}`}
 					on:click={() => {
+						tab = Tab.Code;
 						selectedTutorial = Math.min(
 							tutorials.length - 1,
 							selectedTutorial + 1
@@ -479,6 +493,7 @@
 						class="showme"
 						style={showmeStyle}
 						on:click={() => {
+							tab = Tab.Code;
 							codeEditor.setValue(
 								tutorials[selectedTutorial].initialCode
 							);
@@ -491,6 +506,7 @@
 						class="showme"
 						style={showmeStyle}
 						on:click={() => {
+							tab = Tab.Code;
 							codeEditor.setValue(
 								tutorials[selectedTutorial].solution
 							);
@@ -502,7 +518,7 @@
 			</div>
 		</div>
 		<!-- {/if} -->
-
+		<!-- {#if layout == GuiLayout.Full || !tutorialMode} -->
 		<div
 			class="playground"
 			style={`
@@ -513,21 +529,59 @@
 							1 - playgroundSeparator
 					  }fr`
 			};
-            ${layout != GuiLayout.Full ? "display:block;" : ""}
+            ${
+				layout != GuiLayout.Full
+					? "display:flex;flex-direction:column;padding-top:0px;"
+					: ""
+			}
         `}
 		>
+			{#if layout != GuiLayout.Full}
+				<div class="tabs">
+					<button
+						class={last_build == examples[current_example] ||
+						tab == Tab.Code
+							? "tab-button"
+							: "tab-button glow"}
+						style={tab == Tab.Code
+							? "color: rgb(255, 255, 255, 0.6);"
+							: ""}
+						on:click={() => {
+							tab = Tab.Code;
+						}}
+					>
+						Code
+					</button>
+					<button
+						class={last_build != examples[current_example] ||
+						tab == Tab.Sim
+							? "tab-button"
+							: "tab-button glow"}
+						style={tab == Tab.Sim
+							? "color: rgb(255, 255, 255, 0.6);"
+							: ""}
+						on:click={() => {
+							tab = Tab.Sim;
+						}}
+					>
+						Simulator
+					</button>
+				</div>
+			{/if}
 			<div
 				class="editor"
 				style={`
-                ${
-					layout == GuiLayout.LandscapeTabs
-						? `
-                    display: grid;
-                    grid-template-columns: 60% 40%;
-                    gap: 10px;`
-						: ""
-				}
-            `}
+                    ${
+						tab == Tab.Sim
+							? `width: 0px;display:none;`
+							: layout == GuiLayout.LandscapeTabs
+							? `
+                        display: grid;
+                        grid-template-columns: 60% 40%;
+                        gap: 10px;`
+							: ""
+					}
+                `}
 			>
 				<div
 					id="code-and-console"
@@ -614,7 +668,7 @@
 								}}
 								>{last_build == examples[current_example]
 									? "simulate"
-									: "simulate (old)"}</button
+									: "simulate*"}</button
 							>
 						{/if}
 					</div>
@@ -651,35 +705,77 @@
 			<!-- {#if !maximized} -->
 			<div
 				class="simulation"
-				style={layout == GuiLayout.Full
-					? `
-                display: ${maximized ? "none" : "grid"};
-                grid-template-rows: ${simSeparator}fr auto ${
-							1 - simSeparator
-					  }fr;`
-					: `width: 0px;`}
+				style={`
+                display: ${
+					maximized && layout == GuiLayout.Full
+						? "none"
+						: layout == GuiLayout.Full
+						? "grid"
+						: "flex"
+				};
+                
+                ${
+					layout == GuiLayout.PortraitTabs
+						? "flex-direction: column;"
+						: layout == GuiLayout.LandscapeTabs
+						? "flex-direction: row;"
+						: ""
+				}
+                ${
+					layout == GuiLayout.Full
+						? `grid-template-rows: ${simSeparator}fr auto ${
+								1 - simSeparator
+						  }fr;`
+						: tab == Tab.Code
+						? `width: 0px;display:none;`
+						: ""
+				}
+                `}
 			>
 				<div id="trigger-graph-sketch" />
-				<img
-					src="assets/images/resize.svg"
-					alt="resize"
-					height="16"
-					draggable="false"
-					on:dragstart|preventDefault={() => false}
-					style={`
+				{#if layout == GuiLayout.Full}
+					<img
+						src="assets/images/resize.svg"
+						alt="resize"
+						height="16"
+						draggable="false"
+						on:dragstart|preventDefault={() => false}
+						style={`
                     margin: auto;
                     opacity: 0.2;
                     cursor: row-resize;
                 `}
-					on:mousedown={(e) => {
-						prevMousePos.y = e.screenY;
-						prevSimSeparator = simSeparator;
-						draggingSimSeparator = true;
-					}}
-				/>
+						on:mousedown={(e) => {
+							prevMousePos.y = e.screenY;
+							prevSimSeparator = simSeparator;
+							draggingSimSeparator = true;
+						}}
+					/>
+				{/if}
 				<div id="sketch" />
 			</div>
+			{#if layout != GuiLayout.Full && tab == Tab.Sim}
+				<button
+					id="sim_button"
+					class={current_ls == "" ||
+					last_build != examples[current_example]
+						? "big-button"
+						: "big-button glow"}
+					style={current_ls == ""
+						? "opacity:0.5;cursor:not-allowed;"
+						: last_build != examples[current_example]
+						? "opacity:0.5;"
+						: ""}
+					on:click={() => {
+						if (current_ls != "") simulate_triggers();
+					}}
+					>{last_build == examples[current_example]
+						? "simulate"
+						: "simulate*"}</button
+				>
+			{/if}
 		</div>
+		<!-- {/if} -->
 	</div>
 
 	<div
@@ -739,6 +835,7 @@
 		display: flex;
 		flex-direction: column;
 		box-sizing: border-box;
+		overflow-x: hidden;
 	}
 
 	.weird-size-fixer {
@@ -1039,6 +1136,35 @@
 		font-weight: 600;
 		background-color: #fff3;
 		border: none;
+		user-select: none;
+	}
+
+	.tabs {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-around;
+		align-items: center;
+		padding: 0 10px 0 10px;
+		box-sizing: border-box;
+		border-radius: 6px;
+		overflow: hidden;
+		max-height: 30px;
+		min-height: 30px;
+	}
+	.tab-button {
+		margin: 0;
+		width: 100%;
+		height: 100%;
+		padding: 0;
+		background-color: rgb(0, 0, 0, 0.2);
+		color: rgb(255, 255, 255, 0.4);
+		font-weight: 200;
+		font-size: 18px;
+		font-family: "Source Code Pro", monospace;
+		/* box-shadow: 3px 3px 10px 0px #0005; */
+		border: none;
+
+		transition: 0.1s all;
 		user-select: none;
 	}
 
