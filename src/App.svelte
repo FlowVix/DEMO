@@ -788,7 +788,7 @@
 
 	<div
 		class="docs-window"
-		on:mousedown={(e) => {
+		on:pointerdown={(e) => {
 			prevMousePos.x = e.screenX;
 			prevMousePos.y = e.screenY;
 			prevDocsPos.x = docsPos.x;
@@ -838,6 +838,10 @@
 	@font-face {
 		font-family: Pusab;
 		src: url(/assets/fonts/pusab.otf);
+	}
+	@font-face {
+		font-family: ConsoleFont;
+		src: url(/assets/fonts/Hack.ttf);
 	}
 
 	canvas {
@@ -1106,8 +1110,8 @@
 		border: 2px solid #3b3b3b;
 		box-shadow: 3px 3px 10px 0px #0005;
 		resize: none;
-		font-family: "Source Code Pro", monospace;
-		font-size: 16px;
+		font-size: 17px;
+		font-family: monospace;
 		font-weight: 600;
 	}
 
@@ -1120,7 +1124,6 @@
 		overflow: auto;
 		overflow-wrap: break-word;
 		border-radius: 6px;
-		font-weight: 600;
 		margin: 0;
 		box-sizing: border-box;
 
@@ -1134,6 +1137,14 @@
 		word-wrap: break-word;
 
 		box-shadow: 3px 3px 10px 0px #0005;
+		
+		
+		font-size: 15px;
+		font-weight: 600;
+		font-family: ConsoleFont;
+		letter-spacing: 0px;
+
+
 	}
 
 	.header-right {
