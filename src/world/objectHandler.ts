@@ -120,63 +120,64 @@ const createObject = (
 
     switch (parseInt(props[Constants.OBJ_PROPS.OBJ_ID])) {
         case Constants.OBJ_IDS.Triggers.TOGGLE:
-			obj = new ToggleTrigger(0, 0, idx)
+			obj = new ToggleTrigger(idx)
             break;
 		case Constants.OBJ_IDS.Triggers.SPAWN:
-			obj = new SpawnTrigger(0, 0, idx)
+			obj = new SpawnTrigger(idx)
             break;
 		case Constants.OBJ_IDS.Triggers.PICKUP:
-			obj = new PickupTrigger(0, 0, idx)
+			obj = new PickupTrigger(idx)
             break;
 		case Constants.OBJ_IDS.Triggers.INSTANT_COUNT:
-			obj = new InstantCountTrigger(0, 0, idx)
+			obj = new InstantCountTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.MOVE:
-            obj = new MoveTrigger(0, 0, idx)
+            obj = new MoveTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.ALPHA:
-            obj = new AlphaTrigger(0, 0, idx)
+            obj = new AlphaTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.TOUCH:
-            obj = new TouchTrigger(0, 0, idx)
+            obj = new TouchTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.COUNT:
-            obj = new CountTrigger(0, 0, idx)
+            obj = new CountTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.STOP:
-            obj = new StopTrigger(0, 0, idx)
+            obj = new StopTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.ROTATE:
-            obj = new RotateTrigger(0, 0, idx)
+            obj = new RotateTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.FOLLOW:
-            obj = new FollowTrigger(0, 0, idx)
+            obj = new FollowTrigger(idx)
             break;
 		case Constants.OBJ_IDS.Special.ITEM_DISPLAY:
-			obj = new Display(0, 0, idx)
+			obj = new Display(idx)
             break;
         case Constants.OBJ_IDS.Special.COLLISION_BLOCK:
-            obj = new CollisionObject(0, 0, idx)
+            obj = new CollisionObject(idx)
             break;
         case Constants.OBJ_IDS.Special.TEXT:
-            obj = new TextObject(0, 0, idx)
+            obj = new TextObject(idx)
             break;
         case Constants.OBJ_IDS.Triggers.ON_DEATH:
-            obj = new OnDeathTrigger(0, 0, idx)
+            obj = new OnDeathTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.COLLISION:
-            obj = new CollisionTrigger(0, 0, idx)
+            obj = new CollisionTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.COLOR:
-            obj = new ColorTrigger(0, 0, idx)
+            obj = new ColorTrigger(idx)
             break;
         case Constants.OBJ_IDS.Triggers.PULSE:
-            obj = new PulseTrigger(0, 0, idx)
+            obj = new PulseTrigger(idx)
             break;
 		default:
-			obj = new Regular(0, 0, idx, parseInt(props[Constants.OBJ_PROPS.OBJ_ID]))
+			obj = new Regular(idx)
             break;
     }
+    obj.objID = parseInt(props[Constants.OBJ_PROPS.OBJ_ID])
 
     delete props[Constants.OBJ_PROPS.OBJ_ID]
 

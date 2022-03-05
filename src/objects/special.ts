@@ -1,16 +1,18 @@
 import GDObject from "./object";
 
-import type {ChannelData, World} from "../world/world";
+import type {ChannelData, rgbab, World} from "../world/world";
 
 import { PUSAB_FONT } from "../trigger_graph_sketch/sketch";
+
+import * as PIXI from "pixi.js";
+
+import constants from "../constants"
+import {sheet2} from "../gd_world/resources"
 
 
 export class Display extends GDObject {
     itemID: number = 0;
     //( ͡ °  ͜ ʖ  ͡ °)
-    set_value() {
-
-    }
 
     draw(p5: any, world: World) {
         let value = 0;
@@ -24,6 +26,45 @@ export class Display extends GDObject {
         p5.text(value, 0, 10)
         p5.textSize(6)
         p5.text(`Display ${this.itemID}i`, 0, -5)
+    }
+
+    render(root, methods) {
+
+        let qualityResizer = new PIXI.Container()
+        let quality = 4;
+        
+        const title = new PIXI.Text(`Display ${this.itemID}i`, {
+            fill: "white",
+            fontSize: 8*quality,
+            fontFamily: "Arial",
+            strokeThickness: 1*quality,
+            align: "center",
+        });
+        
+        title.anchor.x = 0.5
+        title.anchor.y = 0.5
+        title.position.y = -9*quality
+
+        const text = new PIXI.Text("0", {
+            fill: "white",
+            fontFamily: "Pusab",
+            miterLimit: 0,
+            fontSize: 18*quality,
+            strokeThickness: 2*quality,
+            align: "center",
+        });
+        text.anchor.x = 0.5
+        text.anchor.y = 0.5
+        text.position.y = 5*quality
+
+        qualityResizer.addChild(title)
+        qualityResizer.addChild(text)
+
+        qualityResizer.scale.x = 1/quality
+        qualityResizer.scale.y = 1/quality
+
+        root.addChild(qualityResizer)
+        methods["changeText"] = (t: string) => text.text = t
     }
 
 }
@@ -56,7 +97,46 @@ export class CollisionObject extends GDObject {
             p5.text(`${this.blockID}b${this.dynamic?'*':''}`, 0, 0)
         }
     }
+
+    render(root: PIXI.Container, methods): void {
+
+        let spriteMain = new PIXI.Sprite(sheet2.textures[`${constants.OBJ_IDS.Special.COLLISION_BLOCK}_main.png`])
+        spriteMain.anchor.x = 0.5
+        spriteMain.anchor.y = 0.5
+
+        spriteMain.scale.x = 0.5
+        spriteMain.scale.y = 0.5
+
+        root.addChild(spriteMain)
+
+        let qualityResizer = new PIXI.Container()
+        let quality = 4;
+        
+        const blockText = new PIXI.Text(`${this.blockID}b${this.dynamic?'*':''}`, {
+            fill: "white",
+            fontSize: 14*quality,
+            fontFamily: "Arial",
+            strokeThickness: 2*quality,
+            align: "center",
+        });
+        
+        blockText.anchor.x = 0.5
+        blockText.anchor.y = 0.5
+        
+        qualityResizer.scale.x = 1/quality
+        qualityResizer.scale.y = 1/quality
+
+        qualityResizer.addChild(blockText)
+        root.addChild(qualityResizer)
+
+    }
+
 }
+
+
+
+
+
 export class TextObject extends GDObject {
     text: string = ""
     color_id: number = 1;
@@ -77,5 +157,39 @@ export class TextObject extends GDObject {
         p5.stroke(0)
         p5.textSize(16)
         p5.text(this.text, 0, 0)
+    }
+
+    render(root: PIXI.Container, methods): void {
+
+
+        let qualityResizer = new PIXI.Container()
+        let quality = 4;
+
+        let textStyle = new PIXI.TextStyle({
+            align: "center",
+            dropShadow: true,
+            dropShadowAlpha: 0.4,
+            dropShadowDistance: 3*quality,
+            dropShadowAngle: 0.6,
+            fill: "white",
+            fontFamily: "pusab",
+            fontSize: 32*quality,
+            miterLimit: 0,
+            strokeThickness: 4*quality
+        })
+
+        const text = new PIXI.Text(this.text, textStyle);
+        text.anchor.x = 0.5
+        text.anchor.y = 0.5
+
+        qualityResizer.addChild(text)
+
+        qualityResizer.scale.x = 1/quality
+        qualityResizer.scale.y = 1/quality
+
+        root.addChild(qualityResizer)
+
+        methods["changeColor"] = (c: rgbab) => textStyle.fill = PIXI.utils.rgb2hex([c.r/255, c.g/255, c.b/255])
+
     }
 }

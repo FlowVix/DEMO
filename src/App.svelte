@@ -2,16 +2,20 @@
 	import P5 from "p5-svelte";
 	import { World } from "./world/world";
 	import triggerGraphSketch from "./trigger_graph_sketch/sketch";
-	import { worldSketch } from "./sketch/sketch";
 	import { createObject } from "./world/objectHandler";
 	import SvelteMarkdown from "svelte-markdown";
 	import { tutorials } from "./tutorials";
 	import { clamp } from "./util";
+	import { Trigger } from "./objects/triggers";
+	import { loadResources } from "./gd_world/resources";
+
+	import * as GDWorld from "./gd_world/gd_world"
 
 	export let run_spwn;
 	export let init_panics;
 	export let check_syntax;
 	init_panics();
+
 	enum GuiLayout {
 		PortraitTabs,
 		LandscapeTabs,
@@ -40,12 +44,6 @@
 		console.log(ar);
 	}
 
-	// document.addEventListener("touchstart", (e) => {
-	// 	e.preventDefault();
-	// });
-	// document.addEventListener("touchmove", (e) => {
-	// 	e.preventDefault();
-	// });
 
 	import AnsiUp from "ansi_up";
 	let ansiUp = new AnsiUp();
@@ -81,14 +79,12 @@
 	let world = new World();
 	let optimize = true;
 
-	import { Trigger } from "./objects/triggers";
-
 	const [triggerSketch, updateBodies] = triggerGraphSketch(world);
-	const [gdWorldSketch] = worldSketch(world);
+
 
 	import def_examples from "./examples";
-	import { setG5 } from "./gp5";
-	import { each } from "svelte/internal";
+	import { onMount } from "svelte";
+
 	let examples = def_examples;
 
 	let current_example = Object.keys(def_examples)[0];
@@ -108,6 +104,7 @@
 				);
 			});
 		world.init();
+		GDWorld.createObjects(world)
 	};
 	let current_ls = "";
 	let last_build = "";
@@ -247,6 +244,8 @@
 	let editorSeparator = 0.7;
 	let prevEditorSeparator = 0;
 
+	
+
 	let draggingSimSeparator = false;
 	let simSeparator = 0.5;
 	let prevSimSeparator = 0;
@@ -255,7 +254,7 @@
 	let playgroundSeparator = 0.5;
 	let prevPlaygroundSeparator = 0;
 
-	run_code();
+	//run_code();
 
 	let maximized = false;
 	let selectedTutorial = 0;
@@ -312,6 +311,18 @@
 			}
 		}, 1);
 	};
+
+	let gdWorldCanvas: HTMLCanvasElement;
+	let triggerGraphCanvas: HTMLCanvasElement;
+
+	onMount(() => {
+		loadResources(() => {
+			GDWorld.createApp(gdWorldCanvas, world)
+			run_code()
+		})
+	})
+
+
 </script>
 
 <svelte:head>
@@ -322,10 +333,8 @@
 		on:load={initializeEditor}></script>
 </svelte:head>
 
-<!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
-<link href="prism-atom-dark.css" rel="stylesheet" />
-<link href="atom-one-dark.css" rel="stylesheet" />
-<!--  gonna head out for a bit -->
+
+<div style="font-family: Pusab;">gdfgsdfgsdfgsdfgsdfgdf</div>
 
 <div class="everything" bind:clientWidth={dwidth} bind:clientHeight={dheight}>
 	<div class="header">
@@ -732,7 +741,7 @@
 				}
                 `}
 			>
-				<div id="trigger-graph-sketch" />
+				<canvas bind:this={triggerGraphCanvas} class="trigger-graph-canvas" />
 				{#if layout == GuiLayout.Full}
 					<img
 						src="assets/images/resize.svg"
@@ -752,7 +761,7 @@
 						}}
 					/>
 				{/if}
-				<div id="sketch" />
+				<canvas on:keydown={(event)=>console.log("piss")} bind:this={gdWorldCanvas}  class="gd-world-canvas" />
 			</div>
 			{#if layout != GuiLayout.Full && tab == Tab.Sim}
 				<button
@@ -808,6 +817,7 @@
 	</div>
 </div>
 
+
 <svelte:window
 	on:mouseup={() => {
 		draggingDocs = false;
@@ -816,15 +826,35 @@
 		draggingPlaygroundSeparator = false;
 	}}
 	on:mousemove={drag}
+	on:mousedown={(e) => {
+		if (GDWorld.mouseInside()) {
+			GDWorld.mouseDown(e)
+		}
+	}}
+	on:mouseup={(e) => {
+		if (GDWorld.mouseInside()) {
+			GDWorld.mouseUp(e)
+		}
+	}}
+	on:wheel={(e) => {
+		if (GDWorld.mouseInside()) {
+			GDWorld.mouseWheel(e)
+		}
+	}}
 />
 
 <!-- {#if !maximized} -->
-<P5 sketch={triggerSketch} />
-<P5 sketch={gdWorldSketch} />
+<!-- <P5 sketch={triggerSketch} /> -->
+<!-- <P5 sketch={gdWorldSketch} /> -->
 
 <!-- {/if} -->
 <style>
 	@import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+
+	@font-face {
+		font-family: Pusab;
+		src: url(/assets/fonts/pusab.otf);
+	}
 
 	.everything {
 		position: absolute;
@@ -1062,7 +1092,6 @@
 	}
 
 	img {
-		user-drag: none;
 		user-select: none;
 		-moz-user-select: none;
 		-webkit-user-drag: none;
@@ -1403,16 +1432,20 @@
 		box-sizing: border-box;
 	}
 
-	#sketch {
+	.gd-world-canvas {
 		width: 100%;
 		height: 100%;
+		min-width: 0;
+		min-height: 0;
 		border-radius: 12px;
 		box-shadow: 3px 3px 10px 0px #0005;
 	}
 
-	#trigger-graph-sketch {
+	.trigger-graph-canvas {
 		width: 100%;
 		height: 100%;
+		min-width: 0;
+		min-height: 0;
 		border-radius: 12px;
 		box-shadow: 3px 3px 10px 0px #0005;
 	}

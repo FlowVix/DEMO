@@ -60,6 +60,7 @@ class MoveTrigger extends Trigger {
     }
 
     trigger(world: World) {
+        console.log("move")
         if (!this.useTarget) {
             world.addMoveCommand(
                 this.target,
@@ -190,8 +191,7 @@ class SpawnTrigger extends Trigger {
         const d = new Date();
         this.kind.last_spawn = d.getTime();
         if (this.delay > 0) {
-            let time = d.getTime();
-            this.schedule_spawn(world, time + this.delay * 1000)
+            this.schedule_spawn(world, world.time + this.delay * 1000)
         } else {
             this.spawn(world)
         }
@@ -282,6 +282,7 @@ class InstantCountTrigger extends Trigger {
     }
 
     trigger(world: World) {
+        console.log("sexo", this.cmpType)
         const d = new Date();
         switch (this.cmpType) {
             case Cmp.EQUAL:

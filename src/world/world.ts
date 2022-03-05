@@ -2,11 +2,13 @@ import type Object from "../objects/object"
 import {Trigger, ToggleTrigger, SpawnTrigger, PickupTrigger, InstantCountTrigger, TouchMode, MoveTrigger, AlphaTrigger, TouchTrigger, RotateTrigger, CountTrigger, CollisionTrigger, ColorTrigger, PulseChannelTarget, PulseGroupTarget} from "../objects/triggers"
 import {CollisionObject, Display} from "../objects/special"
 import {gdHvsConvert, map} from "../util"
+import Col from 'detect-collisions'
 
 type ObjIndex = number;
 type rgbab = {r: number, g: number, b: number, a: number, blending: boolean}
 type rgba = {r: number, g: number, b: number, a: number}
 
+let system = new Col.System();
 
 enum PlayerColor {
     None,
@@ -161,9 +163,9 @@ class MoveCommand {
     ) {}
 
     getDisplacement(
-        time: number
+        world: World
     ): {x: number, y: number} {
-        let lerp = Math.min(1, (time - this.startTime) / (this.duration * 1000));
+        let lerp = Math.min(1, (world.time - this.startTime) / (this.duration * 1000));
         if (this.duration === 0) {
             lerp = 1;
         }
@@ -198,9 +200,9 @@ class RotateCommand {
     ) {}
 
     getAngleIncrement(
-        time: number
+        world: World
     ): number {
-        let lerp = Math.min(1, (time - this.startTime) / (this.duration * 1000));
+        let lerp = Math.min(1, (world.time - this.startTime) / (this.duration * 1000));
         if (this.duration === 0) {
             lerp = 1;
         }
@@ -252,9 +254,9 @@ class AlphaCommand {
     ) {}
 
     getOpacity(
-        time: number
+        world: World
     ) {
-        let lerp = Math.min(1, (time - this.startTime) / (this.duration * 1000));
+        let lerp = Math.min(1, (world.time - this.startTime) / (this.duration * 1000));
         if (this.duration === 0) {
             lerp = 1;
         }
@@ -404,6 +406,221 @@ class World {
         this.colorIDs[1000] = new Stable(new RGBData(54, 66, 92, 1, false))
         this.colorIDs[1001] = new Stable(new RGBData(20, 31, 56, 1, false))
         
+    }
+
+    update() {
+        this.spawned_this_frame = new Set()
+
+        let time = (new Date()).getTime()
+        this.time = time;
+
+        let to_remove = Array(this.scheduled_spawns.length).fill(false)
+        this.scheduled_spawns.forEach((spawn, i) => {
+            // console.log("c:", time)
+            if (spawn.time <= time) {
+                // console.log("a:", spawn.group)
+                this.spawnGroupID(spawn.group)
+                to_remove[i] = true
+            }
+        })
+        this.scheduled_spawns = this.scheduled_spawns.filter((_, i) => !to_remove[i])
+        
+        // silly spunix the ids will change!!! !
+        // to_remove.forEach(i => this.scheduled_spawns.splice(i, 1))
+
+
+        this.followCommands.forEach(cmd => {
+            cmd.lastVec.x = this.objects[this.groupIDs[cmd.followID].objects[0]].pos.x
+            cmd.lastVec.y = this.objects[this.groupIDs[cmd.followID].objects[0]].pos.y
+        })
+
+        
+        
+        let displacements = {}
+        to_remove = []
+        this.moveCommands.forEach((cmd, i) => {
+            if (!(cmd.groupID in displacements)) {
+                displacements[cmd.groupID] = {x: 0, y: 0}
+            }
+            let displacement = cmd.getDisplacement(this)
+            displacements[cmd.groupID].x += displacement.x;
+            displacements[cmd.groupID].y += displacement.y;
+            if (time >= cmd.startTime + cmd.duration * 1000) {
+                to_remove.push(i)
+            }
+        })
+        this.moveCommands = this.moveCommands.filter((_, i) => !to_remove.includes(i))
+        
+        for (const i in displacements) {
+            for (const objIdx of this.groupIDs[i].objects) {
+                this.objects[objIdx].pos.x += displacements[i].x
+                this.objects[objIdx].pos.y += displacements[i].y
+            }
+        }
+
+        let angleIncrements = {}
+        to_remove = []
+        this.rotateCommands.forEach((cmd, i) => {
+            let {x: centerX, y: centerY} = this.objects[this.groupIDs[cmd.centerID].objects[0]].pos
+            if (!(cmd.groupID in angleIncrements)) {
+                angleIncrements[cmd.groupID] = []
+            }
+
+            let increment = cmd.getAngleIncrement(this)
+            angleIncrements[cmd.groupID].push( {increment, centerX, centerY, lock: cmd.lockRotation} )
+            if (time >= cmd.startTime + cmd.duration * 1000) {
+                to_remove.push(i)
+            }
+        })
+        this.rotateCommands = this.rotateCommands.filter((_, i) => !to_remove.includes(i))
+        
+        for (const i in angleIncrements) {
+            for (const entry of angleIncrements[i]) {
+                for (const objIdx of this.groupIDs[i].objects) {
+                    let cos = Math.cos(-entry.increment * Math.PI / 180);
+                    let sin = Math.sin(-entry.increment * Math.PI / 180);
+                    let [vecX, vecY] = [
+                        this.objects[objIdx].pos.x - entry.centerX,
+                        this.objects[objIdx].pos.y - entry.centerY,
+                    ];
+                    [vecX, vecY] = [cos*vecX - sin*vecY, sin*vecX + cos*vecY]
+
+                    this.objects[objIdx].pos.x = entry.centerX + vecX
+                    this.objects[objIdx].pos.y = entry.centerY + vecY
+
+                    if (!entry.lock) {
+                        this.objects[objIdx].rotation -= entry.increment
+                    }
+                }
+            }
+        }
+        
+        
+        to_remove = []
+        for (const i in this.alphaCommands) {
+            this.groupIDs[i].opacity = this.alphaCommands[i].getOpacity(this)
+            if (time >= this.alphaCommands[i].startTime + this.alphaCommands[i].duration * 1000) {
+                to_remove.push(i)
+            }
+        }
+        to_remove.forEach((i) => delete this.alphaCommands[i])
+
+
+        for (const blockA in this.collisionListeners) {
+            this.collisionListeners[blockA].forEach(listener => {
+                listener.collidingAmount = 0
+                this.blockIDs[blockA].objects.forEach(b1 => {
+                    if (this.objects[b1].disables > 0) { return }
+                    const s1 = 15 * this.objects[b1].scale.x
+                    const a1 = this.objects[b1].rotation * Math.PI / 180
+                    let p1 = new Col.Polygon(this.objects[b1].pos,[
+                        {x: s1, y: s1},
+                        {x: -s1, y: s1},
+                        {x: -s1, y: -s1},
+                        {x: s1, y: -s1},
+                    ])
+                    p1.setAngle(a1)
+                    //console.log(p1.angle, this.objects[b1].rotation)
+                    this.blockIDs[listener.blockB].objects.forEach(b2 => {
+                        if (this.objects[b2].disables > 0) { return }
+                        if (!(<CollisionObject>this.objects[b1]).dynamic && !(<CollisionObject>this.objects[b2]).dynamic) { return }
+                        if ((this.objects[b2].pos.x - this.objects[b1].pos.x) ** 2 + (this.objects[b2].pos.y - this.objects[b1].pos.y) ** 2 > (60*this.objects[b1].scale.x + 60*this.objects[b2].scale.x) ** 2) {
+                            return
+                        }
+                        const s2 = 15 * this.objects[b2].scale.x
+                        const a2 = this.objects[b2].rotation * Math.PI / 180
+                        let p2 = new Col.Polygon(this.objects[b2].pos,[
+                            {x: s2, y: s2},
+                            {x: -s2, y: s2},
+                            {x: -s2, y: -s2},
+                            {x: s2, y: -s2},
+                        ])
+                        // are you gonna make a divider between the editor and the sim awesome
+                        p2.setAngle(a2)
+                        if (system.checkCollision(p1, p2)) {
+                            listener.collidingAmount += 1
+                        }
+                    })
+                })
+                if (!listener.onExit) {
+                    if (listener.collidingAmount > 0 && listener.prevAmount == 0) {
+                        if (listener.activateGroup) { this.spawnGroupID(listener.groupID); (<CollisionTrigger>(this.objects[listener.trigger_obj])).kind.last_spawn = (new Date).getTime() }
+                        this.toggleGroupID(listener.groupID, listener.activateGroup) 
+                    }
+                } else {
+                    if (listener.collidingAmount == 0 && listener.prevAmount > 0) {
+                        if (listener.activateGroup) { this.spawnGroupID(listener.groupID); (<CollisionTrigger>(this.objects[listener.trigger_obj])).kind.last_spawn = (new Date).getTime() }
+                        this.toggleGroupID(listener.groupID, listener.activateGroup) 
+                    }
+                }
+                listener.prevAmount = listener.collidingAmount
+            })
+        }
+
+        for (const id in this.colorIDs) {
+            if (this.colorIDs[id] instanceof Fading && !(<Fading> this.colorIDs[id]).stopped) {
+                (<Fading> this.colorIDs[id]).currentTime = time
+                if (time >= (<Fading> this.colorIDs[id]).startTime + (<Fading> this.colorIDs[id]).duration * 1000) {
+                    this.colorIDs[id] = new Stable(
+                        (<Fading> this.colorIDs[id]).to
+                    )
+                }
+            }
+        }
+        //console.log(this.colorIDs)
+
+        // to_remove = []
+        // for (const id in this.colorFades) {
+        //     let fade = this.colorFades[id].getColor(time)
+        //     this.colorIDs[id].r = fade.r
+        //     this.colorIDs[id].g = fade.g
+        //     this.colorIDs[id].b = fade.b
+        //     this.colorIDs[id].opacity = fade.opacity
+        //     if (time >= this.colorFades[id].startTime + this.colorFades[id].duration * 1000) {
+        //         to_remove.push(id)
+        //     }
+        // }
+        // to_remove.forEach((i) => delete this.colorFades[i])
+
+
+
+        to_remove = []
+        this.followCommands.forEach((cmd, i) => {
+            if (!(cmd.groupID in displacements)) {
+                displacements[cmd.groupID] = {x: 0, y: 0}
+            }
+            let newX = this.objects[this.groupIDs[cmd.followID].objects[0]].pos.x
+            let newY = this.objects[this.groupIDs[cmd.followID].objects[0]].pos.y
+            let displacement = cmd.getDisplacement( {x: newX, y: newY} )
+            for (const objIdx of this.groupIDs[cmd.groupID].objects) {
+                this.objects[objIdx].pos.x += displacement.x
+                this.objects[objIdx].pos.y += displacement.y
+            }
+            if (time >= cmd.startTime + cmd.duration * 1000) {
+                to_remove.push(i)
+            }
+        })
+        this.followCommands = this.followCommands.filter((_, i) => !to_remove.includes(i))
+
+        
+        for (const i in this.pulseCommands.channel) {
+            to_remove = []
+            this.pulseCommands.channel[i].forEach((cmd, i) => {
+                if (time >= cmd.startTime + (cmd.fadeIn + cmd.hold + cmd.fadeOut) * 1000) {
+                    to_remove.push(i)
+                }
+            })
+            this.pulseCommands.channel[i] = this.pulseCommands.channel[i].filter((_, i) => !to_remove.includes(i))
+        }
+        for (const i in this.pulseCommands.group) {
+            to_remove = []
+            this.pulseCommands.group[i].forEach((cmd, i) => {
+                if (time >= cmd.startTime + (cmd.fadeIn + cmd.hold + cmd.fadeOut) * 1000) {
+                    to_remove.push(i)
+                }
+            })
+            this.pulseCommands.group[i] = this.pulseCommands.group[i].filter((_, i) => !to_remove.includes(i))
+        }
     }
 
     getColor(colorID: number): rgbab {
@@ -558,9 +775,9 @@ class World {
     
         for (let i = 0; i < this.itemIDs[itemID].objects.length; i++) {
             let obj = this.objects[this.itemIDs[itemID].objects[i]]
-            if (obj instanceof Display) {
-                obj.set_value(/*...*/)
-            }
+            // if (obj instanceof Display) {
+            //     obj.set_value(/*...*/)
+            // }
         }
     }
     
@@ -877,5 +1094,6 @@ export {
     Stable,
     Fading,
     PlayerColor,
+    type rgbab,
 }
 
