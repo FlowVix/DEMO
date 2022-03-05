@@ -1087,6 +1087,7 @@
 		-ms-user-select: none;
 	}
 
+	
 	#code-and-console {
 		width: 100%;
 		height: 100%;
