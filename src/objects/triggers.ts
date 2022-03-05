@@ -60,7 +60,6 @@ class MoveTrigger extends Trigger {
     }
 
     trigger(world: World) {
-        console.log("move")
         if (!this.useTarget) {
             world.addMoveCommand(
                 this.target,
@@ -282,7 +281,6 @@ class InstantCountTrigger extends Trigger {
     }
 
     trigger(world: World) {
-        console.log("sexo", this.cmpType)
         const d = new Date();
         switch (this.cmpType) {
             case Cmp.EQUAL:

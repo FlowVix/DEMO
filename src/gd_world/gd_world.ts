@@ -6,6 +6,7 @@ import type {World} from "../world/world"
 import {touch_buttons} from "../gd_world/resources"
 import { TouchMode } from "../objects/triggers";
 
+const CAMERA_SPEED = 10;
 
 let app: PIXI.Application;
 let objects: PIXI.Container;
@@ -13,37 +14,16 @@ let objects: PIXI.Container;
 let prevWidth = 0;
 let prevHeight = 0;
 
-let mouseX = 0;
-let mouseY = 0;
-
-let prevMouseX = 0;
-let prevMouseY = 0;
-
 let cameraPos = {x: 0, y: 0}
+let cameraMove = {x: 0, y: 0}
 let prevCameraPos = {x: 0, y: 0}
-
-let dragging = false;
 
 
 let zoom = 1;
 let zoomExp = 0;
+let zoomExpLerp = 0;
 
 
-let mouseInside: () => boolean;
-
-let mouseDown = (event) => {
-    [prevCameraPos.x, prevCameraPos.y] = [cameraPos.x, cameraPos.y]
-    prevMouseX = mouseX;
-    prevMouseY = mouseY;
-    dragging = true;
-}
-let mouseUp = (event) => {
-    dragging = false;
-}
-let mouseWheel = (event) => {
-    zoomExp += event.deltaY > 0 ? -1 : 1;
-    zoom = 2 ** (zoomExp/10)
-}
 
 let renderMethods = []
 
@@ -120,14 +100,23 @@ const updateObjects = (world: World) => {
 
 const createApp = (canvas: HTMLCanvasElement, world: World) => {
 
-    mouseInside = () => {
-        return mouseX >= 0 && mouseX <= canvas.offsetWidth && mouseY >= 0 && mouseY <= canvas.offsetHeight
-    }
+    
+    let mouseX = 0;
+    let mouseY = 0;
 
+    let prevMouseX = 0;
+    let prevMouseY = 0;
 
+    let dragging = false;
+
+    
     let pressingInput1 = false;
     let pressingInput2 = false;
     let clickingButton = false;
+
+    const mouseInside = () => {
+        return mouseX >= 0 && mouseX <= canvas.offsetWidth && mouseY >= 0 && mouseY <= canvas.offsetHeight
+    }
 
     const activateListeners = (activate: boolean, touch2: boolean) => {
         if (touch2) pressingInput2 = activate
@@ -159,14 +148,103 @@ const createApp = (canvas: HTMLCanvasElement, world: World) => {
     let center = new PIXI.Container();
     app.stage.addChild(center)
 
+    app.renderer.plugins.interaction
+        .on('pointerdown', (e) => {
+            [prevCameraPos.x, prevCameraPos.y] = [cameraPos.x, cameraPos.y];
+            [prevMouseX, prevMouseY] = [e.data.global.x, e.data.global.y];
+            [mouseX, mouseY] = [e.data.global.x, e.data.global.y]
+            dragging = true;
+        })
+        .on('pointerup', (e) => {
+            dragging = false;
+        })
+        .on('pointermove', (e) => {
+            mouseX = e.data.global.x
+            mouseY = e.data.global.y
+        })
+
+    let keys = []
+    app.renderer.view.tabIndex = 1000
+    app.renderer.view.addEventListener('keydown', (event) => {
+        if (keys.includes(event.keyCode)) return
+        keys.push( event.keyCode )
+        switch (event.keyCode) {
+            case 65:
+                cameraMove.x -= CAMERA_SPEED;
+                break;
+            
+            case 87:
+                cameraMove.y += CAMERA_SPEED;
+                break;
+                
+            case 68:
+                cameraMove.x += CAMERA_SPEED;
+                break;
+            
+            case 83:
+                cameraMove.y -= CAMERA_SPEED;
+                break;
+
+            case 38:
+                activateListeners(true, false)
+                break;
+
+            case 32:
+                activateListeners(true, true)
+                break;
+        }
+    })
+    app.renderer.view.addEventListener('keyup', (event) => {
+        keys = keys.filter(e => e != event.keyCode)
+        switch (event.keyCode) {
+            case 65:
+                cameraMove.x = 0;
+                break;
+            
+            case 87:
+                cameraMove.y = 0;
+                break;
+                
+            case 68:
+                cameraMove.x = 0;
+                break;
+            
+            case 83:
+                cameraMove.y = 0;
+                break;
+            
+            case 38:
+                if (pressingInput1) {
+                    activateListeners(false, false)
+                }
+                break;
+
+            case 32:
+                if (pressingInput2) {
+                    activateListeners(false, true)
+                }
+                break;
+        }
+    })
+    app.renderer.view.addEventListener('wheel', (event) => {
+        zoomExp += event.deltaY > 0 ? -1 : 1;
+    })
+
+
+
     app.ticker.add((delta) => {
 
-        
+        cameraPos.x += cameraMove.x
+        cameraPos.y += cameraMove.y
+
         if (dragging && !clickingButton) {
             cameraPos.x = prevCameraPos.x - (mouseX - prevMouseX) / zoom
             cameraPos.y = prevCameraPos.y + (mouseY - prevMouseY) / zoom
             if (!mouseInside()) dragging = false
         }
+
+        zoomExpLerp = zoomExpLerp + (zoomExp - zoomExpLerp) * 0.2
+        zoom = 2 ** (zoomExpLerp/10)
 
         touch_button.renderable = touch_button.interactive = world.touchListeners.length > 0
         touch_button_dual.renderable = touch_button_dual.interactive = world.touchListeners.some(listener => listener.dualMode)
@@ -196,12 +274,8 @@ const createApp = (canvas: HTMLCanvasElement, world: World) => {
         updateObjects(world)
     })
 
-    app.stage.interactive = true
 
-    app.stage.on('pointermove', (e) => {
-        mouseX = e.data.global.x
-        mouseY = e.data.global.y
-    })
+
 
     let axes = new PIXI.Graphics();
     axes.beginFill(0x000000);
@@ -213,12 +287,7 @@ const createApp = (canvas: HTMLCanvasElement, world: World) => {
 
     objects = new PIXI.Container();
     center.addChild(objects)
-
     
-    let gaga = PIXI.Sprite.from("assets/images/github.png")
-    gaga.anchor.x = 0.5
-    gaga.anchor.y = 0.5
-    objects.addChild(gaga)
 
 
     let touch_button = new PIXI.Sprite(touch_buttons.textures[`touch.png`])
@@ -279,4 +348,4 @@ const createApp = (canvas: HTMLCanvasElement, world: World) => {
 }
 
 
-export {createApp, createObjects, mouseInside, mouseDown, mouseUp, mouseWheel}
+export {createApp, createObjects}

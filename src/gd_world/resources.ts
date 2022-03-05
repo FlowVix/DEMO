@@ -7,15 +7,12 @@ const setup = (then) => {
     sheet1 = PIXI.Loader.shared.resources["sheet1"].spritesheet;
     sheet2 = PIXI.Loader.shared.resources["sheet2"].spritesheet;
     touch_buttons = PIXI.Loader.shared.resources["touch_buttons"].spritesheet;
-    // pusab = PIXI.Loader.shared.resources["assets/fonts/pusab.otf"].bitmapFont;
-    console.log(sheet1, sheet2)
 
     then()
 }
 
 const loadResources = (then) => {
     PIXI.Loader.shared
-        .add("pusab", "assets/fonts/pusab.otf")
         .add("sheet1", "assets/images/spritesheets/sheet1.json")
         .add("sheet2", "assets/images/spritesheets/sheet2.json")
         .add("touch_buttons", "assets/images/spritesheets/touch_buttons.json")

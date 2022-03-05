@@ -31,7 +31,7 @@ export class Display extends GDObject {
     render(root, methods) {
 
         let qualityResizer = new PIXI.Container()
-        let quality = 4;
+        let quality = 8;
         
         const title = new PIXI.Text(`Display ${this.itemID}i`, {
             fill: "white",

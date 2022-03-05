@@ -872,7 +872,6 @@ class World {
         let juj = new CollisionListener(
             groupID, blockB, activateGroup, onExit, trigger_obj
         )
-        console.log(juj)
         this.collisionListeners[blockA].push(juj)
     }
 

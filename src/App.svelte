@@ -41,7 +41,6 @@
 		} else {
 			layout = GuiLayout.Full;
 		}
-		console.log(ar);
 	}
 
 
@@ -761,7 +760,7 @@
 						}}
 					/>
 				{/if}
-				<canvas on:keydown={(event)=>console.log("piss")} bind:this={gdWorldCanvas}  class="gd-world-canvas" />
+				<canvas bind:this={gdWorldCanvas}  class="gd-world-canvas" />
 			</div>
 			{#if layout != GuiLayout.Full && tab == Tab.Sim}
 				<button
@@ -819,28 +818,13 @@
 
 
 <svelte:window
-	on:mouseup={() => {
+	on:pointerup={() => {
 		draggingDocs = false;
 		draggingEditorSeparator = false;
 		draggingSimSeparator = false;
 		draggingPlaygroundSeparator = false;
 	}}
-	on:mousemove={drag}
-	on:mousedown={(e) => {
-		if (GDWorld.mouseInside()) {
-			GDWorld.mouseDown(e)
-		}
-	}}
-	on:mouseup={(e) => {
-		if (GDWorld.mouseInside()) {
-			GDWorld.mouseUp(e)
-		}
-	}}
-	on:wheel={(e) => {
-		if (GDWorld.mouseInside()) {
-			GDWorld.mouseWheel(e)
-		}
-	}}
+	on:pointermove={drag}
 />
 
 <!-- {#if !maximized} -->
@@ -854,6 +838,10 @@
 	@font-face {
 		font-family: Pusab;
 		src: url(/assets/fonts/pusab.otf);
+	}
+
+	canvas {
+		outline: none;
 	}
 
 	.everything {
