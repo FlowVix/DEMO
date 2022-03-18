@@ -142,7 +142,7 @@
 	};
 
 	const simulate_triggers = async () => {
-		await buildLevel(current_ls);
+		// await buildLevel(current_ls);
 		setTimeout(() => {
 			world.objects.forEach((obj) => {
 				if (obj instanceof Trigger && !obj.spawnTriggered) {
@@ -320,7 +320,11 @@
 			run_code()
 		})
 	})
-
+	// window.loadLevelStr = (s) => {
+	// 	buildLevel(s);
+	// 	updateBodies(world);
+	// 	console.log(world.objects.length, "objects")
+	// }
 
 </script>
 
@@ -828,8 +832,7 @@
 />
 
 <!-- {#if !maximized} -->
-<!-- <P5 sketch={triggerSketch} /> -->
-<!-- <P5 sketch={gdWorldSketch} /> -->
+<P5 sketch={triggerSketch} />
 
 <!-- {/if} -->
 <style>
@@ -1439,6 +1442,8 @@
 		min-height: 0;
 		border-radius: 12px;
 		box-shadow: 3px 3px 10px 0px #0005;
+		border: 2px solid #3b3b3b;
+		box-sizing: border-box;
 	}
 
 	.trigger-graph-canvas {
@@ -1448,5 +1453,7 @@
 		min-height: 0;
 		border-radius: 12px;
 		box-shadow: 3px 3px 10px 0px #0005;
+		border: 2px solid #3b3b3b;
+		box-sizing: border-box;
 	}
 </style>
