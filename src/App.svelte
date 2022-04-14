@@ -860,7 +860,7 @@
 		display: flex;
 		flex-direction: column;
 		box-sizing: border-box;
-		overflow-x: hidden;
+		overflow: hidden;
 	}
 
 	.weird-size-fixer {
