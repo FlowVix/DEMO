@@ -1,4 +1,5 @@
 
+import type { Container } from "pixi.js";
 import type {World} from "../world/world";
 
 class GDObject {
@@ -6,7 +7,7 @@ class GDObject {
     pos: {
         x: number,
         y: number,
-    }
+    } = {x: 0, y: 0}
     scale: {
         x: number,
         y: number,
@@ -14,10 +15,10 @@ class GDObject {
     rotation: number = 0;
     disables: number = 0;
     groups: number[] = []; 
-    index: number
+    index: number;
+    objID: number = 0;
 
-    constructor(x: number, y: number, idx: number) {
-        this.pos = {x, y}
+    constructor(idx: number) {
         this.index = idx
     } // the test example works with optimisation off :oooooooh:
 
@@ -50,6 +51,8 @@ class GDObject {
     }
 
     draw(p5: any, world: World) {}
+
+    render(root: Container, methods: Record<string, Function>) {}
 
 }
 

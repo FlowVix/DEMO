@@ -2,16 +2,20 @@
 	import P5 from "p5-svelte";
 	import { World } from "./world/world";
 	import triggerGraphSketch from "./trigger_graph_sketch/sketch";
-	import { worldSketch } from "./sketch/sketch";
 	import { createObject } from "./world/objectHandler";
 	import SvelteMarkdown from "svelte-markdown";
 	import { tutorials } from "./tutorials";
 	import { clamp } from "./util";
+	import { Trigger } from "./objects/triggers";
+	import { loadResources } from "./gd_world/resources";
+
+	import * as GDWorld from "./gd_world/gd_world"
 
 	export let run_spwn;
 	export let init_panics;
 	export let check_syntax;
 	init_panics();
+
 	enum GuiLayout {
 		PortraitTabs,
 		LandscapeTabs,
@@ -37,15 +41,8 @@
 		} else {
 			layout = GuiLayout.Full;
 		}
-		console.log(ar);
 	}
 
-	// document.addEventListener("touchstart", (e) => {
-	// 	e.preventDefault();
-	// });
-	// document.addEventListener("touchmove", (e) => {
-	// 	e.preventDefault();
-	// });
 
 	import AnsiUp from "ansi_up";
 	let ansiUp = new AnsiUp();
@@ -81,14 +78,12 @@
 	let world = new World();
 	let optimize = true;
 
-	import { Trigger } from "./objects/triggers";
-
 	const [triggerSketch, updateBodies] = triggerGraphSketch(world);
-	const [gdWorldSketch] = worldSketch(world);
+
 
 	import def_examples from "./examples";
-	import { setG5 } from "./gp5";
-	import { each } from "svelte/internal";
+	import { onMount } from "svelte";
+
 	let examples = def_examples;
 
 	let current_example = Object.keys(def_examples)[0];
@@ -108,6 +103,7 @@
 				);
 			});
 		world.init();
+		GDWorld.createObjects(world)
 	};
 	let current_ls = "";
 	let last_build = "";
@@ -146,7 +142,7 @@
 	};
 
 	const simulate_triggers = async () => {
-		await buildLevel(current_ls);
+		// await buildLevel(current_ls);
 		setTimeout(() => {
 			world.objects.forEach((obj) => {
 				if (obj instanceof Trigger && !obj.spawnTriggered) {
@@ -247,6 +243,8 @@
 	let editorSeparator = 0.7;
 	let prevEditorSeparator = 0;
 
+	
+
 	let draggingSimSeparator = false;
 	let simSeparator = 0.5;
 	let prevSimSeparator = 0;
@@ -255,7 +253,7 @@
 	let playgroundSeparator = 0.5;
 	let prevPlaygroundSeparator = 0;
 
-	run_code();
+	//run_code();
 
 	let maximized = false;
 	let selectedTutorial = 0;
@@ -312,6 +310,22 @@
 			}
 		}, 1);
 	};
+
+	let gdWorldCanvas: HTMLCanvasElement;
+	let triggerGraphCanvas: HTMLCanvasElement;
+
+	onMount(() => {
+		loadResources(() => {
+			GDWorld.createApp(gdWorldCanvas, world)
+			run_code()
+		})
+	})
+	// window.loadLevelStr = (s) => {
+	// 	buildLevel(s);
+	// 	updateBodies(world);
+	// 	console.log(world.objects.length, "objects")
+	// }
+
 </script>
 
 <svelte:head>
@@ -322,10 +336,8 @@
 		on:load={initializeEditor}></script>
 </svelte:head>
 
-<!-- <link href="prism-vsc-dark-plus.css" rel="stylesheet" /> -->
-<link href="prism-atom-dark.css" rel="stylesheet" />
-<link href="atom-one-dark.css" rel="stylesheet" />
-<!--  gonna head out for a bit -->
+
+<div style="font-family: Pusab;">gdfgsdfgsdfgsdfgsdfgdf</div>
 
 <div class="everything" bind:clientWidth={dwidth} bind:clientHeight={dheight}>
 	<div class="header">
@@ -732,7 +744,7 @@
 				}
                 `}
 			>
-				<div id="trigger-graph-sketch" />
+				<canvas bind:this={triggerGraphCanvas} class="trigger-graph-canvas" />
 				{#if layout == GuiLayout.Full}
 					<img
 						src="assets/images/resize.svg"
@@ -752,7 +764,7 @@
 						}}
 					/>
 				{/if}
-				<div id="sketch" />
+				<canvas bind:this={gdWorldCanvas}  class="gd-world-canvas" />
 			</div>
 			{#if layout != GuiLayout.Full && tab == Tab.Sim}
 				<button
@@ -780,7 +792,7 @@
 
 	<div
 		class="docs-window"
-		on:mousedown={(e) => {
+		on:pointerdown={(e) => {
 			prevMousePos.x = e.screenX;
 			prevMousePos.y = e.screenY;
 			prevDocsPos.x = docsPos.x;
@@ -802,29 +814,42 @@
 			on:mouseup={() => (draggingDocs = false)}
 			style={`
             pointer-events: ${draggingDocs || !viewingDocs ? "none" : "all"};
-            opacity: 0.98;
+            opacity: 0.9;
         `}
 		/>
 	</div>
 </div>
 
+
 <svelte:window
-	on:mouseup={() => {
+	on:pointerup={() => {
 		draggingDocs = false;
 		draggingEditorSeparator = false;
 		draggingSimSeparator = false;
 		draggingPlaygroundSeparator = false;
 	}}
-	on:mousemove={drag}
+	on:pointermove={drag}
 />
 
 <!-- {#if !maximized} -->
 <P5 sketch={triggerSketch} />
-<P5 sketch={gdWorldSketch} />
 
 <!-- {/if} -->
 <style>
 	@import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+
+	@font-face {
+		font-family: Pusab;
+		src: url(/assets/fonts/pusab.otf);
+	}
+	@font-face {
+		font-family: CodeFont;
+		src: url(/assets/fonts/FiraCode-SemiBold.ttf);
+	}
+
+	canvas {
+		outline: none;
+	}
 
 	.everything {
 		position: absolute;
@@ -835,7 +860,7 @@
 		display: flex;
 		flex-direction: column;
 		box-sizing: border-box;
-		overflow-x: hidden;
+		overflow: hidden;
 	}
 
 	.weird-size-fixer {
@@ -844,6 +869,7 @@
 
 	:global(.highlight-spwn > code) {
 		display: none;
+		font-family: CodeFont, monospace;
 	}
 
 	:global(.snippet) {
@@ -854,7 +880,7 @@
 		/* background-color: #0003; */
 		resize: none;
 		/* color:rgba(255, 255, 255, 0.886); */
-		font-family: "Source Code Pro", monospace;
+		font-family: CodeFont, monospace;
 		font-size: 16px;
 		font-weight: 600;
 		border: 1.5px solid #ffffff26;
@@ -1009,13 +1035,13 @@
 		position: absolute;
 		width: 50vw;
 		height: 80vh;
-		padding: 40px 6px 6px 6px;
+		padding: 6px 6px 6px 100px;
 		background-color: rgba(75, 69, 87, 0.5);
 		border: 1px solid #fff2;
 		border-radius: 24px;
 		z-index: 1000;
 		box-shadow: 8px 8px 36px 3px rgba(0, 0, 0, 0.637);
-		backdrop-filter: blur(6px);
+		backdrop-filter: blur(15px);
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -1062,7 +1088,6 @@
 	}
 
 	img {
-		user-drag: none;
 		user-select: none;
 		-moz-user-select: none;
 		-webkit-user-drag: none;
@@ -1070,10 +1095,12 @@
 		-ms-user-select: none;
 	}
 
+
 	#code-and-console {
 		width: 100%;
 		height: 100%;
 		display: grid;
+		resize: none;
 
 		box-sizing: border-box;
 	}
@@ -1088,9 +1115,8 @@
 		border: 2px solid #3b3b3b;
 		box-shadow: 3px 3px 10px 0px #0005;
 		resize: none;
-		font-family: "Source Code Pro", monospace;
-		font-size: 16px;
-		font-weight: 600;
+		font-size: 15px;
+		font-family: CodeFont, monospace;
 	}
 
 	#console {
@@ -1102,13 +1128,14 @@
 		overflow: auto;
 		overflow-wrap: break-word;
 		border-radius: 6px;
-		font-weight: 600;
 		margin: 0;
 		box-sizing: border-box;
+		resize: none;
 
 		padding: 10px;
 		font-size: 16px;
 		overflow-x: auto;
+		overflow-y: scroll;
 		white-space: pre-wrap;
 		white-space: -moz-pre-wrap;
 		white-space: -pre-wrap;
@@ -1116,6 +1143,12 @@
 		word-wrap: break-word;
 
 		box-shadow: 3px 3px 10px 0px #0005;
+		
+		
+		font-size: 15px;
+		font-family: CodeFont, monospace;
+
+
 	}
 
 	.header-right {
@@ -1277,6 +1310,7 @@
 		height: 100%;
 		box-sizing: border-box;
 		padding: 1rem;
+		resize: none;
 
 		display: flex;
 		flex-direction: column;
@@ -1403,17 +1437,25 @@
 		box-sizing: border-box;
 	}
 
-	#sketch {
+	.gd-world-canvas {
 		width: 100%;
 		height: 100%;
+		min-width: 0;
+		min-height: 0;
 		border-radius: 12px;
 		box-shadow: 3px 3px 10px 0px #0005;
+		border: 2px solid #3b3b3b;
+		box-sizing: border-box;
 	}
 
-	#trigger-graph-sketch {
+	.trigger-graph-canvas {
 		width: 100%;
 		height: 100%;
+		min-width: 0;
+		min-height: 0;
 		border-radius: 12px;
 		box-shadow: 3px 3px 10px 0px #0005;
+		border: 2px solid #3b3b3b;
+		box-sizing: border-box;
 	}
 </style>

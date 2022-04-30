@@ -1,0 +1,44 @@
+{"frames": {
+
+"touch.png":
+{
+	"frame": {"x":1,"y":1,"w":172,"h":80},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":172,"h":80},
+	"sourceSize": {"w":172,"h":80}
+},
+"touch_down.png":
+{
+	"frame": {"x":1,"y":83,"w":172,"h":80},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":172,"h":80},
+	"sourceSize": {"w":172,"h":80}
+},
+"touch_dual.png":
+{
+	"frame": {"x":175,"y":1,"w":172,"h":80},
+	"rotated": true,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":172,"h":80},
+	"sourceSize": {"w":172,"h":80}
+},
+"touch_dual_down.png":
+{
+	"frame": {"x":1,"y":165,"w":172,"h":80},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":172,"h":80},
+	"sourceSize": {"w":172,"h":80}
+}},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "touch_buttons.png",
+	"format": "RGBA8888",
+	"size": {"w":256,"h":246},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:8d6fdea97e40f35136b3fe6c9cca877a:06e7061c43f652bf87b8007190d1bfa4:6f4dfd9020088799cfc05d92ce88d1fa$"
+}
+}

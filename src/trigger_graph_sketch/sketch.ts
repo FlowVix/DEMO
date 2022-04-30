@@ -277,7 +277,7 @@ const triggerGraphSketch = (
         p5.setup = () => {
             cnv = p5.createCanvas(400, 400);
             p5.frameRate(240)
-            p5div = document.getElementById("trigger-graph-sketch")
+            p5div = document.getElementsByClassName("trigger-graph-canvas")[0]
         };
     
         p5.keyPressed = () => {

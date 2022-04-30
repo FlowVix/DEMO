@@ -7,6 +7,7 @@ import sveltePreprocess from "svelte-preprocess";
 import typescript from "@rollup/plugin-typescript";
 import css from "rollup-plugin-css-only";
 import rust from "@wasm-tool/rollup-plugin-rust";
+import url from "@rollup/plugin-url";
 
 //import svelteStaticHtml from "rollup-plugin-svelte-static-html";
 
@@ -73,11 +74,13 @@ export default {
 		// https://github.com/rollup/plugins/tree/master/packages/commonjs
 		resolve({
 			dedupe: ["svelte"],
+			preferBuiltins: false,
 		}),
 		commonjs(),
 		typescript({
 			sourceMap: !production,
 			inlineSources: !production,
+			rootDir: './src',
 		}),
 
 		// In dev mode, call `npm run start` once

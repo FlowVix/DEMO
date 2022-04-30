@@ -31,11 +31,13 @@
   },
   "dependencies": {
     "@novacbn/svelte-codejar": "^0.1.1",
+    "@rollup/plugin-url": "^6.1.0",
     "ansi_up": "^5.1.0",
     "detect-collisions": "^3.2.5",
     "highlight.js": "^11.4.0",
     "js-quadtree": "^3.3.6",
     "p5-svelte": "^3.0.1",
+    "pixi.js": "^6.2.2",
     "prismjs": "^1.27.0",
     "rollup-plugin-rust": "^1.2.0",
     "sirv-cli": "^2.0.0",
