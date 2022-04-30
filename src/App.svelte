@@ -814,7 +814,7 @@
 			on:mouseup={() => (draggingDocs = false)}
 			style={`
             pointer-events: ${draggingDocs || !viewingDocs ? "none" : "all"};
-            opacity: 0.98;
+            opacity: 0.9;
         `}
 		/>
 	</div>
@@ -843,8 +843,8 @@
 		src: url(/assets/fonts/pusab.otf);
 	}
 	@font-face {
-		font-family: ConsoleFont;
-		src: url(/assets/fonts/Hack.ttf);
+		font-family: CodeFont;
+		src: url(/assets/fonts/FiraCode-SemiBold.ttf);
 	}
 
 	canvas {
@@ -869,6 +869,7 @@
 
 	:global(.highlight-spwn > code) {
 		display: none;
+		font-family: CodeFont, monospace;
 	}
 
 	:global(.snippet) {
@@ -879,7 +880,7 @@
 		/* background-color: #0003; */
 		resize: none;
 		/* color:rgba(255, 255, 255, 0.886); */
-		font-family: "Source Code Pro", monospace;
+		font-family: CodeFont, monospace;
 		font-size: 16px;
 		font-weight: 600;
 		border: 1.5px solid #ffffff26;
@@ -1034,13 +1035,13 @@
 		position: absolute;
 		width: 50vw;
 		height: 80vh;
-		padding: 40px 6px 6px 6px;
+		padding: 6px 6px 6px 100px;
 		background-color: rgba(75, 69, 87, 0.5);
 		border: 1px solid #fff2;
 		border-radius: 24px;
 		z-index: 1000;
 		box-shadow: 8px 8px 36px 3px rgba(0, 0, 0, 0.637);
-		backdrop-filter: blur(6px);
+		backdrop-filter: blur(15px);
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -1099,6 +1100,7 @@
 		width: 100%;
 		height: 100%;
 		display: grid;
+		resize: none;
 
 		box-sizing: border-box;
 	}
@@ -1113,9 +1115,8 @@
 		border: 2px solid #3b3b3b;
 		box-shadow: 3px 3px 10px 0px #0005;
 		resize: none;
-		font-size: 17px;
-		font-family: monospace;
-		font-weight: 600;
+		font-size: 15px;
+		font-family: CodeFont, monospace;
 	}
 
 	#console {
@@ -1129,10 +1130,12 @@
 		border-radius: 6px;
 		margin: 0;
 		box-sizing: border-box;
+		resize: none;
 
 		padding: 10px;
 		font-size: 16px;
 		overflow-x: auto;
+		overflow-y: scroll;
 		white-space: pre-wrap;
 		white-space: -moz-pre-wrap;
 		white-space: -pre-wrap;
@@ -1143,9 +1146,7 @@
 		
 		
 		font-size: 15px;
-		font-weight: 600;
-		font-family: ConsoleFont;
-		letter-spacing: 0px;
+		font-family: CodeFont, monospace;
 
 
 	}
@@ -1309,6 +1310,7 @@
 		height: 100%;
 		box-sizing: border-box;
 		padding: 1rem;
+		resize: none;
 
 		display: flex;
 		flex-direction: column;

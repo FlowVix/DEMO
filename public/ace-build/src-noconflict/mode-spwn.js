@@ -43,7 +43,7 @@ var SPWNHighlightRules = function() {
         }],
         "#keywords": [{
             token: "keyword.control.spwn",
-            regex: /\b(?:if|else|while|return|extract|break|continue|match)\b/
+            regex: /\b(?:if|else|while|return|extract|throw|break|continue|match)\b/
         }, {
             token: "keyword.control.spwn",
             regex: /^\s*type\b/
